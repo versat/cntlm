@@ -469,7 +469,6 @@ rr_data_t forward_request(void *thread_data, rr_data_t request) {
 	int sd;
 	assert(thread_data != NULL);
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
-	struct sockaddr_in caddr = ((struct thread_arg_s *)thread_data)->addr;
 
 beginning:
 #ifdef ENABLE_PACPARSER
@@ -621,11 +620,6 @@ beginning:
 			if (debug)
 				hlist_dump(data[loop]->headers);
 
-			if (loop == 0 && data[0]->req) {
-				if (request_logging_level == 1) {
-					syslog(LOG_DEBUG, "%s %s %s", inet_ntoa(caddr.sin_addr), data[0]->method, data[0]->url);
-				}
-			}
 
 shortcut:
 			/*
@@ -979,7 +973,6 @@ void forward_tunnel(void *thread_data) {
 	assert(thread_data != NULL);
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
 	char *thost = ((struct thread_arg_s *)thread_data)->target;
-	struct sockaddr_in caddr = ((struct thread_arg_s *)thread_data)->addr;
 
 	tcreds = new_auth();
 	sd = proxy_connect(tcreds);
@@ -987,7 +980,6 @@ void forward_tunnel(void *thread_data) {
 	if (sd < 0)
 		goto bailout;
 
-	syslog(LOG_DEBUG, "%s TUNNEL %s", inet_ntoa(caddr.sin_addr), thost);
 	if (debug)
 		printf("Tunneling to %s for client %d...\n", thost, cd);
 

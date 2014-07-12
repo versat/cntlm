@@ -107,7 +107,7 @@ struct rr_data_s {
 struct thread_arg_s {
 	int fd;
 	char *target;
-	struct sockaddr_in addr;
+	struct sockaddr_in6 addr;
 };
 
 extern void myexit(int rc) __attribute__((noreturn));

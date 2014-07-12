@@ -70,7 +70,7 @@ typedef struct {
 #endif
 	char hostname[64];
 	struct auth_s creds;
-	struct in_addr host;
+	struct in6_addr host;
 	int port;
 	int resolved;
 } proxy_t;

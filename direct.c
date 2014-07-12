@@ -41,7 +41,7 @@
 #include "pages.h"
 
 int host_connect(const char *hostname, int port) {
-	struct in_addr addr;
+	struct in6_addr addr;
 
 	errno = 0;
 	if (!so_resolv(&addr, hostname)) {
@@ -193,7 +193,6 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 	int conn_alive = 0;
 
 	int cd = ((struct thread_arg_s *)cdata)->fd;
-	struct sockaddr_in caddr = ((struct thread_arg_s *)cdata)->addr;
 
 	if (debug)
 		printf("Direct thread processing...\n");
@@ -280,9 +279,6 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 				hlist_dump(data[loop]->headers);
 
 			if (loop == 0 && data[0]->req) {
-				if (request_logging_level == 1) {
-					syslog(LOG_DEBUG, "%s %s %s", inet_ntoa(caddr.sin_addr), data[0]->method, data[0]->url);
-				}
 
 				/*
 				 * Convert full proxy request URL into a relative URL
@@ -460,7 +456,6 @@ void direct_tunnel(void *thread_data) {
 
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
 	char *thost = ((struct thread_arg_s *)thread_data)->target;
-	struct sockaddr_in caddr = ((struct thread_arg_s *)thread_data)->addr;
 
 	hostname = strdup(thost);
 	if ((pos = strchr(hostname, ':')) != NULL) {
@@ -472,7 +467,6 @@ void direct_tunnel(void *thread_data) {
 	if (sd <= 0)
 		goto bailout;
 
-	syslog(LOG_DEBUG, "%s FORWARD %s", inet_ntoa(caddr.sin_addr), thost);
 	if (debug)
 		printf("Portforwarding to %s for client %d...\n", thost, cd);
 

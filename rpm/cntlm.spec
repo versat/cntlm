@@ -27,7 +27,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-root
 
 %description
 Cntlm is a fast and efficient NTLM proxy, with support for TCP/IP tunneling,
-authenticated connection caching, ACLs, proper daemon logging and behaviour
+authenticated connection caching, proper daemon logging and behaviour
 and much more. It has up to ten times faster responses than similar NTLM
 proxies, while using by orders or magnitude less RAM and CPU. Manual page 
 contains detailed information.

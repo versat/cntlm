@@ -40,7 +40,7 @@ extern int debug;
 /*
  * gethostbyname() wrapper. Return 1 if OK, otherwise 0.
  */
-int so_resolv(struct in_addr *host, const char *name) {
+int so_resolv(struct in6_addr *host, const char *name) {
 /*
 	struct hostent *resolv;
 
@@ -56,8 +56,9 @@ int so_resolv(struct in_addr *host, const char *name) {
 	const struct addrinfo *p;
 
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET;
+	hints.ai_family = AF_INET6;
 	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_V4MAPPED | AI_ALL;
 	int rc = getaddrinfo(name, NULL, &hints, &res);
 	if (rc != 0) {
 		if (debug)
@@ -69,20 +70,25 @@ int so_resolv(struct in_addr *host, const char *name) {
 		printf("Resolve %s:\n", name);
 	int addr_set = 0;
 	for (p = res; p != NULL; p = p->ai_next) {
-		const struct sockaddr_in *ad = (struct sockaddr_in*)(p->ai_addr);
+		const struct sockaddr_in6 *ad = (struct sockaddr_in6*)(p->ai_addr);
 		if (ad == NULL) {
 			freeaddrinfo(res);
 			return 0;
 		}
 		if (!addr_set) {
-			memcpy(host, &ad->sin_addr, sizeof(ad->sin_addr));
+			memcpy(host, &ad->sin6_addr, sizeof(ad->sin6_addr));
 			addr_set = 1;
-			if (debug)
-				printf("  -> %s\n", inet_ntoa(ad->sin_addr));
-		} else
-			if (debug)
-				printf("     %s\n", inet_ntoa(ad->sin_addr));
+			if (debug) {
+				char s[INET6_ADDRSTRLEN];
+				inet_ntop(p->ai_family, &ad->sin6_addr, s, INET6_ADDRSTRLEN);
+				printf("  -> %s\n", s);
 	}
+      } else if (debug) {
+          char s[INET6_ADDRSTRLEN];
+          inet_ntop(p->ai_family, &ad->sin6_addr, s, INET6_ADDRSTRLEN);
+          printf("     %s\n", s);
+      }
+    }
 
 	freeaddrinfo(res);
 
@@ -91,27 +97,33 @@ int so_resolv(struct in_addr *host, const char *name) {
 
 /*
  * Connect to a host. Host is required to be resolved
- * in the struct in_addr already.
+ * in the struct in6_addr already.
  * Returns: socket descriptor
  */
-int so_connect(struct in_addr host, int port) {
+int so_connect(struct in6_addr host, int port) {
 	int flags;
 	int fd;
 	int rc;
-	struct sockaddr_in saddr;
+	struct sockaddr_in6 saddr;
 	// struct timeval tv;
 	// fd_set fds;
 
-	if ((fd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
+	if ((fd = socket(PF_INET6, SOCK_STREAM, 0)) < 0) {
 		if (debug)
 			printf("so_connect: create: %s\n", strerror(errno));
 		return -1;
 	}
 
 	memset(&saddr, 0, sizeof(saddr));
-	saddr.sin_family = AF_INET;
-	saddr.sin_port = htons(port);
-	saddr.sin_addr = host;
+	saddr.sin6_family = AF_INET6;
+	saddr.sin6_port = htons(port);
+	saddr.sin6_addr = host;
+
+    if (debug) {
+            char s[INET6_ADDRSTRLEN];
+            inet_ntop(AF_INET6, &saddr.sin6_addr, s, INET6_ADDRSTRLEN);
+            printf("so_connect: %s : %i \n", s, port);
+    }
 
 	if ((flags = fcntl(fd, F_GETFL, 0)) < 0) {
 		if (debug)
@@ -165,13 +177,13 @@ int so_connect(struct in_addr host, int port) {
  * Bind the specified port and listen on it.
  * Return socket descriptor if OK, otherwise 0.
  */
-int so_listen(int port, struct in_addr source) {
-	struct sockaddr_in saddr;
+int so_listen(int port, struct in6_addr source) {
+	struct sockaddr_in6 saddr;
 	int fd;
 	socklen_t clen;
 	int retval;
 
-	fd = socket(PF_INET, SOCK_STREAM, 0);
+	fd = socket(PF_INET6, SOCK_STREAM, 0);
 	if (fd < 0) {
 		if (debug)
 			printf("so_listen: new socket: %s\n", strerror(errno));
@@ -184,9 +196,9 @@ int so_listen(int port, struct in_addr source) {
 		syslog(LOG_WARNING, "setsockopt() (option: SO_REUSEADDR, value: 1) failed: %s\n", strerror(errno));
 	}
 	memset((void *)&saddr, 0, sizeof(saddr));
-	saddr.sin_family = AF_INET;
-	saddr.sin_port = htons(port);
-	saddr.sin_addr.s_addr = source.s_addr;
+	saddr.sin6_family = AF_INET6;
+	saddr.sin6_port = htons(port);
+	saddr.sin6_addr = source;
 
 	if (bind(fd, (struct sockaddr *)&saddr, sizeof(saddr))) {
 		syslog(LOG_ERR, "Cannot bind port %d: %s!\n", port, strerror(errno));

@@ -9,7 +9,7 @@ MANDIR=/usr/local/man
 #
 #
 CC=xlc_r
-OBJS=utils.o ntlm.o xcrypt.o config.o socket.o acl.o auth.o http.o forward.o direct.o scanner.o pages.o main.o sspi.o
+OBJS=utils.o ntlm.o xcrypt.o config.o socket.o auth.o http.o forward.o direct.o scanner.o pages.o main.o sspi.o
 CFLAGS=$(FLAGS) -O3 -D_POSIX_C_SOURCE=200112 -D_ISOC99_SOURCE -D_REENTRANT -DVERSION=\"`cat VERSION`\"
 LDFLAGS=-lpthread
 NAME=cntlm
