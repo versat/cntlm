@@ -41,17 +41,19 @@
 #include "pages.h"
 
 int host_connect(const char *hostname, int port) {
-	struct in6_addr addr;
+	int fd;
+	struct addrinfo *addresses;
 
 	errno = 0;
-	if (!so_resolv(&addr, hostname)) {
+	if (!so_resolv(&addresses, hostname, port)) {
 		//if (debug)
 		//	printf("so_resolv: %s failed (%d: %s)\n", hostname, h_errno, hstrerror(h_errno));
 		return -1;
 	}
 
-	return so_connect(addr, port);
-
+	fd = so_connect(addresses);
+	freeaddrinfo(addresses);
+	return fd;
 }
 
 int www_authenticate(int sd, rr_data_t request, rr_data_t response, struct auth_s *creds) {

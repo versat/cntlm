@@ -61,17 +61,14 @@ extern pthread_mutex_t pacparser_mtx;
 enum proxy_type_t { DIRECT, PROXY };
 #endif
 
-/*
- * just malloc/free sizeof(proxy_t)
- */
 typedef struct {
 #ifdef ENABLE_PACPARSER
 	enum proxy_type_t type;
 #endif
 	char hostname[64];
-	struct auth_s creds;
-	struct in6_addr host;
 	int port;
+	struct auth_s creds;
+	struct addrinfo *addresses;
 	int resolved;
 } proxy_t;
 

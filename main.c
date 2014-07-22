@@ -191,18 +191,6 @@ int parent_add(char *parent, int port) {
 		myexit(1);
 	}
 
-	/*
-	 * Try to resolve proxy address
-	 *
-	if (debug)
-		syslog(LOG_INFO, "Resolving proxy %s...\n", proxy);
-	if (!so_resolv(&host, proxy)) {
-		syslog(LOG_ERR, "Cannot resolve proxy %s, discarding.\n", parent);
-		free(proxy);
-		return 0;
-	}
-	*/
-
 	aux = (proxy_t *)zmalloc(sizeof(proxy_t));
 #ifdef ENABLE_PACPARSER
 	aux->type = PROXY;
@@ -210,6 +198,7 @@ int parent_add(char *parent, int port) {
 	strlcpy(aux->hostname, proxy, sizeof(aux->hostname));
 	aux->port = port;
 	aux->resolved = 0;
+	aux->addresses = NULL;
 	parent_list = plist_add(parent_list, ++parent_count, (char *)aux);
 
 	free(proxy);
@@ -295,7 +284,7 @@ plist_t pac_create_list(plist_t paclist, char *pacp_str) {
  * Register and bind new proxy service port.
  */
 void listen_add(const char *service, plist_t *list, char *spec, int gateway) {
-	struct in6_addr source;
+	struct addrinfo *addresses;
 	int i;
 	int p;
 	int len;
@@ -311,36 +300,32 @@ void listen_add(const char *service, plist_t *list, char *spec, int gateway) {
 	        } else {
 			tmp = substr(spec, 0, p);
 		}
-		if (!so_resolv(&source, tmp)) {
-			syslog(LOG_ERR, "Cannot resolve listen address %s\n", tmp);
+
+		port = atoi(spec+p+1);
+		if (!port || !so_resolv(&addresses, tmp, port)) {
+			syslog(LOG_ERR, "Cannot resolve listen address %s\n", spec);
 			myexit(1);
 		}
+
 		free(tmp);
-		port = atoi(tmp = spec+p+1);
 	} else {
-		source = gateway ? in6addr_any : in6addr_loopback;
-		port = atoi(tmp = spec);
+		port = atoi(spec);
+		if (!port) {
+			syslog(LOG_ERR, "Cannot resolve listen address %s\n", spec);
+			myexit(1);
+		}
+		so_resolv_wildcard(&addresses, port, gateway);
 	}
 
-	if (!port) {
-		syslog(LOG_ERR, "Invalid listen port %s.\n", tmp);
-		myexit(1);
-	}
-
-	i = so_listen(port, source);
-	if (i >= 0) {
-		*list = plist_add(*list, i, NULL);
-		char s[INET6_ADDRSTRLEN];
-		inet_ntop(AF_INET6, &source, s, INET6_ADDRSTRLEN);
-		syslog(LOG_INFO, "%s listening on %s:%d\n", service, s, port);
-	}
+	so_listen(list, addresses, NULL);
+	freeaddrinfo(addresses);
 }
 
 /*
  * Register a new tunnel definition, bind service port.
  */
 void tunnel_add(plist_t *list, char *spec, int gateway) {
-	struct in6_addr source;
+	struct addrinfo *addresses;
 	int i;
 	int len;
 	int count;
@@ -360,21 +345,22 @@ void tunnel_add(plist_t *list, char *spec, int gateway) {
 
 	pos = 0;
 	if (count == 4) {
-		if (!so_resolv(&source, field[pos])) {
-			syslog(LOG_ERR, "Cannot resolve tunnel bind address: %s\n", field[pos]);
+		port = atoi(field[pos+1]);
+		if (!port || !so_resolv(&addresses, field[pos], port)) {
+			syslog(LOG_ERR, "Cannot resolve tunnel bind address: %s:%s\n", field[pos], field[pos+1]);
 			myexit(1);
 		}
 		pos++;
-	} else
-		source = gateway ? in6addr_any : in6addr_loopback;
-
-	if (count - pos == 3) {
+	} else {
 		port = atoi(field[pos]);
-		if (port == 0) {
+		if(!port) {
 			syslog(LOG_ERR, "Invalid tunnel local port: %s\n", field[pos]);
 			myexit(1);
 		}
+		so_resolv_wildcard(&addresses, port, gateway);
+	}
 
+	if (count-pos == 3) {
 		if (!strlen(field[pos+1]) || !strlen(field[pos+2])) {
 			syslog(LOG_ERR, "Invalid tunnel target: %s:%s\n", field[pos+1], field[pos+2]);
 			myexit(1);
@@ -386,18 +372,20 @@ void tunnel_add(plist_t *list, char *spec, int gateway) {
 		strlcat(tmp, ":", tmp_len);
 		strlcat(tmp, field[pos+2], tmp_len);
 
-		i = so_listen(port, source);
-		if (i >= 0) {
-			*list = plist_add(*list, i, tmp);
-//			syslog(LOG_INFO, "New tunnel from %s:%d to %s\n", inet_ntoa(source), port, tmp);
-		} else
+		i = so_listen(list, addresses, tmp);
+		if (i == 0) {
+			syslog(LOG_INFO, "New tunnel to %s\n", tmp);
+		} else {
+			syslog(LOG_ERR, "Unable to bind tunnel");
 			free(tmp);
+		}
 	} else {
 		printf("Tunnel specification incorrect ([laddress:]lport:rserver:rport).\n");
 		myexit(1);
 	}
 
 	free(spec);
+	freeaddrinfo(addresses);
 }
 
 /*
@@ -2001,7 +1989,7 @@ bailout:
 	free(magic_detect);
 	free(g_creds);
 
-	plist_free(parent_list);
+	parentlist_free(parent_list);
 
 	exit(0);
 }

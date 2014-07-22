@@ -24,16 +24,19 @@
 
 #include <netinet/in.h>
 #include <stdint.h>
+#include <netdb.h>
 
 #include "config/config.h"
+#include "utils.h"
 
 #if config_socklen_t != 1
 #define socklen_t uint32_t
 #endif
 
-extern int so_resolv(struct in6_addr *host, const char *name);
-extern int so_connect(struct in6_addr host, int port);
-extern int so_listen(int port, struct in6_addr source);
+extern int so_resolv(struct addrinfo **addresses, const char *hostname, const int port);
+extern int so_resolv_wildcard(struct addrinfo **addresses, const int port, int gateway);
+extern int so_connect(struct addrinfo *adresses);
+extern int so_listen(plist_t *list, struct addrinfo *adresses, void *aux);
 extern int so_dataready(int fd);
 extern int so_closed(int fd);
 extern int so_recvln(int fd, char **buf, int *size);

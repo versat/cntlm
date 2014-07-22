@@ -149,7 +149,7 @@ int proxy_connect(struct auth_s *credentials) {
 		if (aux->resolved == 0) {
 			if (debug)
 				syslog(LOG_INFO, "Resolving proxy %s...\n", aux->hostname);
-			if (so_resolv(&aux->host, aux->hostname)) {
+			if (so_resolv(&aux->addresses, aux->hostname, aux->port)) {
 				aux->resolved = 1;
 			} else {
 				syslog(LOG_ERR, "Cannot resolve proxy %s\n", aux->hostname);
@@ -158,7 +158,7 @@ int proxy_connect(struct auth_s *credentials) {
 
 		i = -1;
 		if (aux->resolved != 0)
-			i = so_connect(aux->host, aux->port);
+			i = so_connect(aux->addresses);
 
 		/*
 		 * Resolve or connect failed?

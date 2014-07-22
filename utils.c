@@ -254,6 +254,27 @@ plist_t plist_free(plist_t list) {
 }
 
 /*
+ * Free parent_list
+ */
+plist_t parentlist_free(plist_t list) {
+	plist_t t = list;
+
+	while (list) {
+		t = list->next;
+
+		proxy_t *proxy = (proxy_t *) list->aux;
+
+		freeaddrinfo(proxy->addresses);
+		free(proxy);
+		free(list);
+
+		list = t;
+	}
+
+	return NULL;
+}
+
+/*
  * The same as plist_add. Here we have two other arguments.
  * They are boolean flags - HLIST_ALLOC means to duplicate a
  * key/value, HLIST_NOALLOC means to store the pointer directly.
