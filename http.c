@@ -219,7 +219,6 @@ int headers_recv(int fd, rr_data_t data) {
 		 * Fix requests, make sure the Host: header is present
 		 */
 		if (host && strlen(host)) {
-			data->hostname = strdup(host);
 			if (!hlist_get(data->headers, "Host"))
 				data->headers = hlist_add(data->headers, "Host", host, HLIST_ALLOC, HLIST_ALLOC);
 		} else {
@@ -229,13 +228,23 @@ int headers_recv(int fd, rr_data_t data) {
 			goto bailout;
 		}
 
-		/*
-		 * Remove port number from internal host name variable
-		 */
-		if (data->hostname && (tok = strchr(data->hostname, ':'))) {
+
+		if (host[0] == '[') {
+			tok = strchr(host, ']');
 			*tok = 0;
+			data->hostname = strdup(host+1);
+			if (*(tok+1) == ':') {
+				data->port = atoi(tok+2);
+			}
+		} else if (tok = strchr(host, ':')) {
+			*tok = 0;
+			data->hostname = strdup(host);
 			data->port = atoi(tok+1);
-		} else if (data->url) {
+		} else {
+			data->hostname = strdup(host);
+		}
+
+		if (!data->port) {
 			if (!strncasecmp(data->url, "https", 5))
 				data->port = 443;
 			else
