@@ -158,7 +158,7 @@ uninstall:
 clean:
 	@rm -f config/endian config/gethostname config/strdup config/socklen_t config/*.exe
 	@rm -f *.o cntlm cntlm.exe configure-stamp build-stamp config/config.h
-	rm -f $(patsubst %, win/%, $(CYGWIN_REQS) cntlm.exe cntlm.ini LICENSE.txt setup.iss cntlm_manual.pdf)
+	rm -f $(patsubst %, win/%, $(CYGWIN_REQS) cntlm.exe cntlm.ini LICENSE.txt resources.o setup.iss cntlm_manual.pdf)
 	@if [ -h Makefile ]; then rm -f Makefile; mv Makefile.gcc Makefile; fi
 
 distclean: clean
