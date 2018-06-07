@@ -11,6 +11,6 @@ script:
  - make DEBUG=1
  - make distclean
  - make rpm
- - make dep
+ - make deb
  - make install
  - make uninstall
