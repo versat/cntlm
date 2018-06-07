@@ -77,7 +77,7 @@ install: $(NAME)
 tgz:
 	mkdir -p tmp
 	rm -rf tmp/$(NAME)-$(VER)
-	svn export . tmp/$(NAME)-$(VER)
+	git checkout-index -a -f --prefix=./tmp/$(NAME)-$(VER)/
 	tar zcvf $(NAME)-$(VER).tar.gz -C tmp/ $(NAME)-$(VER)
 	rm -rf tmp/$(NAME)-$(VER)
 	rmdir tmp 2>/dev/null || true
@@ -85,7 +85,7 @@ tgz:
 tbz2:
 	mkdir -p tmp
 	rm -rf tmp/$(NAME)-$(VER)
-	svn export . tmp/$(NAME)-$(VER)
+	git checkout-index -a -f --prefix=./tmp/$(NAME)-$(VER)/
 	tar jcvf $(NAME)-$(VER).tar.bz2 -C tmp/ $(NAME)-$(VER)
 	rm -rf tmp/$(NAME)-$(VER)
 	rmdir tmp 2>/dev/null || true
