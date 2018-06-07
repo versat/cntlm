@@ -1,0 +1,17 @@
+language: c
+
+before_install:
+# install needed packages
+ - sudo apt-get update
+ - sudo apt-get install fakeroot rpm dpkg debhelper
+
+script:
+ - make
+ - make distclean
+ - make DEBUG=1
+ - make distclean
+ - make rpm
+ - make deb
+ - make clean
+ - sudo make install
+ - sudo make uninstall
