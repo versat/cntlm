@@ -12,5 +12,5 @@ script:
  - make distclean
  - make rpm
  - make deb
- - make install
- - make uninstall
+ - sudo make install
+ - sudo make uninstall
