@@ -79,7 +79,8 @@ fakeroot. However, to install your packages you have to be root.
 
 *** WINDOWS INSTALLER ***
 
-	Install CygWin and include at least the ghostscript, zip and libgcc packages.
+	Install CygWin and include at least the ghostscript, zip, dos2unix and libgcc
+	packages.
 
 	In case you are using a 64-bit version of CygWin: rename cyggcc_s-1.dll to
 	cyggcc_s-seh-1.dll in Makefile and win/setup.iss.
@@ -98,13 +99,13 @@ fakeroot. However, to install your packages you have to be root.
 
 	$ make win
 
-	Then run InnoSetup compiler to pack it all into an automatic installer EXE:
-
+	Now this automatically creates the installer.
+	For manually creating the installer you can do this:
+	Run InnoSetup compiler to pack it all into an automatic installer EXE:
 	$ /your/path/to/ISCC.exe win/setup.iss
 	or
 	Open folder "win" in explorer, right click "setup.iss" and select "Compile".
-
-	Both with generate an installer in the "cntlm" folder.
+	Both will generate an installer in the "cntlm" folder.
 
 Traditional installation
 ~~~~~~~~~~~~~~~~~~~~~~~~
