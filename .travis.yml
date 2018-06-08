@@ -28,10 +28,13 @@ addons:
     branch_pattern: master
 
 script:
+  - ./configure
   - make
   - make distclean
+  - ./configure
   - make DEBUG=1
   - make distclean
+  - ./configure
   - make rpm
   - make deb
   - make clean
