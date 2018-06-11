@@ -38,3 +38,6 @@ script:
   - make clean
   - sudo make install
   - sudo make uninstall
+  - make distclean
+  - ./configure
+  - scan-build --force-analyze-debug-code make
