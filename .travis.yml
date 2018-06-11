@@ -21,8 +21,8 @@ addons:
     project:
       name: "versat/cntlm"
       description: "Cntlm is an NTLM / NTLM Session Response / NTLMv2 authenticating HTTP proxy."
-    build_command_prepend: "make distclean"
-    build_command: "./configure && make"
+    build_command_prepend: "make distclean && ./configure"
+    build_command: "make"
     branch_pattern: coverity_scan
 
 script:
