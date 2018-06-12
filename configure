@@ -9,7 +9,7 @@
 # Makefile. This is why compiler "xlc_r" has Makefile extension "xlc".
 # This can be disabled if necessary.
 #
-set -x
+#set -x
 
 if [ -n "$CC" ]; then
 	# If compiler is specified look for the path
