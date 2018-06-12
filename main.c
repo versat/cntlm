@@ -659,7 +659,7 @@ bailout:
 		free(bs);
 	if (tcreds)
 		free(tcreds);
-	if (sd)
+	if (sd >= 0)
 		close(sd);
 	close(cd);
 
