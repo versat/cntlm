@@ -82,7 +82,7 @@ static void ntlm2_calc_resp(char **nthash, int *ntlen, char **lmhash, int *lmlen
 #ifdef PRId64
 		printf("NTLMv2:\n\t    Nonce: %s\n\tTimestamp: %"PRId64"\n", tmp, tw);
 #else
-		printf("NTLMv2:\n\t    Nonce: %s\n\tTimestamp: %ld\n", tmp, tw);
+		printf("NTLMv2:\n\t    Nonce: %s\n\tTimestamp: %lld\n", tmp, tw);
 #endif
 		free(tmp);
 	}
