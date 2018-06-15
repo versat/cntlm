@@ -466,7 +466,9 @@ void direct_tunnel(void *thread_data) {
 
 bailout:
 	free(hostname);
-	close(sd);
+	if(sd >= 0) {
+		close(sd);
+	}
 	close(cd);
 
 	return;
