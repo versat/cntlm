@@ -112,7 +112,7 @@ int proxy_connect(struct auth_s *credentials) {
 		pthread_mutex_unlock(&connection_mtx);
 	}
 
-	if (i > 0 && credentials != NULL)
+	if (i >= 0 && credentials != NULL)
 		copy_auth(credentials, g_creds, /* fullcopy */ !ntlmbasic);
 
 	return i;
@@ -898,11 +898,10 @@ void magic_auth_detect(const char *url) {
 		printf("Config profile %2d/%d... ", i+1, MAGIC_TESTS);
 
 		nc = proxy_connect(NULL);
-		if (nc <= 0) {
+		if (nc < 0) {
 			printf("\nConnection to proxy failed, bailing out\n");
 			free_rr_data(res);
 			free_rr_data(req);
-			close(nc);
 			if (host)
 				free(host);
 			return;
