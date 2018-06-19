@@ -834,7 +834,9 @@ void forward_tunnel(void *thread_data) {
 		tunnel(cd, sd);
 
 bailout:
-	close(sd);
+	if (sd >= 0) {
+		close(sd);
+	}
 	close(cd);
 	free(tcreds);
 

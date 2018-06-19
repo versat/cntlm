@@ -170,7 +170,6 @@ int so_listen(int port, struct in_addr source) {
 	if (fd < 0) {
 		if (debug)
 			printf("so_listen: new socket: %s\n", strerror(errno));
-		close(fd);
 		return -1;
 	}
 

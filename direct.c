@@ -435,7 +435,9 @@ bailout:
 	if (hostname)
 		free(hostname);
 
-	close(sd);
+	if (sd >= 0) {
+		close(sd);
+	}
 
 	return rc;
 }
