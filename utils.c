@@ -443,7 +443,7 @@ int hlist_subcmp_all(hlist_t list, const char *key, const char *substr) {
 
 /*
  * Free the list. For more about list memory management,
- * se hlist_add.
+ * see hlist_add.
  */
 hlist_t hlist_free(hlist_t list) {
 	hlist_t t = list;
@@ -574,7 +574,7 @@ rr_data_t dup_rr_data(rr_data_t data) {
 }
 
 /*
- * Reset, freeing if neccessary
+ * Reset, freeing if necessary
  */
 rr_data_t reset_rr_data(rr_data_t data) {
 	if (data == NULL)
@@ -617,7 +617,7 @@ rr_data_t reset_rr_data(rr_data_t data) {
 void free_rr_data(rr_data_t data) {
 	if (data == NULL)
 		return;
-	
+
 	if (data->headers) hlist_free(data->headers);
 	if (data->method) free(data->method);
 	if (data->url) free(data->url);
