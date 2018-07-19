@@ -19,9 +19,6 @@
  *
  */
 
-#ifndef _PAGES_H
-#define _PAGES_H
-
 #include "utils.h"
 #include "string.h"
 #include "stdio.h"
@@ -81,5 +78,3 @@ char *gen_502_page(const char *http, const char *msg) {
 		http, msg, msg);
 	return tmp;
 }
-
-#endif /* _PAGES_H */
