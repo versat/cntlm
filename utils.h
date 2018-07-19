@@ -159,7 +159,7 @@ extern long int random(void);
 #if config_gethostname == 1
 extern int gethostname(char *name, size_t len);
 #endif
-#ifndef strdup
+#if config_strdup == 0
 extern char *strdup(const char *src);
 #endif
 
