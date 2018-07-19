@@ -107,7 +107,7 @@ enum acl_t acl_check(plist_t rules, struct in_addr naddr) {
 		mask = swap32(~(((uint64_t)1 << (32-aux->mask)) - 1));
 
 		if ((naddr.s_addr & mask) == (aux->ip & mask))
-			return rules->key;
+			return ACL_DENY;
 
 		rules = rules->next;
 	}
