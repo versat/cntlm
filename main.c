@@ -1632,7 +1632,7 @@ int main(int argc, char **argv) {
 			pthread_mutex_lock(&threads_mtx);
 			t = threads_list;
 			while (t) {
-				plist_t tmp = t->next;
+				plist_t tmp_next = t->next;
 				tid = pthread_join((pthread_t)t->key, (void *)&i);
 
 				if (!tid) {
@@ -1643,7 +1643,7 @@ int main(int argc, char **argv) {
 					syslog(LOG_ERR, "Serious error during pthread_join: %d\n", tid);
 
 				free(t);
-				t = tmp;
+				t = tmp_next;
 			}
 			threads_list = NULL;
 			pthread_mutex_unlock(&threads_mtx);
