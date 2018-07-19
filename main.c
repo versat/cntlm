@@ -208,7 +208,7 @@ void listen_add(const char *service, plist_t *list, char *spec, int gateway) {
 	}
 
 	i = so_listen(port, source);
-	if (i > 0) {
+	if (i >= 0) {
 		*list = plist_add(*list, i, NULL);
 		syslog(LOG_INFO, "%s listening on %s:%d\n", service, inet_ntoa(source), port);
 	}
@@ -260,7 +260,7 @@ void tunnel_add(plist_t *list, char *spec, int gateway) {
 		strcat(tmp, field[pos+2]);
 
 		i = so_listen(port, source);
-		if (i > 0) {
+		if (i >= 0) {
 			*list = plist_add(*list, i, tmp);
 			syslog(LOG_INFO, "New tunnel from %s:%d to %s\n", inet_ntoa(source), port, tmp);
 		} else
