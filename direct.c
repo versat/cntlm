@@ -169,7 +169,7 @@ int www_authenticate(int sd, rr_data_t request, rr_data_t response, struct auth_
 
 bailout:
 	if (rc)
-		response = copy_rr_data(response, auth);
+		copy_rr_data(response, auth);
 	free_rr_data(auth);
 	free(buf);
 
