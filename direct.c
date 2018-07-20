@@ -170,7 +170,7 @@ int www_authenticate(int sd, rr_data_t request, rr_data_t response, struct auth_
 bailout:
 	if (rc)
 		copy_rr_data(response, auth);
-	free_rr_data(auth);
+	free_rr_data(&auth);
 	free(buf);
 
 	return rc;
@@ -245,8 +245,8 @@ rr_data_t direct_request(void *cdata, rr_data_t request) {
 					printf("Reading headers (%d)...\n", *rsocket[loop]);
 				}
 				if (!headers_recv(*rsocket[loop], data[loop])) {
-					free_rr_data(data[0]);
-					free_rr_data(data[1]);
+					free_rr_data(&data[0]);
+					free_rr_data(&data[1]);
 					rc = (void *)-1;
 					goto bailout;
 				}
@@ -263,8 +263,8 @@ rr_data_t direct_request(void *cdata, rr_data_t request) {
 					printf("\n******* D RETURN: %s *******\n", data[0]->url);
 
 				rc = dup_rr_data(data[0]);
-				free_rr_data(data[0]);
-				free_rr_data(data[1]);
+				free_rr_data(&data[0]);
+				free_rr_data(&data[1]);
 				goto bailout;
 			}
 
@@ -321,8 +321,8 @@ rr_data_t direct_request(void *cdata, rr_data_t request) {
 				if (headers_send(cd, data[1]))
 					tunnel(cd, sd);
 
-				free_rr_data(data[0]);
-				free_rr_data(data[1]);
+				free_rr_data(&data[0]);
+				free_rr_data(&data[1]);
 				rc = (void *)-1;
 				goto bailout;
 			}
@@ -354,8 +354,8 @@ rr_data_t direct_request(void *cdata, rr_data_t request) {
 					w = write(cd, tmp, strlen(tmp));
 					free(tmp);
 
-					free_rr_data(data[0]);
-					free_rr_data(data[1]);
+					free_rr_data(&data[0]);
+					free_rr_data(&data[1]);
 
 					rc = (void *)-1;
 					goto bailout;
@@ -368,8 +368,8 @@ rr_data_t direct_request(void *cdata, rr_data_t request) {
 					w = write(cd, tmp, strlen(tmp));
 					free(tmp);
 
-					free_rr_data(data[0]);
-					free_rr_data(data[1]);
+					free_rr_data(&data[0]);
+					free_rr_data(&data[1]);
 
 					rc = (void *)-1;
 					goto bailout;
@@ -410,22 +410,22 @@ rr_data_t direct_request(void *cdata, rr_data_t request) {
 			 * Send headers
 			 */
 			if (!headers_send(*wsocket[loop], data[loop])) {
-				free_rr_data(data[0]);
-				free_rr_data(data[1]);
+				free_rr_data(&data[0]);
+				free_rr_data(&data[1]);
 				rc = (void *)-1;
 				goto bailout;
 			}
 
 			if (!http_body_send(*wsocket[loop], *rsocket[loop], data[0], data[1])) {
-				free_rr_data(data[0]);
-				free_rr_data(data[1]);
+				free_rr_data(&data[0]);
+				free_rr_data(&data[1]);
 				rc = (void *)-1;
 				goto bailout;
 			}
 		}
 
-		free_rr_data(data[0]);
-		free_rr_data(data[1]);
+		free_rr_data(&data[0]);
+		free_rr_data(&data[1]);
 
 	} while (conn_alive && !so_closed(sd) && !so_closed(cd) && !serialize);
 

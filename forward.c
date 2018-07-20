@@ -205,7 +205,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 	 * so make it point to the caller's structure.
 	 */
 	if (response) {
-		free_rr_data(auth);
+		free_rr_data(&auth);
 		auth = response;
 	}
 
@@ -285,7 +285,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 
 bailout:
 	if (!response)
-		free_rr_data(auth);
+		free_rr_data(&auth);
 
 	free(buf);
 
@@ -432,8 +432,8 @@ beginning:
 					printf("Reading headers (%d)...\n", *rsocket[loop]);
 				}
 				if (!headers_recv(*rsocket[loop], data[loop])) {
-					free_rr_data(data[0]);
-					free_rr_data(data[1]);
+					free_rr_data(&data[0]);
+					free_rr_data(&data[1]);
 					rc = (void *)-1;
 					/* error page */
 					goto bailout;
@@ -459,8 +459,8 @@ beginning:
 					proxy_alive = 1;
 
 				rc = dup_rr_data(data[0]);
-				free_rr_data(data[0]);
-				free_rr_data(data[1]);
+				free_rr_data(&data[0]);
+				free_rr_data(&data[1]);
 				goto bailout;
 			}
 
@@ -493,8 +493,8 @@ shortcut:
 					i = write(cd, tmp, strlen(tmp));
 					free(tmp);
 
-					free_rr_data(data[0]);
-					free_rr_data(data[1]);
+					free_rr_data(&data[0]);
+					free_rr_data(&data[1]);
 					rc = (void *)-1;
 					goto bailout;
 				}
@@ -531,8 +531,8 @@ shortcut:
 				if (!proxy_authenticate(wsocket[0], data[0], data[1], tcreds)) {
 					if (debug)
 						printf("Proxy auth connection error.\n");
-					free_rr_data(data[0]);
-					free_rr_data(data[1]);
+					free_rr_data(&data[0]);
+					free_rr_data(&data[1]);
 					rc = (void *)-1;
 					/* error page */
 					goto bailout;
@@ -580,7 +580,7 @@ shortcut:
 
 				retry = 1;
 				request = data[0];
-				free_rr_data(data[1]);
+				free_rr_data(&data[1]);
 				close(sd);
 				goto beginning;
 			}
@@ -646,8 +646,8 @@ shortcut:
 				 * the 3rd, final, NTLM message.
 				 */
 				if (!headers_send(*wsocket[loop], data[loop])) {
-					free_rr_data(data[0]);
-					free_rr_data(data[1]);
+					free_rr_data(&data[0]);
+					free_rr_data(&data[1]);
 					rc = (void *)-1;
 					/* error page */
 					goto bailout;
@@ -662,16 +662,16 @@ shortcut:
 					printf("Ok CONNECT response. Tunneling...\n");
 
 				tunnel(cd, sd);
-				free_rr_data(data[0]);
-				free_rr_data(data[1]);
+				free_rr_data(&data[0]);
+				free_rr_data(&data[1]);
 				rc = (void *)-1;
 				goto bailout;
 			}
 
 			if (plugin & PLUG_SENDDATA) {
 				if (!http_body_send(*wsocket[loop], *rsocket[loop], data[0], data[1])) {
-					free_rr_data(data[0]);
-					free_rr_data(data[1]);
+					free_rr_data(&data[0]);
+					free_rr_data(&data[1]);
 					rc = (void *)-1;
 					goto bailout;
 				}
@@ -700,8 +700,8 @@ shortcut:
 			}
 		}
 
-		free_rr_data(data[0]);
-		free_rr_data(data[1]);
+		free_rr_data(&data[0]);
+		free_rr_data(&data[1]);
 
 	/*
 	 * Checking conn_alive && proxy_alive is sufficient,
@@ -806,8 +806,8 @@ int prepare_http_connect(int sd, struct auth_s *credentials, const char *thost) 
 		syslog(LOG_ERR, "Tunnel requests failed!\n");
 
 bailout:
-	free_rr_data(data1);
-	free_rr_data(data2);
+	free_rr_data(&data1);
+	free_rr_data(&data2);
 
 	return rc;
 }
@@ -900,8 +900,8 @@ void magic_auth_detect(const char *url) {
 		nc = proxy_connect(NULL);
 		if (nc < 0) {
 			printf("\nConnection to proxy failed, bailing out\n");
-			free_rr_data(res);
-			free_rr_data(req);
+			free_rr_data(&res);
+			free_rr_data(&req);
 			if (host)
 				free(host);
 			return;
@@ -911,8 +911,8 @@ void magic_auth_detect(const char *url) {
 		if (c && res->code != 407) {
 			ign++;
 			printf("Auth not required (HTTP code: %d)\n", res->code);
-			free_rr_data(res);
-			free_rr_data(req);
+			free_rr_data(&res);
+			free_rr_data(&req);
 			close(nc);
 			continue;
 		}
@@ -934,16 +934,16 @@ void magic_auth_detect(const char *url) {
 				printf("OK (HTTP code: %d)\n", res->code);
 				if (found < 0) {
 					found = i;
-					free_rr_data(res);
-					free_rr_data(req);
+					free_rr_data(&res);
+					free_rr_data(&req);
 					close(nc);
 					break;
 				}
 			}
 		}
 
-		free_rr_data(res);
-		free_rr_data(req);
+		free_rr_data(&res);
+		free_rr_data(&req);
 		close(nc);
 	}
 

@@ -329,7 +329,7 @@ void *proxy_thread(void *thread_data) {
 
 		request = new_rr_data();
 		if (!headers_recv(cd, request)) {
-			free_rr_data(request);
+			free_rr_data(&request);
 			break;
 		}
 
@@ -338,7 +338,7 @@ void *proxy_thread(void *thread_data) {
 			 * Are we being returned a request by forward_request or direct_request?
 			 */
 			if (ret) {
-				free_rr_data(request);
+				free_rr_data(&request);
 				request = ret;
 			}
 
@@ -353,7 +353,7 @@ void *proxy_thread(void *thread_data) {
 				printf("proxy_thread: request rc = %p\n", (void *)ret);
 		} while (ret != NULL && ret != (void *)-1);
 
-		free_rr_data(request);
+		free_rr_data(&request);
 	/*
 	 * If client asked for proxy keep-alive, loop unless the last server response
 	 * requested (Proxy-)Connection: close.

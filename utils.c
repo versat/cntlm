@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <ctype.h>
 #include <syslog.h>
+#include <assert.h>
 
 #include "config/config.h"
 #include "swap.h"
@@ -616,7 +617,13 @@ rr_data_t reset_rr_data(rr_data_t data) {
  * Free rr_data_t structure. We also take care of freeing
  * the memory of its members.
  */
-void free_rr_data(rr_data_t data) {
+void free_rr_data(rr_data_t * pdata) {
+	if (pdata == NULL) {
+		fprintf(stderr, "Internal error in free_rr_data: Pointer pdata is NULL\n");
+		assert(0);
+		return;
+	}
+	rr_data_t data = *pdata;
 	if (data == NULL)
 		return;
 
@@ -630,6 +637,7 @@ void free_rr_data(rr_data_t data) {
 	if (data->body) free(data->body);
 	memset(data, 0, sizeof(struct rr_data_s));
 	free(data);
+	data = NULL;
 }
 
 /*

@@ -147,7 +147,7 @@ extern rr_data_t new_rr_data(void);
 extern rr_data_t copy_rr_data(rr_data_t dst, rr_data_t src);
 extern rr_data_t dup_rr_data(rr_data_t data);
 extern rr_data_t reset_rr_data(rr_data_t data);
-extern void free_rr_data(rr_data_t data);
+extern void free_rr_data(rr_data_t * data);
 
 extern char *printmem(char *src, size_t len, int bitwidth);
 extern char *scanmem(char *src, int bitwidth);
