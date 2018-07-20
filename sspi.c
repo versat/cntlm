@@ -49,7 +49,7 @@ void UnloadSecurityDll(HMODULE hModule) {
 
    if (hModule)
       FreeLibrary(hModule);
-	  
+
 	sspi_dll = NULL;
 
    _AcceptSecurityContext      = NULL;
@@ -63,7 +63,7 @@ void UnloadSecurityDll(HMODULE hModule) {
    _QuerySecurityContextToken  = NULL;
 }
 
-HMODULE LoadSecurityDll() {
+HMODULE LoadSecurityDll(void) {
 
    HMODULE hModule;
    BOOL    fAllFunctionsLoaded = FALSE;
@@ -164,7 +164,7 @@ HMODULE LoadSecurityDll() {
       fAllFunctionsLoaded = TRUE;
 
    } while (NULL);
-	
+
 	if (!fAllFunctionsLoaded) {
          UnloadSecurityDll(hModule);
          hModule = NULL;
@@ -173,7 +173,7 @@ HMODULE LoadSecurityDll() {
    return hModule;
 }
 
-int sspi_enabled()
+int sspi_enabled(void)
 {
 	if (sspi_mode != NULL)
 		return 1;
@@ -191,7 +191,7 @@ int sspi_set(char* mode)
 #else
 		sspi_mode = strdup(mode);
 #endif
-		return 1;	
+		return 1;
 	}
 	sspi_mode = NULL;
 	return 0;
@@ -201,7 +201,7 @@ int sspi_request(char **dst, struct sspi_handle *sspi)
 {
 	SECURITY_STATUS status;
 	TimeStamp expiry;
-	
+
 	status = _AcquireCredentialsHandle(
 		NULL, // Use current principal
 		sspi_mode,
@@ -209,25 +209,25 @@ int sspi_request(char **dst, struct sspi_handle *sspi)
 		NULL,
 		NULL,
 		NULL,
-		NULL, 
+		NULL,
 		&sspi->credentials,
 		&expiry);
-		
+
 	if (status != SEC_E_OK)
 		return 0;
-	
+
 	char *tokenBuf = new(TOKEN_BUFSIZE);
 	SecBufferDesc   tokenDesc;
 	SecBuffer       token;
 	unsigned long attrs;
-	
+
 	tokenDesc.ulVersion = SECBUFFER_VERSION;
 	tokenDesc.cBuffers  = 1;
 	tokenDesc.pBuffers  = &token;
 	token.cbBuffer   = TOKEN_BUFSIZE;
 	token.BufferType = SECBUFFER_TOKEN;
 	token.pvBuffer   = tokenBuf;
-	
+
 	status = _InitializeSecurityContext(
 		&sspi->credentials,
         NULL,
@@ -241,7 +241,7 @@ int sspi_request(char **dst, struct sspi_handle *sspi)
 		&tokenDesc,
 		&attrs,
 		&expiry);
-		
+
 	if(status == SEC_I_COMPLETE_AND_CONTINUE || status == SEC_I_CONTINUE_NEEDED)
 		_CompleteAuthToken(&sspi->context, &tokenDesc);
 	else if(status != SEC_E_OK)
@@ -249,7 +249,7 @@ int sspi_request(char **dst, struct sspi_handle *sspi)
 		_FreeCredentialsHandle(&sspi->context);
 		return 0;
 	}
-	
+
 	*dst = token.pvBuffer;
 	return token.cbBuffer;
 	return 0;
@@ -264,22 +264,22 @@ int sspi_response(char **dst, char *challengeBuf, int challen, struct sspi_handl
 	SECURITY_STATUS status;
 	unsigned long attrs;
 	TimeStamp expiry;
-	
+
 	char *answerBuf = new(TOKEN_BUFSIZE);
-	
+
 	challengeDesc.ulVersion = answerDesc.ulVersion  = SECBUFFER_VERSION;
 	challengeDesc.cBuffers  = answerDesc.cBuffers   = 1;
-	
+
 	challengeDesc.pBuffers  = &challenge;
 	answerDesc.pBuffers  = &answer;
-	
+
 	challenge.BufferType = answer.BufferType = SECBUFFER_TOKEN;
-	
+
 	challenge.pvBuffer   = challengeBuf;
 	challenge.cbBuffer   = challen;
 	answer.pvBuffer   = answerBuf;
 	answer.cbBuffer   = TOKEN_BUFSIZE;
-	
+
 	status = _InitializeSecurityContext(
 		&sspi->credentials,
 		&sspi->context,
@@ -293,7 +293,7 @@ int sspi_response(char **dst, char *challengeBuf, int challen, struct sspi_handl
 		&answerDesc,
 		&attrs,
 		&expiry);
-		
+
 	if(status != SEC_E_OK)
 		return 0;
 

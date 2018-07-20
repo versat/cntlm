@@ -40,7 +40,7 @@ struct sspi_handle
 	CtxtHandle context;
 };
 
-extern int sspi_enabled();
+extern int sspi_enabled(void);
 extern int sspi_set(char *mode);
 
 extern int sspi_request(char **dst, struct sspi_handle *sspi);
