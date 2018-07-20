@@ -721,14 +721,10 @@ size_t strlcat(char *dst, const char *src, size_t siz) {
 }
 
 /*
- * Shortcut for malloc/memset zero.
+ * Allocates memory and makes sure it is zero initialized.
  */
 char *new(size_t size) {
-	char *tmp;
-
-	tmp = malloc(size);
-	memset(tmp, 0, size);
-
+	char *tmp = calloc(1, size);
 	return tmp;
 }
 
