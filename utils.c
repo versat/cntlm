@@ -529,8 +529,16 @@ rr_data_t new_rr_data(void) {
  * Copy the req/res data.
  */
 rr_data_t copy_rr_data(rr_data_t dst, rr_data_t src) {
-	if (src == NULL || dst == NULL)
+	if (dst == NULL) {
+		fprintf(stderr, "Internal error in copy_rr_data: Pointer dst is NULL\n");
+		assert(0);
 		return NULL;
+	}
+	if (src == NULL) {
+		fprintf(stderr, "Internal error in copy_rr_data: Pointer src is NULL\n");
+		assert(0);
+		return NULL;
+	}
 
 	reset_rr_data(dst);
 	dst->req = src->req;
@@ -569,8 +577,11 @@ rr_data_t copy_rr_data(rr_data_t dst, rr_data_t src) {
 rr_data_t dup_rr_data(rr_data_t data) {
 	rr_data_t tmp;
 
-	if (data == NULL)
+	if (data == NULL) {
+		fprintf(stderr, "Internal error in dup_rr_data: Pointer data is NULL\n");
+		assert(0);
 		return NULL;
+	}
 
 	tmp = new_rr_data();
 	return copy_rr_data(tmp, data);
@@ -580,8 +591,11 @@ rr_data_t dup_rr_data(rr_data_t data) {
  * Reset, freeing if necessary
  */
 rr_data_t reset_rr_data(rr_data_t data) {
-	if (data == NULL)
+	if (data == NULL) {
+		fprintf(stderr, "Internal error in reset_rr_data: Pointer data is NULL\n");
+		assert(0);
 		return NULL;
+	}
 
 	data->req = 0;
 	data->code = 0;
@@ -646,6 +660,8 @@ void free_rr_data(rr_data_t * pdata) {
 char *trimr(char *buf) {
 	int i;
 
+	assert(buf != NULL);
+
 	for (i = strlen(buf)-1; i >= 0 && isspace(buf[i]); --i);
 	buf[i+1] = 0;
 
@@ -679,6 +695,9 @@ size_t strlcpy(char *dst, const char *src, size_t siz) {
         char *d = dst;
         const char *s = src;
         size_t n = siz;
+
+        assert(dst != NULL);
+        assert(src != NULL);
 
         /* Copy as many bytes as will fit */
         if (n != 0) {
@@ -744,6 +763,8 @@ char *new(size_t size) {
 char *lowercase(char *str) {
 	int i;
 
+	assert(str != NULL);
+
 	for (i = 0; i < strlen(str); ++i)
 		str[i] = tolower(str[i]);
 	
@@ -755,6 +776,8 @@ char *lowercase(char *str) {
  */
 char *uppercase(char *str) {
 	int i;
+
+	assert(str != NULL);
 
 	for (i = 0; i < strlen(str); ++i)
 		str[i] = toupper(str[i]);
