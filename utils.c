@@ -479,18 +479,20 @@ void hlist_dump(hlist_t list) {
  * (terminating \x0), return the result in a new memory.
  */
 char *substr(const char *src, int pos, int len) {
-	int l;
+	int min_len;
 	char *tmp;
+
+	assert(src != NULL);
 
 	if (len == 0)
 		len = strlen(src);
 
-	l = MIN(len, strlen(src)-pos);
-	if (l <= 0)
+	min_len = MIN(len, strlen(src)-pos);
+	if (min_len <= 0)
 		return new(1);
 
-	tmp = new(l+1);
-	strlcpy(tmp, src+pos, l+1);
+	tmp = new(min_len+1);
+	strlcpy(tmp, src+pos, min_len+1);
 
 	return tmp;
 }
