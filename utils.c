@@ -841,7 +841,7 @@ char *scanmem(char *src, int bitwidth) {
 #define BAD     	-1
 #define base64val(c)	index64[(unsigned int)(c)]
 
-char base64[64] = {
+static const char base64[64] = {
 	'A','B','C','D','E','F','G','H','I','J','K','L','M','N',
 	'O','P','Q','R','S','T','U','V','W','X','Y','Z','a','b',
 	'c','d','e','f','g','h','i','j','k','l','m','n','o','p',
