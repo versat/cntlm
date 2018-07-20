@@ -348,7 +348,7 @@ int data_send(int dst, int src, length_t len) {
 	do {
 		block = (len == -1 || len-c > BLOCK ? BLOCK : len-c);
 		i = read(src, buf, block);
-		
+
 		if (i > 0)
 			c += i;
 
@@ -505,7 +505,7 @@ length_t http_has_body(rr_data_t request, rr_data_t response) {
 	current = (!response || response->empty ? request : response);
 
 	/*
-	 * HTTP body length decisions. There MUST NOT be any body from 
+	 * HTTP body length decisions. There MUST NOT be any body from
 	 * server if the request was HEAD or reply is 1xx, 204 or 304.
 	 * No body can be in GET request if direction is from client.
 	 */
@@ -532,7 +532,7 @@ length_t http_has_body(rr_data_t request, rr_data_t response) {
 	if (!nobody && tmp == NULL && (hlist_in(current->headers, "Content-Type")
 			|| hlist_in(current->headers, "Transfer-Encoding")
 			|| hlist_subcmp(current->headers, "Connection", "close"))) {
-			// || (response->code == 200) 
+			// || (response->code == 200)
 		if (hlist_in(current->headers, "Transfer-Encoding")
 				&& hlist_subcmp(current->headers, "Transfer-Encoding", "chunked"))
 			length = 1;

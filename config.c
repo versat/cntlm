@@ -52,7 +52,7 @@ config_t config_open(const char *fname) {
 	fp = fopen(fname, "r");
 	if (!fp)
 		return NULL;
-	
+
 	buf = new(BUFSIZE);
 	rc = (config_t)new(sizeof(struct config_s));
 	rc->options = NULL;
@@ -158,7 +158,7 @@ char *config_pop(config_t cf, const char *option) {
 		tmp = strdup(tmp);
 		cf->options = hlist_del(cf->options, option);
 	}
-	
+
 	return tmp;
 }
 

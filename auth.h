@@ -53,12 +53,12 @@ struct auth_s {
 #define auth_strcpy(creds, var, value) \
 	if ((creds) && (value)) { \
 		strlcpy(((creds)->var), (value), MINIBUF_SIZE); \
-	} 
+	}
 
 #define auth_memcpy(creds, var, value, len) \
 	if ((creds) && (value)) { \
 		memcpy(((creds)->var), (value), MIN(len, MINIBUF_SIZE)); \
-	} 
+	}
 
 /*
  * No free_auth() required, just use free()

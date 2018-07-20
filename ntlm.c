@@ -67,7 +67,7 @@ static int ntlm_calc_resp(char **dst, char *keys, char *challenge) {
 	return 24;
 }
 
-static void ntlm2_calc_resp(char **nthash, int *ntlen, char **lmhash, int *lmlen, 
+static void ntlm2_calc_resp(char **nthash, int *ntlen, char **lmhash, int *lmlen,
 		char *passnt2, char *challenge, int tbofs, int tblen) {
 	char *tmp, *blob, *nonce, *buf;
 	int64_t tw;

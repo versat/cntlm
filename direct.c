@@ -60,7 +60,7 @@ int www_authenticate(int sd, rr_data_t request, rr_data_t response, struct auth_
 	char *tmp, *buf, *challenge;
 	rr_data_t auth;
 	int len;
-	
+
 	int rc = 0;
 
 	buf = new(BUFSIZE);
@@ -273,7 +273,7 @@ rr_data_t direct_request(void *cdata, rr_data_t request) {
 
 			if (loop == 0 && data[0]->req) {
 				syslog(LOG_DEBUG, "%s %s %s", inet_ntoa(caddr.sin_addr), data[0]->method, data[0]->url);
-				
+
 				/*
 				 * Convert full proxy request URL into a relative URL
 				 * Host header is already inserted by headers_recv()
@@ -291,7 +291,7 @@ rr_data_t direct_request(void *cdata, rr_data_t request) {
 					data[0]->headers = hlist_mod(data[0]->headers, "Connection", "keep-alive", 1);
 
 				/*
-				 * Also remove runaway P-A from the client (e.g. Basic from N-t-B), which might 
+				 * Also remove runaway P-A from the client (e.g. Basic from N-t-B), which might
 				 * cause some ISAs to deny us, even if the connection is already auth'd.
 				 */
 				while (hlist_get(data[loop]->headers, "Proxy-Authorization")) {
@@ -317,7 +317,7 @@ rr_data_t direct_request(void *cdata, rr_data_t request) {
 				data[1]->code = 200;
 				data[1]->msg = strdup("Connection established");
 				data[1]->http = strdup(data[0]->http);
-				
+
 				if (headers_send(cd, data[1]))
 					tunnel(cd, sd);
 

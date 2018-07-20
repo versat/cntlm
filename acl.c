@@ -43,7 +43,7 @@ int acl_add(plist_t *rules, char *spec, enum acl_t acl) {
 	network_t *aux;
 	int i, mask = 32;
 	char *tmp;
-	
+
 	if (rules == NULL)
 		return 0;
 

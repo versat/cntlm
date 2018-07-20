@@ -244,7 +244,7 @@ int so_closed(int fd) {
  *
  * I had to time this in comparison to recv with block read :) and
  * the performance was very similar. Given the fact that it keeps us
- * from creating a whole buffering scheme around the socket (HTTP 
+ * from creating a whole buffering scheme around the socket (HTTP
  * connection is both line and block oriented, switching back and forth),
  * it is actually OK.
  */

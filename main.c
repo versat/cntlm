@@ -100,7 +100,7 @@ int parent_count = 0;
 plist_t parent_list = NULL;
 
 /*
- * List of custom header substitutions, SOCKS5 proxy users and 
+ * List of custom header substitutions, SOCKS5 proxy users and
  * UserAgents for the scanner plugin.
  */
 hlist_t header_list = NULL;			/* forward_request() */
@@ -868,7 +868,7 @@ int main(int argc, char **argv) {
 #else
 				fprintf(stderr, "This feature is available under Windows only!\n");
 				help = 1;
-#endif				
+#endif
 				break;
 			case 'h':
 			default:
@@ -1009,7 +1009,7 @@ int main(int argc, char **argv) {
 	 * If any configuration file was successfully opened, parse it.
 	 */
 	if (cf) {
-		
+
 		/*
 		 * Check if gateway mode is requested before actually binding any ports.
 		 */
@@ -1106,14 +1106,14 @@ int main(int argc, char **argv) {
 		CFG_DEFAULT(cf, "PassLM", cpasslm, MINIBUF_SIZE);
 		CFG_DEFAULT(cf, "Username", cuser, MINIBUF_SIZE);
 		CFG_DEFAULT(cf, "Workstation", cworkstation, MINIBUF_SIZE);
-		
+
 #ifdef __CYGWIN__
 		/*
 		 * Check if SSPI is enabled and it's type.
 		 */
 		tmp = new(MINIBUF_SIZE);
 		CFG_DEFAULT(cf, "SSPI", tmp, MINIBUF_SIZE);
-		
+
 		if (!sspi_enabled() && strlen(tmp))
 		{
 			if (!strcasecmp("NTLM", tmp) && !sspi_set(tmp)) // Only NTLM supported for now
@@ -1122,7 +1122,7 @@ int main(int argc, char **argv) {
 			}
 		}
 		free(tmp);
-		
+
 #endif
 
 		tmp = new(MINIBUF_SIZE);
@@ -1155,7 +1155,7 @@ int main(int argc, char **argv) {
 				users_list = hlist_add(users_list, tmp, head+1, HLIST_ALLOC, HLIST_ALLOC);
 			}
 		}
-					
+
 
 		/*
 		 * Add User-Agent matching patterns.
@@ -1270,7 +1270,7 @@ int main(int argc, char **argv) {
 	 * Convert optional PassNT, PassLM and PassNTLMv2 strings to hashes
 	 * unless plaintext pass was used, which has higher priority.
 	 *
-	 * If plain password is present, calculate its NT and LM hashes 
+	 * If plain password is present, calculate its NT and LM hashes
 	 * and remove it from the memory.
 	 */
 	if (!strlen(cpassword)) {
@@ -1544,7 +1544,7 @@ int main(int argc, char **argv) {
 		tv.tv_usec = 0;
 
 		/*
-		 * Wait here for data (connection request) on any of the listening 
+		 * Wait here for data (connection request) on any of the listening
 		 * sockets. When ready, establish the connection. For the main
 		 * port, a new proxy_thread() thread is spawned to service the HTTP
 		 * request. For tunneled ports, tunnel_thread() thread is created

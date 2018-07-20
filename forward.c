@@ -157,7 +157,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 		 * There's a body - make this request just a probe. Do not send any body. If no auth
 		 * is required, we let our caller send the reply directly to the client to avoid
 		 * another duplicate request later (which traditionally finishes the 2nd part of
-		 * NTLM handshake). Without auth, there's no need for the final request. 
+		 * NTLM handshake). Without auth, there's no need for the final request.
 		 *
 		 * However, if client has a body, we make this request without it and let caller do
 		 * the second request in full. If we did it here, we'd have to cache the request
@@ -298,7 +298,7 @@ bailout:
  * First read request, then call proxy_authenticate() which will send
  * the request. If proxy returns 407, it will compute NTLM reply and
  * return authenticated request to us. If proxy returns full response
- * (no auth needed), it returns the full reply. Then we just forward 
+ * (no auth needed), it returns the full reply. Then we just forward
  * the reply to client OR make the request again with properly auth'd
  * headers provided by proxy_authenticate().
  *
@@ -358,7 +358,7 @@ beginning:
 	 * us by proxy_connect() or retrieved from connection cache.
 	 *
 	 * Ultimately, the source for creds is always proxy_connect(), but when
-	 * we cache a connection, we store creds associated with it in the 
+	 * we cache a connection, we store creds associated with it in the
 	 * cache as well, in case we'll need them.
 	 */
 	pthread_mutex_lock(&connection_mtx);
@@ -515,7 +515,7 @@ shortcut:
 					data[0]->headers = hlist_mod(data[0]->headers, "Proxy-Connection", "keep-alive", 1);
 
 				/*
-				 * Also remove runaway P-A from the client (e.g. Basic from N-t-B), which might 
+				 * Also remove runaway P-A from the client (e.g. Basic from N-t-B), which might
 				 * cause some ISAs to deny us, even if the connection is already auth'd.
 				 */
 				while (hlist_get(data[loop]->headers, "Proxy-Authorization")) {

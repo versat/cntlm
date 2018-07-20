@@ -47,7 +47,7 @@ int hexindex[128] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
 void myexit(int rc) {
 	if (rc)
 		fprintf(stderr, "Exitting with error. Check daemon logs or run with -v.\n");
-	
+
 	exit(rc);
 }
 
@@ -56,12 +56,12 @@ void croak(const char *msg, int console) {
 		printf("%s", msg);
 	else
 		syslog(LOG_ERR, "%s", msg);
-	
+
 	myexit(1);
 }
 
 /*
- * Add a new item to a list. Every plist_t variable must be 
+ * Add a new item to a list. Every plist_t variable must be
  * initialized to NULL (or pass NULL for "list" when adding
  * the first item). This is for simplicity's sake (we don't
  * need any plist_new).
@@ -253,7 +253,7 @@ plist_t plist_free(plist_t list) {
  * Caller decides this on a by-call basis. Part of the manipulation
  * routines is a "free". That method always deallocates both the
  * key and the value. So for static or temporary keys/values,
- * the caller can instruct us to duplicate the necessary amount 
+ * the caller can instruct us to duplicate the necessary amount
  * of heap. This mechanism is used to minimize memory-related
  * bugs throughout the code and tons of free's.
  */
@@ -503,7 +503,7 @@ char *substr(const char *src, int pos, int len) {
  */
 rr_data_t new_rr_data(void) {
 	rr_data_t data;
-	
+
 	data = malloc(sizeof(struct rr_data_s));
 	data->req = 0;
 	data->code = 0;
@@ -567,7 +567,7 @@ rr_data_t copy_rr_data(rr_data_t dst, rr_data_t src) {
 		dst->body = new(src->body_len);
 		memcpy(dst->body, src->body, src->body_len);
 	}
-	
+
 	return dst;
 }
 
@@ -718,7 +718,7 @@ size_t strlcpy(char *dst, const char *src, size_t siz) {
 }
 
 /*
- * More intuitive version os strncat with string termination
+ * More intuitive version of strncat with string termination
  * from OpenBSD
  */
 size_t strlcat(char *dst, const char *src, size_t siz) {
@@ -767,7 +767,7 @@ char *lowercase(char *str) {
 
 	for (i = 0; i < strlen(str); ++i)
 		str[i] = tolower(str[i]);
-	
+
 	return str;
 }
 
@@ -781,7 +781,7 @@ char *uppercase(char *str) {
 
 	for (i = 0; i < strlen(str); ++i)
 		str[i] = toupper(str[i]);
-	
+
 	return str;
 }
 
@@ -858,7 +858,7 @@ char *scanmem(char *src, int bitwidth) {
 
 
 
-/* 
+/*
  * BASE64 CODE FROM MUTT BEGIN - ORIGINAL COPYRIGHT APPLIES:
  *
  * Copyright (C) 1996-2001 Michael R. Elkins <me@cs.hmc.edu>
@@ -959,6 +959,6 @@ int from_base64(char *out, const char *in)
 
 	return len;
 }
-/* 
+/*
  * CODE FROM MUTT END
  */
