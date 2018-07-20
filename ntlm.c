@@ -53,7 +53,7 @@ static void ntlm_set_key(unsigned char *src, gl_des_ctx *context) {
 static int ntlm_calc_resp(char **dst, char *keys, char *challenge) {
 	gl_des_ctx context;
 
-	*dst = new(24 + 1);
+	*dst = zmalloc(24 + 1);
 
 	ntlm_set_key(MEM(keys, unsigned char, 0), &context);
 	gl_des_ecb_encrypt(&context, challenge, *dst);
@@ -73,7 +73,7 @@ static void ntlm2_calc_resp(char **nthash, int *ntlen, char **lmhash, int *lmlen
 	int64_t tw;
 	int blen;
 
-	nonce = new(8 + 1);
+	nonce = zmalloc(8 + 1);
 	VAL(nonce, uint64_t, 0) = ((uint64_t)random() << 32) | random();
 	tw = ((uint64_t)time(NULL) + 11644473600LLU) * 10000000LLU;
 
@@ -87,7 +87,7 @@ static void ntlm2_calc_resp(char **nthash, int *ntlen, char **lmhash, int *lmlen
 		free(tmp);
 	}
 
-	blob = new(4+4+8+8+4+tblen+4 + 1);
+	blob = zmalloc(4+4+8+8+4+tblen+4 + 1);
 	VAL(blob, uint32_t, 0) = U32LE(0x00000101);
 	VAL(blob, uint32_t, 4) = U32LE(0);
 	VAL(blob, uint64_t, 8) = U64LE(tw);
@@ -104,8 +104,8 @@ static void ntlm2_calc_resp(char **nthash, int *ntlen, char **lmhash, int *lmlen
 	}
 
 	*ntlen = 16+blen;
-	*nthash = new(*ntlen + 1);
-	buf = new(8+blen + 1);
+	*nthash = zmalloc(*ntlen + 1);
+	buf = zmalloc(8+blen + 1);
 	memcpy(buf, MEM(challenge, char, 24), 8);
 	memcpy(buf+8, blob, blen);
 	hmac_md5(passnt2, 16, buf, 8+blen, *nthash);
@@ -113,8 +113,8 @@ static void ntlm2_calc_resp(char **nthash, int *ntlen, char **lmhash, int *lmlen
 	free(buf);
 
 	*lmlen = 24;
-	*lmhash = new(*lmlen + 1);
-	buf = new(16 + 1);
+	*lmhash = zmalloc(*lmlen + 1);
+	buf = zmalloc(16 + 1);
 	memcpy(buf, MEM(challenge, char, 24), 8);
 	memcpy(buf+8, nonce, 8);
 	hmac_md5(passnt2, 16, buf, 16, *lmhash);
@@ -129,16 +129,16 @@ static void ntlm2_calc_resp(char **nthash, int *ntlen, char **lmhash, int *lmlen
 static void ntlm2sr_calc_rest(char **nthash, int *ntlen, char **lmhash, int *lmlen, char *passnt, char *challenge) {
 	char *sess, *nonce, *buf;
 
-	nonce = new(8 + 1);
+	nonce = zmalloc(8 + 1);
 	VAL(nonce, uint64_t, 0) = ((uint64_t)random() << 32) | random();
 
 	*lmlen = 24;
-	*lmhash = new(*lmlen + 1);
+	*lmhash = zmalloc(*lmlen + 1);
 	memcpy(*lmhash, nonce, 8);
 	memset(*lmhash+8, 0, 16);
 
-	buf = new(16 + 1);
-	sess = new(16 + 1);
+	buf = zmalloc(16 + 1);
+	sess = zmalloc(16 + 1);
 	memcpy(buf, MEM(challenge, char, 24), 8);
 	memcpy(buf+8, nonce, 8);
 	md5_buffer(buf, 16, sess);
@@ -157,8 +157,8 @@ char *ntlm_hash_lm_password(char *password) {
 	gl_des_ctx context;
 	char *keys, *pass;
 
-	keys = new(21 + 1);
-	pass = new(14 + 1);
+	keys = zmalloc(21 + 1);
+	pass = zmalloc(14 + 1);
 	uppercase(strncpy(pass, password, MIN(14, strlen(password))));
 
 	ntlm_set_key(MEM(pass, unsigned char, 0), &context);
@@ -178,7 +178,7 @@ char *ntlm_hash_nt_password(char *password) {
 	char *u16, *keys;
 	int len;
 
-	keys = new(21 + 1);
+	keys = zmalloc(21 + 1);
 	len = unicode(&u16, password);
 	md4_buffer(u16, len, keys);
 
@@ -195,13 +195,13 @@ char *ntlm2_hash_password(char *username, char *domain, char *password) {
 
 	passnt = ntlm_hash_nt_password(password);
 
-	buf = new(strlen(username)+strlen(domain) + 1);
+	buf = zmalloc(strlen(username)+strlen(domain) + 1);
 	strcat(buf, username);
 	strcat(buf, domain);
 	uppercase(buf);
 	len = unicode(&tmp, buf);
 
-	passnt2 = new(16 + 1);
+	passnt2 = zmalloc(16 + 1);
 	hmac_md5(passnt, 16, tmp, len, passnt2);
 
 	free(passnt);
@@ -254,7 +254,7 @@ int ntlm_request(char **dst, struct auth_s *creds) {
 		printf("\t    Flags: 0x%X\n", (int)flags);
 	}
 
-	buf = new(NTLM_BUFSIZE);
+	buf = zmalloc(NTLM_BUFSIZE);
 	memcpy(buf, "NTLMSSP\0", 8);
 	VAL(buf, uint32_t, 8) = U32LE(1);
 	VAL(buf, uint32_t, 12) = U32LE(flags);
@@ -281,7 +281,7 @@ static char *printuc(char *src, int len) {
 	char *tmp;
 	int i;
 
-	tmp = new((len+1)/2 + 1);
+	tmp = zmalloc((len+1)/2 + 1);
 	for (i = 0; i < len/2; ++i) {
 		tmp[i] = src[i*2];
 	}
@@ -425,7 +425,7 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 		}
 	}
 
-	buf = new(NTLM_BUFSIZE);
+	buf = zmalloc(NTLM_BUFSIZE);
 	memcpy(buf, "NTLMSSP\0", 8);
 	VAL(buf, uint32_t, 8) = U32LE(3);
 

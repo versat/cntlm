@@ -216,7 +216,7 @@ int sspi_request(char **dst, struct sspi_handle *sspi)
 	if (status != SEC_E_OK)
 		return 0;
 
-	char *tokenBuf = new(TOKEN_BUFSIZE);
+	char *tokenBuf = zmalloc(TOKEN_BUFSIZE);
 	SecBufferDesc   tokenDesc;
 	SecBuffer       token;
 	unsigned long attrs;
@@ -265,7 +265,7 @@ int sspi_response(char **dst, char *challengeBuf, int challen, struct sspi_handl
 	unsigned long attrs;
 	TimeStamp expiry;
 
-	char *answerBuf = new(TOKEN_BUFSIZE);
+	char *answerBuf = zmalloc(TOKEN_BUFSIZE);
 
 	challengeDesc.ulVersion = answerDesc.ulVersion  = SECBUFFER_VERSION;
 	challengeDesc.cBuffers  = answerDesc.cBuffers   = 1;

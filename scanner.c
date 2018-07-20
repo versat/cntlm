@@ -80,7 +80,7 @@ int scanner_hook(rr_data_t request, rr_data_t response, struct auth_s *credentia
 	}
 
 	bsize = SAMPLE;
-	buf = new(bsize);
+	buf = zmalloc(bsize);
 
 	len = 0;
 	do {
@@ -102,7 +102,7 @@ int scanner_hook(rr_data_t request, rr_data_t response, struct auth_s *credentia
 				printf("scanner_hook: ISA id = %s\n", isaid);
 
 			lsize = BUFSIZE;
-			line = new(lsize);
+			line = zmalloc(lsize);
 			do {
 				i = so_recvln(*sd, &line, &lsize);
 
@@ -150,7 +150,7 @@ int scanner_hook(rr_data_t request, rr_data_t response, struct auth_s *credentia
 						 * remember to not include it.
 						 */
 						headers_initiated = 1;
-						tmp = new(MINIBUF_SIZE);
+						tmp = zmalloc(MINIBUF_SIZE);
 						snprintf(tmp, MINIBUF_SIZE, "%s 200 OK\r\n", request->http);
 						w = write(cd, tmp, strlen(tmp));
 						// We don't really care about the result - shut up GCC warning (unused-but-set-variable)
@@ -168,7 +168,7 @@ int scanner_hook(rr_data_t request, rr_data_t response, struct auth_s *credentia
 					 * Send a notification header to the client, just so it doesn't timeout
 					 */
 					if (!done) {
-						tmp = new(MINIBUF_SIZE);
+						tmp = zmalloc(MINIBUF_SIZE);
 						progress = atol(line+12);
 						snprintf(tmp, MINIBUF_SIZE, "ISA-Scanner: %ld of %ld\r\n", progress, filesize);
 						w = write(cd, tmp, strlen(tmp));
@@ -190,13 +190,13 @@ int scanner_hook(rr_data_t request, rr_data_t response, struct auth_s *credentia
 
 				uurl = urlencode(request->url);
 
-				post = new(BUFSIZE);
+				post = zmalloc(BUFSIZE);
 				snprintf(post, BUFSIZE-1, "%surl=%s&%sSaveToDisk=YES&%sOrig=%s", isaid, pos, isaid, isaid, uurl);
 
 				if (debug)
 					printf("scanner_hook: Getting file with URL data = %s\n", request->url);
 
-				tmp = new(MINIBUF_SIZE);
+				tmp = zmalloc(MINIBUF_SIZE);
 				snprintf(tmp, MINIBUF_SIZE, "%d", (int)strlen(post));
 
 				newres = new_rr_data();
@@ -234,7 +234,7 @@ int scanner_hook(rr_data_t request, rr_data_t response, struct auth_s *credentia
 					 * The clients progress bar doesn't work without it and it stinks!
 					 */
 					if (filesize || progress) {
-						tmp = new(20);
+						tmp = zmalloc(20);
 						snprintf(tmp, 20, "%ld", filesize ? filesize : progress);
 						newres->headers = hlist_mod(newres->headers, "Content-Length", tmp, 1);
 					}

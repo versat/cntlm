@@ -48,7 +48,7 @@ int acl_add(plist_t *rules, char *spec, enum acl_t acl) {
 		return 0;
 
 	spec = strdup(spec);
-	aux = (network_t *)new(sizeof(network_t));
+	aux = (network_t *)zmalloc(sizeof(network_t));
 	i = strcspn(spec, "/");
 	if (i < strlen(spec)) {
 		spec[i] = 0;

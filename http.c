@@ -93,7 +93,7 @@ int headers_recv(int fd, rr_data_t data) {
 	char *host = NULL;
 
 	bsize = BUFSIZE;
-	buf = new(bsize);
+	buf = zmalloc(bsize);
 
 	i = so_recvln(fd, &buf, &bsize);
 	if (i <= 0)
@@ -285,7 +285,7 @@ int headers_send(int fd, rr_data_t data) {
 	/*
 	 * We know how much memory we need now...
 	 */
-	buf = new(len);
+	buf = zmalloc(len);
 
 	/*
 	 * Prepare the first request/response line
@@ -343,7 +343,7 @@ int data_send(int dst, int src, length_t len) {
 	if (!len)
 		return 1;
 
-	buf = new(BLOCK);
+	buf = zmalloc(BLOCK);
 
 	do {
 		block = (len == -1 || len-c > BLOCK ? BLOCK : len-c);
@@ -394,7 +394,7 @@ int chunked_data_send(int dst, int src) {
 	char *err = NULL;
 
 	bsize = BUFSIZE;
-	buf = new(bsize);
+	buf = zmalloc(bsize);
 
 	/* Take care of all chunks */
 	do {
@@ -451,7 +451,7 @@ int tunnel(int cd, int sd) {
 	int from, to, ret, sel;
 	char *buf;
 
-	buf = new(BUFSIZE);
+	buf = zmalloc(BUFSIZE);
 
 	if (debug)
 		printf("tunnel: select cli: %d, srv: %d\n", cd, sd);
@@ -628,7 +628,7 @@ int http_parse_basic(hlist_t headers, const char *header, struct auth_s *tcreds)
 
 	tmp = hlist_get(headers, header);
 	assert(tmp != NULL);
-	buf = new(strlen(tmp) + 1);
+	buf = zmalloc(strlen(tmp) + 1);
 	i = 5;
 	while (i < strlen(tmp) && tmp[++i] == ' ');
 	from_base64(buf, tmp+i);

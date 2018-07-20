@@ -27,7 +27,7 @@ char *gen_407_page(const char *http) {
 	char *tmp;
 	if (http == NULL)
 		http = "HTTP/1.0";
-	tmp = new(BUFSIZE);
+	tmp = zmalloc(BUFSIZE);
 	snprintf(tmp, BUFSIZE-1,
 		"%s 407 Access denied\r\n"
 		"Proxy-Authenticate: Basic realm=\"Cntlm Proxy\"\r\n"
@@ -41,7 +41,7 @@ char *gen_401_page(const char *http, const char *host, int port) {
 	char *tmp;
 	if (http == NULL)
 		http = "HTTP/1.0";
-	tmp = new(BUFSIZE);
+	tmp = zmalloc(BUFSIZE);
 	snprintf(tmp, BUFSIZE-1,
 		"%s 401 Access denied\r\n"
 		"WWW-Authenticate: Basic realm=\"%s:%d\"\r\n"
@@ -55,7 +55,7 @@ char *gen_denied_page(const char *ip) {
 	char *tmp;
 	if (ip == NULL)
 		ip = "client";
-	tmp = new(BUFSIZE);
+	tmp = zmalloc(BUFSIZE);
 	snprintf(tmp, BUFSIZE-1,
 		"HTTP/1.0 407 Access denied\r\n"
 		"Content-Type: text/html\r\n\r\n"
@@ -70,7 +70,7 @@ char *gen_502_page(const char *http, const char *msg) {
 		http = "HTTP/1.0";
 	if (msg == NULL)
 		msg = "Proxy error";
-	tmp = new(BUFSIZE);
+	tmp = zmalloc(BUFSIZE);
 	snprintf(tmp, BUFSIZE-1,
 		"%s 502 %s\r\n"
 		"Content-Type: text/html\r\n\r\n"

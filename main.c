@@ -169,7 +169,7 @@ int parent_add(char *parent, int port) {
 	}
 	*/
 
-	aux = (proxy_t *)new(sizeof(proxy_t));
+	aux = (proxy_t *)zmalloc(sizeof(proxy_t));
 	strlcpy(aux->hostname, proxy, sizeof(aux->hostname));
 	aux->port = port;
 	aux->resolved = 0;
@@ -254,7 +254,7 @@ void tunnel_add(plist_t *list, char *spec, int gateway) {
 			myexit(1);
 		}
 
-		tmp = new(strlen(field[pos+1]) + strlen(field[pos+2]) + 2 + 1);
+		tmp = zmalloc(strlen(field[pos+1]) + strlen(field[pos+2]) + 2 + 1);
 		strcpy(tmp, field[pos+1]);
 		strcat(tmp, ":");
 		strcat(tmp, field[pos+2]);
@@ -427,9 +427,9 @@ void *socks5_thread(void *thread_data) {
 	/*
 	 * Check client's version, possibly fuck'em
 	 */
-	bs = (unsigned char *)new(10);
-	thost = new(MINIBUF_SIZE);
-	tport = new(MINIBUF_SIZE);
+	bs = (unsigned char *)zmalloc(10);
+	thost = zmalloc(MINIBUF_SIZE);
+	tport = zmalloc(MINIBUF_SIZE);
 	r = read(cd, bs, 2);
 	if (r != 2 || bs[0] != 5)
 		goto bailout;
@@ -438,7 +438,7 @@ void *socks5_thread(void *thread_data) {
 	 * Read offered auth schemes
 	 */
 	c = bs[1];
-	auths = (unsigned char *)new(c+1);
+	auths = (unsigned char *)zmalloc(c+1);
 	r = read(cd, auths, c);
 	if (r != c)
 		goto bailout;
@@ -493,7 +493,7 @@ void *socks5_thread(void *thread_data) {
 		/*
 		 * Read username and pass len
 		 */
-		uname = new(c+1);
+		uname = zmalloc(c+1);
 		r = read(cd, uname, c+1);
 		if (r != c+1) {
 			free(uname);
@@ -506,7 +506,7 @@ void *socks5_thread(void *thread_data) {
 		/*
 		 * Read pass
 		 */
-		upass = new(c+1);
+		upass = zmalloc(c+1);
 		r = read(cd, upass, c);
 		if (r != c) {
 			free(upass);
@@ -576,7 +576,7 @@ void *socks5_thread(void *thread_data) {
 	} else
 		goto bailout;
 
-	addr = (unsigned char *)new(c+10 + 1);
+	addr = (unsigned char *)zmalloc(c+10 + 1);
 	r = read(cd, addr, c);
 	if (r != c)
 		goto bailout;
@@ -698,16 +698,16 @@ int main(int argc, char **argv) {
 	char *magic_detect = NULL;
 
 	g_creds = new_auth();
-	cuser = new(MINIBUF_SIZE);
-	cdomain = new(MINIBUF_SIZE);
-	cpassword = new(MINIBUF_SIZE);
-	cpassntlm2 = new(MINIBUF_SIZE);
-	cpassnt = new(MINIBUF_SIZE);
-	cpasslm = new(MINIBUF_SIZE);
-	cworkstation = new(MINIBUF_SIZE);
-	cpidfile = new(MINIBUF_SIZE);
-	cuid = new(MINIBUF_SIZE);
-	cauth = new(MINIBUF_SIZE);
+	cuser = zmalloc(MINIBUF_SIZE);
+	cdomain = zmalloc(MINIBUF_SIZE);
+	cpassword = zmalloc(MINIBUF_SIZE);
+	cpassntlm2 = zmalloc(MINIBUF_SIZE);
+	cpassnt = zmalloc(MINIBUF_SIZE);
+	cpasslm = zmalloc(MINIBUF_SIZE);
+	cworkstation = zmalloc(MINIBUF_SIZE);
+	cpidfile = zmalloc(MINIBUF_SIZE);
+	cuid = zmalloc(MINIBUF_SIZE);
+	cauth = zmalloc(MINIBUF_SIZE);
 
 	openlog("cntlm", LOG_CONS, LOG_DAEMON);
 
@@ -748,7 +748,7 @@ int main(int argc, char **argv) {
 					if (!scanner_plugin_maxsize)
 						scanner_plugin_maxsize = 1;
 					i = strlen(optarg) + 3;
-					tmp = new(i);
+					tmp = zmalloc(i);
 					snprintf(tmp, i, "*%s*", optarg);
 					scanner_agent_list = plist_add(scanner_agent_list, 0, tmp);
 				}
@@ -989,7 +989,7 @@ int main(int argc, char **argv) {
 		if (tmp == NULL)
 			tmp = "C:\\Program Files";
 
-		head = new(MINIBUF_SIZE);
+		head = zmalloc(MINIBUF_SIZE);
 		strlcpy(head, tmp, MINIBUF_SIZE);
 		strlcat(head, "\\Cntlm\\cntlm.ini", MINIBUF_SIZE);
 		cf = config_open(head);
@@ -1013,7 +1013,7 @@ int main(int argc, char **argv) {
 		/*
 		 * Check if gateway mode is requested before actually binding any ports.
 		 */
-		tmp = new(MINIBUF_SIZE);
+		tmp = zmalloc(MINIBUF_SIZE);
 		CFG_DEFAULT(cf, "Gateway", tmp, MINIBUF_SIZE);
 		if (!strcasecmp("yes", tmp))
 			gateway = 1;
@@ -1022,7 +1022,7 @@ int main(int argc, char **argv) {
 		/*
 		 * Check for NTLM-to-basic settings
 		 */
-		tmp = new(MINIBUF_SIZE);
+		tmp = zmalloc(MINIBUF_SIZE);
 		CFG_DEFAULT(cf, "NTLMToBasic", tmp, MINIBUF_SIZE);
 		if (!strcasecmp("yes", tmp))
 			ntlmbasic = 1;
@@ -1111,7 +1111,7 @@ int main(int argc, char **argv) {
 		/*
 		 * Check if SSPI is enabled and it's type.
 		 */
-		tmp = new(MINIBUF_SIZE);
+		tmp = zmalloc(MINIBUF_SIZE);
 		CFG_DEFAULT(cf, "SSPI", tmp, MINIBUF_SIZE);
 
 		if (!sspi_enabled() && strlen(tmp))
@@ -1125,13 +1125,13 @@ int main(int argc, char **argv) {
 
 #endif
 
-		tmp = new(MINIBUF_SIZE);
+		tmp = zmalloc(MINIBUF_SIZE);
 		CFG_DEFAULT(cf, "Flags", tmp, MINIBUF_SIZE);
 		if (!cflags)
 			cflags = swap32(strtoul(tmp, NULL, 0));
 		free(tmp);
 
-		tmp = new(MINIBUF_SIZE);
+		tmp = zmalloc(MINIBUF_SIZE);
 		CFG_DEFAULT(cf, "ISAScannerSize", tmp, MINIBUF_SIZE);
 		if (!scanner_plugin_maxsize && strlen(tmp)) {
 			scanner_plugin = 1;
@@ -1166,7 +1166,7 @@ int main(int argc, char **argv) {
 				scanner_plugin_maxsize = 1;
 
 			if ((i = strlen(tmp))) {
-				head = new(i + 3);
+				head = zmalloc(i + 3);
 				snprintf(head, i+3, "*%s*", tmp);
 				scanner_agent_list = plist_add(scanner_agent_list, 0, head);
 			}
@@ -1462,7 +1462,7 @@ int main(int argc, char **argv) {
 			myexit(1);
 		}
 
-		tmp = new(50);
+		tmp = zmalloc(50);
 		snprintf(tmp, 50, "%d\n", getpid());
 		w = write(cd, tmp, (len = strlen(tmp)));
 		if (w != len) {
@@ -1598,7 +1598,7 @@ int main(int argc, char **argv) {
 #endif
 
 				if (plist_in(proxyd_list, i)) {
-					data = (struct thread_arg_s *)new(sizeof(struct thread_arg_s));
+					data = (struct thread_arg_s *)zmalloc(sizeof(struct thread_arg_s));
 					data->fd = cd;
 					data->addr = caddr;
 					if (!serialize)
@@ -1606,12 +1606,12 @@ int main(int argc, char **argv) {
 					else
 						proxy_thread((void *)data);
 				} else if (plist_in(socksd_list, i)) {
-					data = (struct thread_arg_s *)new(sizeof(struct thread_arg_s));
+					data = (struct thread_arg_s *)zmalloc(sizeof(struct thread_arg_s));
 					data->fd = cd;
 					data->addr = caddr;
 					tid = pthread_create(&pthr, &pattr, socks5_thread, (void *)data);
 				} else {
-					data = (struct thread_arg_s *)new(sizeof(struct thread_arg_s));
+					data = (struct thread_arg_s *)zmalloc(sizeof(struct thread_arg_s));
 					data->fd = cd;
 					data->addr = caddr;
 					data->target = plist_get(tunneld_list, i);

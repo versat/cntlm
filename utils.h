@@ -140,7 +140,7 @@ extern char *trimr(char *buf);
 extern char *lowercase(char *str);
 extern char *uppercase(char *str);
 extern int unicode(char **dst, char *src);
-extern char *new(size_t size);
+extern char *zmalloc(size_t size);
 extern char *urlencode(const char *str);
 
 extern rr_data_t new_rr_data(void);

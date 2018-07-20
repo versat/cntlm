@@ -63,7 +63,7 @@ int www_authenticate(int sd, rr_data_t request, rr_data_t response, struct auth_
 
 	int rc = 0;
 
-	buf = new(BUFSIZE);
+	buf = zmalloc(BUFSIZE);
 
 	strcpy(buf, "NTLM ");
 	len = ntlm_request(&tmp, creds);
@@ -115,7 +115,7 @@ int www_authenticate(int sd, rr_data_t request, rr_data_t response, struct auth_
 
 		tmp = hlist_get(auth->headers, "WWW-Authenticate");
 		if (tmp && strlen(tmp) > 6 + 8) {
-			challenge = new(strlen(tmp) + 5 + 1);
+			challenge = zmalloc(strlen(tmp) + 5 + 1);
 			len = from_base64(challenge, tmp + 5);
 			if (len > NTLM_CHALLENGE_MIN) {
 				len = ntlm_response(&tmp, challenge, len, creds);

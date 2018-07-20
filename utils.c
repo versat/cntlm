@@ -490,9 +490,9 @@ char *substr(const char *src, int pos, int len) {
 
 	min_len = MIN(len, strlen(src)-pos);
 	if (min_len <= 0)
-		return new(1);
+		return zmalloc(1);
 
-	tmp = new(min_len+1);
+	tmp = zmalloc(min_len+1);
 	strlcpy(tmp, src+pos, min_len+1);
 
 	return tmp;
@@ -564,7 +564,7 @@ rr_data_t copy_rr_data(rr_data_t dst, rr_data_t src) {
 	if (src->msg)
 		dst->msg = strdup(src->msg);
 	if (src->body && src->body_len > 0) {
-		dst->body = new(src->body_len);
+		dst->body = zmalloc(src->body_len);
 		memcpy(dst->body, src->body, src->body_len);
 	}
 
@@ -752,7 +752,7 @@ size_t strlcat(char *dst, const char *src, size_t siz) {
 /*
  * Allocates memory and makes sure it is zero initialized.
  */
-char *new(size_t size) {
+char *zmalloc(size_t size) {
 	char *tmp = calloc(1, size);
 	return tmp;
 }
@@ -795,7 +795,7 @@ int unicode(char **dst, char *src) {
 	}
 
 	l = MIN(64, strlen(src));
-	tmp = new(2*l);
+	tmp = zmalloc(2*l);
 	for (i = 0; i < l; ++i)
 		tmp[2*i] = src[i];
 
@@ -807,7 +807,7 @@ char *urlencode(const char *str) {
 	char *tmp;
 	int i, pos;
 
-	tmp = new(strlen(str)*3 + 1);
+	tmp = zmalloc(strlen(str)*3 + 1);
 	for (pos = 0, i = 0; i < strlen(str); ++i) {
 		if (isdigit(str[i]) || (tolower(str[i]) >= 'a' && tolower(str[i]) <= 'z') || str[i] == '.' || str[i] == '-' || str[i] == '_' || str[i] == '~') {
 			tmp[pos++] = str[i];
@@ -824,7 +824,7 @@ char *printmem(char *src, size_t len, int bitwidth) {
 	char *tmp;
 	int i;
 
-	tmp = new(2*len+1);
+	tmp = zmalloc(2*len+1);
 	for (i = 0; i < len; ++i) {
 		tmp[i*2] = hextab[((uint8_t)src[i] ^ (uint8_t)(7-bitwidth)) >> 4];
 		tmp[i*2+1] = hextab[(src[i] ^ (uint8_t)(7-bitwidth)) & 0x0F];
@@ -841,7 +841,7 @@ char *scanmem(char *src, int bitwidth) {
 		return NULL;
 
 	bytes = strlen(src)/2;
-	tmp = new(bytes+1);
+	tmp = zmalloc(bytes+1);
 	for (i = 0; i < bytes; ++i) {
 		h = hexindex[(int)src[i*2]];
 		l = hexindex[(int)src[i*2+1]];

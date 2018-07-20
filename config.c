@@ -53,8 +53,8 @@ config_t config_open(const char *fname) {
 	if (!fp)
 		return NULL;
 
-	buf = new(BUFSIZE);
-	rc = (config_t)new(sizeof(struct config_s));
+	buf = zmalloc(BUFSIZE);
+	rc = (config_t)zmalloc(sizeof(struct config_s));
 	rc->options = NULL;
 
 	while (!feof(fp)) {
