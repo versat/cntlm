@@ -726,7 +726,9 @@ bailout:
 		pthread_mutex_unlock(&connection_mtx);
 	} else {
 		free(tcreds);
-		close(sd);
+		if (sd >= 0) {
+			close(sd);
+		}
 	}
 
 	return rc;
