@@ -109,58 +109,57 @@ struct thread_arg_s {
 	struct sockaddr_in addr;
 };
 
-extern void myexit(int rc);
-extern void croak(const char *msg, int console);
+extern void myexit(int rc) __attribute__((noreturn));
+extern void croak(const char *msg, int console) __attribute__((noreturn));
 
 extern plist_t plist_add(plist_t list, unsigned long key, void *aux);
 extern plist_t plist_del(plist_t list, unsigned long key);
-extern int plist_in(plist_t list, unsigned long key);
+extern int plist_in(plist_t list, unsigned long key) __attribute__((warn_unused_result));
 extern void plist_dump(plist_t list);
-extern char *plist_get(plist_t list, int key);
+extern char *plist_get(plist_t list, int key) __attribute__((warn_unused_result));
 extern int plist_pop(plist_t *list, void **aux);
-extern int plist_count(plist_t list);
+extern int plist_count(plist_t list) __attribute__((warn_unused_result));
 extern plist_t plist_free(plist_t list);
 
 extern hlist_t hlist_add(hlist_t list, char *key, char *value, hlist_add_t allockey, hlist_add_t allocvalue);
-extern hlist_t hlist_dup(hlist_t list);
+extern hlist_t hlist_dup(hlist_t list) __attribute__((warn_unused_result));
 extern hlist_t hlist_del(hlist_t list, const char *key);
 extern hlist_t hlist_mod(hlist_t list, char *key, char *value, int add);
-extern int hlist_in(hlist_t list, const char *key);
-extern int hlist_count(hlist_t list);
-extern char *hlist_get(hlist_t list, const char *key);
-extern int hlist_subcmp(hlist_t list, const char *key, const char *substr);
-extern int hlist_subcmp_all(hlist_t list, const char *key, const char *substr);
+extern int hlist_in(hlist_t list, const char *key) __attribute__((warn_unused_result));
+extern int hlist_count(hlist_t list) __attribute__((warn_unused_result));
+extern char *hlist_get(hlist_t list, const char *key) __attribute__((warn_unused_result));
+extern int hlist_subcmp(hlist_t list, const char *key, const char *substr) __attribute__((warn_unused_result));
+extern int hlist_subcmp_all(hlist_t list, const char *key, const char *substr) __attribute__((warn_unused_result));
 extern hlist_t hlist_free(hlist_t list);
 extern void hlist_dump(hlist_t list);
 
-extern char *substr(const char *src, int pos, int len);
+extern char *substr(const char *src, int pos, int len) __attribute__((warn_unused_result));
 extern size_t strlcpy(char *dst, const char *src, size_t siz);
 extern size_t strlcat(char *dst, const char *src, size_t siz);
 extern char *trimr(char *buf);
 extern char *lowercase(char *str);
 extern char *uppercase(char *str);
 extern int unicode(char **dst, char *src);
-extern char *zmalloc(size_t size);
-extern char *urlencode(const char *str);
+extern char *zmalloc(size_t size) __attribute__((warn_unused_result, malloc));
+extern char *urlencode(const char *str) __attribute__((warn_unused_result));
 
-extern rr_data_t new_rr_data(void);
+extern rr_data_t new_rr_data(void) __attribute__((warn_unused_result));
 extern rr_data_t copy_rr_data(rr_data_t dst, rr_data_t src);
-extern rr_data_t dup_rr_data(rr_data_t data);
+extern rr_data_t dup_rr_data(rr_data_t data) __attribute__((warn_unused_result));
 extern rr_data_t reset_rr_data(rr_data_t data);
 extern void free_rr_data(rr_data_t * data);
 
-extern char *printmem(char *src, size_t len, int bitwidth);
-extern char *scanmem(char *src, int bitwidth);
+extern char *printmem(char *src, size_t len, int bitwidth) __attribute__((warn_unused_result));
+extern char *scanmem(char *src, int bitwidth) __attribute__((warn_unused_result));
 
 extern void to_base64(unsigned char *out, const unsigned char *in, size_t len, size_t olen);
 extern int from_base64(char *out, const char *in);
 
-extern long int random(void);
 #if config_gethostname == 1
 extern int gethostname(char *name, size_t len);
 #endif
 #if config_strdup == 0
-extern char *strdup(const char *src);
+extern char *strdup(const char *src)  __attribute__((warn_unused_result));
 #endif
 
 #endif /* _UTILS_H */
