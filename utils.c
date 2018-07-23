@@ -761,7 +761,7 @@ char *zmalloc(size_t size) {
  * Self-explanatory.
  */
 char *lowercase(char *str) {
-	int i;
+	size_t i;
 
 	assert(str != NULL);
 
@@ -775,7 +775,7 @@ char *lowercase(char *str) {
  * Self-explanatory.
  */
 char *uppercase(char *str) {
-	int i;
+	size_t i;
 
 	assert(str != NULL);
 
@@ -805,7 +805,8 @@ int unicode(char **dst, char *src) {
 
 char *urlencode(const char *str) {
 	char *tmp;
-	int i, pos;
+	size_t i;
+	size_t pos;
 
 	tmp = zmalloc(strlen(str)*3 + 1);
 	for (pos = 0, i = 0; i < strlen(str); ++i) {
@@ -822,7 +823,7 @@ char *urlencode(const char *str) {
 
 char *printmem(char *src, size_t len, int bitwidth) {
 	char *tmp;
-	int i;
+	size_t i;
 
 	tmp = zmalloc(2*len+1);
 	for (i = 0; i < len; ++i) {
@@ -834,7 +835,9 @@ char *printmem(char *src, size_t len, int bitwidth) {
 }
 
 char *scanmem(char *src, int bitwidth) {
-	int h, l, i, bytes;
+	int h, l;
+	size_t i;
+	size_t bytes;
 	char *tmp;
 
 	if (strlen(src) % 2)

@@ -621,7 +621,7 @@ int http_body_drop(int fd, rr_data_t response) {
  */
 int http_parse_basic(hlist_t headers, const char *header, struct auth_s *tcreds) {
 	char *tmp = NULL, *pos = NULL, *buf = NULL, *dom = NULL;
-	int i;
+	size_t i;
 
 	if (!hlist_subcmp(headers, header, "basic"))
 		return 0;
