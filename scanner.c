@@ -184,14 +184,17 @@ int scanner_hook(rr_data_t request, rr_data_t response, struct auth_s *credentia
 			} while (i > 0 && !done);
 
 			if (i >= 0 && done && (pos = strstr(line, "\",\"")+3) && (c = strchr(pos, '"') - pos) > 0) {
+				char * encoded_url;
+
 				tmp = substr(pos, 0, c);
-				pos = urlencode(tmp);
+				encoded_url = urlencode(tmp);
 				free(tmp);
 
 				uurl = urlencode(request->url);
 
 				post = zmalloc(BUFSIZE);
-				snprintf(post, BUFSIZE-1, "%surl=%s&%sSaveToDisk=YES&%sOrig=%s", isaid, pos, isaid, isaid, uurl);
+				snprintf(post, BUFSIZE-1, "%surl=%s&%sSaveToDisk=YES&%sOrig=%s", isaid, encoded_url, isaid, isaid, uurl);
+				free(encoded_url);
 
 				if (debug)
 					printf("scanner_hook: Getting file with URL data = %s\n", request->url);
