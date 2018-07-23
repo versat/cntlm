@@ -27,6 +27,13 @@
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.cygwin.base.110518893" name="Cygwin C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.cygwin.base">
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.999957156" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="VERSION=&quot;x.y.zIDE&quot;"/>
+									<listOptionValue builtIn="false" value="__BSD_VISIBLE"/>
+									<listOptionValue builtIn="false" value="_ALL_SOURCE"/>
+									<listOptionValue builtIn="false" value="_XOPEN_SOURCE=600"/>
+									<listOptionValue builtIn="false" value="_POSIX_C_SOURCE=200112"/>
+									<listOptionValue builtIn="false" value="_ISOC99_SOURCE"/>
+									<listOptionValue builtIn="false" value="_REENTRANT"/>
+									<listOptionValue builtIn="false" value="_BSD_SOURCE"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.cygwin.1663676703" superClass="cdt.managedbuild.tool.gnu.c.compiler.input.cygwin"/>
 							</tool>
