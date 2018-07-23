@@ -253,8 +253,8 @@ int scanner_hook(rr_data_t request, rr_data_t response, struct auth_s *credentia
 				} else if (debug)
 					printf("scanner_hook: New request failed\n");
 
-				free(newreq);
-				free(newres);
+				free_rr_data(&newreq);
+				free_rr_data(&newres);
 				free(post);
 				free(uurl);
 			}
