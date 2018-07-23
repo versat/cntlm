@@ -41,7 +41,8 @@
 int acl_add(plist_t *rules, char *spec, enum acl_t acl) {
 	struct in_addr source;
 	network_t *aux;
-	int i, mask = 32;
+	int mask = 32;
+	size_t i;
 	char *tmp;
 
 	if (rules == NULL)
@@ -95,12 +96,12 @@ int acl_add(plist_t *rules, char *spec, enum acl_t acl) {
  * is allowed (such is the case with no ACLs).
  *
  * Proper policy should always end with a default rule,
- * targetting either "*" or "0/0" to explicitly express
+ * targeting either "*" or "0/0" to explicitly express
  * one's intentions.
  */
 enum acl_t acl_check(plist_t rules, struct in_addr naddr) {
 	network_t *aux;
-	int mask;
+	unsigned int mask;
 
 	while (rules) {
 		aux = (network_t *)rules->aux;
