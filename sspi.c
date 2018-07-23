@@ -252,7 +252,6 @@ int sspi_request(char **dst, struct sspi_handle *sspi)
 
 	*dst = token.pvBuffer;
 	return token.cbBuffer;
-	return 0;
 }
 
 int sspi_response(char **dst, char *challengeBuf, int challen, struct sspi_handle *sspi)
