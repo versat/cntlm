@@ -646,8 +646,9 @@ int http_parse_basic(hlist_t headers, const char *header, struct auth_s *tcreds)
 			auth_strcpy(tcreds, user, buf);
 		} else {
 			*dom = 0;
+			++dom;
 			auth_strcpy(tcreds, domain, buf);
-			auth_strcpy(tcreds, user, dom+1);
+			auth_strcpy(tcreds, user, dom);
 		}
 
 		if (tcreds->hashntlm2) {
