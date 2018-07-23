@@ -235,9 +235,9 @@ void tunnel_add(plist_t *list, char *spec, int gateway) {
 	pos = 0;
 	if (count == 4) {
 		if (!so_resolv(&source, field[pos])) {
-                        syslog(LOG_ERR, "Cannot resolve tunel bind address: %s\n", field[pos]);
-                        myexit(1);
-                }
+			syslog(LOG_ERR, "Cannot resolve tunel bind address: %s\n", field[pos]);
+			myexit(1);
+		}
 		pos++;
 	} else
 		source.s_addr = htonl(gateway ? INADDR_ANY : INADDR_LOOPBACK);
@@ -1367,8 +1367,8 @@ int main(int argc, char **argv) {
 	 */
 	if (!ntlmbasic && (
 			(g_creds->hashnt && !g_creds->passnt)
-		     || (g_creds->hashlm && !g_creds->passlm)
-		     || (g_creds->hashntlm2 && !g_creds->passntlm2))) {
+			 || (g_creds->hashlm && !g_creds->passlm)
+			 || (g_creds->hashntlm2 && !g_creds->passntlm2))) {
 		syslog(LOG_ERR, "Parent proxy account password (or required hashes) missing.\n");
 		myexit(1);
 	}
