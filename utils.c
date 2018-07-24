@@ -46,7 +46,7 @@ int hexindex[128] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
 
 void myexit(int rc) {
 	if (rc)
-		fprintf(stderr, "Exitting with error. Check daemon logs or run with -v.\n");
+		fprintf(stderr, "Exiting with error. Check daemon logs or run with -v.\n");
 
 	exit(rc);
 }

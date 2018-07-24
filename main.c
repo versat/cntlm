@@ -919,7 +919,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "\t-M  <testurl>\n"
 				"\t    Magic autodetection of proxy's NTLM dialect.\n");
 		fprintf(stderr, "\t-N  \"<hostname_wildcard1>[, <hostname_wildcardN>\"\n"
-				"\t    List of URL's to serve direcly as stand-alone proxy (e.g. '*.local')\n");
+				"\t    List of URL's to serve directly as stand-alone proxy (e.g. '*.local')\n");
 		fprintf(stderr, "\t-O  [<saddr>:]<lport>\n"
 				"\t    Enable SOCKS5 proxy on port lport (binding to address saddr)\n");
 		fprintf(stderr, "\t-P  <pidfile>\n"

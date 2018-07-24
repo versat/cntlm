@@ -234,7 +234,7 @@ int so_closed(int fd) {
 		return 1;
 
 	i = so_recvtest(fd);
-	return (i == 0 || (i == -1 && errno != EAGAIN && errno != ENOENT));   /* ENOENT, you ask? Perhap AIX devels could explain! :-( */
+	return (i == 0 || (i == -1 && errno != EAGAIN && errno != ENOENT));   /* ENOENT, you ask? Perhaps AIX devels could explain! :-( */
 }
 
 /*

@@ -41,7 +41,7 @@
 extern int debug;
 
 /*
- * Ture if src is a header. This is just a basic check
+ * True if src is a header. This is just a basic check
  * for the colon delimiter. Might eventually become more
  * sophisticated. :)
  */
@@ -519,7 +519,7 @@ length_t http_has_body(rr_data_t request, rr_data_t response) {
 	}
 
 	/*
-	 * Otherwise consult Content-Length. If present, we forward exaclty
+	 * Otherwise consult Content-Length. If present, we forward exactly
 	 * that many bytes.
 	 *
 	 * If not present, but there is Transfer-Encoding or Content-Type
