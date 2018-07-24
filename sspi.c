@@ -47,130 +47,128 @@ QUERY_SECURITY_CONTEXT_TOKEN_FN  _QuerySecurityContextToken = NULL;
 
 void UnloadSecurityDll(HMODULE hModule) {
 
-   if (hModule)
-      FreeLibrary(hModule);
+	if (hModule)
+		FreeLibrary(hModule);
 
 	sspi_dll = NULL;
 
-   _AcceptSecurityContext      = NULL;
-   _AcquireCredentialsHandle   = NULL;
-   _CompleteAuthToken          = NULL;
-   _DeleteSecurityContext      = NULL;
-   _FreeContextBuffer          = NULL;
-   _FreeCredentialsHandle      = NULL;
-   _InitializeSecurityContext  = NULL;
-   _QuerySecurityPackageInfo   = NULL;
-   _QuerySecurityContextToken  = NULL;
+	_AcceptSecurityContext      = NULL;
+	_AcquireCredentialsHandle   = NULL;
+	_CompleteAuthToken          = NULL;
+	_DeleteSecurityContext      = NULL;
+	_FreeContextBuffer          = NULL;
+	_FreeCredentialsHandle      = NULL;
+	_InitializeSecurityContext  = NULL;
+	_QuerySecurityPackageInfo   = NULL;
+	_QuerySecurityContextToken  = NULL;
 }
 
 HMODULE LoadSecurityDll(void) {
 
-   HMODULE hModule;
-   BOOL    fAllFunctionsLoaded = FALSE;
-   TCHAR   lpszDLL[MAX_PATH];
-   OSVERSIONINFO VerInfo;
+	HMODULE hModule;
+	BOOL    fAllFunctionsLoaded = FALSE;
+	TCHAR   lpszDLL[MAX_PATH];
+	OSVERSIONINFO VerInfo;
 
-   //
-   //  Find out which security DLL to use, depending on
-   //  whether we are on Windows NT or Windows 95, Windows 2000, Windows XP, or Windows Server 2003
-   //  We have to use security.dll on Windows NT 4.0.
-   //  All other operating systems, we have to use Secur32.dll
-   //
-   VerInfo.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
-   if (!GetVersionEx (&VerInfo))   // If this fails, something has gone wrong
-   {
-      return FALSE;
-   }
+	//
+	//  Find out which security DLL to use, depending on
+	//  whether we are on Windows NT or Windows 95, Windows 2000, Windows XP, or Windows Server 2003
+	//  We have to use security.dll on Windows NT 4.0.
+	//  All other operating systems, we have to use Secur32.dll
+	//
+	VerInfo.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
+	if (!GetVersionEx (&VerInfo))   // If this fails, something has gone wrong
+	{
+		return FALSE;
+	}
 
-   if (VerInfo.dwPlatformId == VER_PLATFORM_WIN32_NT &&
-      VerInfo.dwMajorVersion == 4 &&
-      VerInfo.dwMinorVersion == 0)
-   {
-      lstrcpy (lpszDLL, TEXT("security.dll"));
-   }
-   else
-   {
-      lstrcpy (lpszDLL, TEXT("secur32.dll"));
-   }
+	if (VerInfo.dwPlatformId == VER_PLATFORM_WIN32_NT &&
+		VerInfo.dwMajorVersion == 4 &&
+		VerInfo.dwMinorVersion == 0)
+	{
+		lstrcpy (lpszDLL, TEXT("security.dll"));
+	}
+	else
+	{
+		lstrcpy (lpszDLL, TEXT("secur32.dll"));
+	}
 
 
-   hModule = LoadLibrary(lpszDLL);
-   if (!hModule)
-      return NULL;
+	hModule = LoadLibrary(lpszDLL);
+	if (!hModule)
+		return NULL;
 
-   do {
-
-      _AcceptSecurityContext = (ACCEPT_SECURITY_CONTEXT_FN)
-            GetProcAddress(hModule, "AcceptSecurityContext");
-      if (!_AcceptSecurityContext)
-         break;
-
-#ifdef UNICODE
-      _AcquireCredentialsHandle = (ACQUIRE_CREDENTIALS_HANDLE_FN)
-            GetProcAddress(hModule, "AcquireCredentialsHandleW");
-#else
-      _AcquireCredentialsHandle = (ACQUIRE_CREDENTIALS_HANDLE_FN)
-            GetProcAddress(hModule, "AcquireCredentialsHandleA");
-#endif
-      if (!_AcquireCredentialsHandle)
-         break;
-
-      // CompleteAuthToken is not present on Windows 9x Secur32.dll
-      // Do not check for the availablity of the function if it is NULL;
-      _CompleteAuthToken = (COMPLETE_AUTH_TOKEN_FN)
-            GetProcAddress(hModule, "CompleteAuthToken");
-
-      _DeleteSecurityContext = (DELETE_SECURITY_CONTEXT_FN)
-            GetProcAddress(hModule, "DeleteSecurityContext");
-      if (!_DeleteSecurityContext)
-         break;
-
-      _FreeContextBuffer = (FREE_CONTEXT_BUFFER_FN)
-            GetProcAddress(hModule, "FreeContextBuffer");
-      if (!_FreeContextBuffer)
-         break;
-
-      _FreeCredentialsHandle = (FREE_CREDENTIALS_HANDLE_FN)
-            GetProcAddress(hModule, "FreeCredentialsHandle");
-      if (!_FreeCredentialsHandle)
-         break;
+	do {
+		_AcceptSecurityContext = (ACCEPT_SECURITY_CONTEXT_FN)
+				GetProcAddress(hModule, "AcceptSecurityContext");
+		if (!_AcceptSecurityContext)
+			break;
 
 #ifdef UNICODE
-      _InitializeSecurityContext = (INITIALIZE_SECURITY_CONTEXT_FN)
-            GetProcAddress(hModule, "InitializeSecurityContextW");
+		_AcquireCredentialsHandle = (ACQUIRE_CREDENTIALS_HANDLE_FN)
+				GetProcAddress(hModule, "AcquireCredentialsHandleW");
 #else
-      _InitializeSecurityContext = (INITIALIZE_SECURITY_CONTEXT_FN)
-            GetProcAddress(hModule, "InitializeSecurityContextA");
+		_AcquireCredentialsHandle = (ACQUIRE_CREDENTIALS_HANDLE_FN)
+				GetProcAddress(hModule, "AcquireCredentialsHandleA");
 #endif
-      if (!_InitializeSecurityContext)
-         break;
+		if (!_AcquireCredentialsHandle)
+			break;
+
+		// CompleteAuthToken is not present on Windows 9x Secur32.dll
+		// Do not check for the availablity of the function if it is NULL;
+		_CompleteAuthToken = (COMPLETE_AUTH_TOKEN_FN)
+				GetProcAddress(hModule, "CompleteAuthToken");
+
+		_DeleteSecurityContext = (DELETE_SECURITY_CONTEXT_FN)
+				GetProcAddress(hModule, "DeleteSecurityContext");
+		if (!_DeleteSecurityContext)
+			break;
+
+		_FreeContextBuffer = (FREE_CONTEXT_BUFFER_FN)
+				GetProcAddress(hModule, "FreeContextBuffer");
+		if (!_FreeContextBuffer)
+			break;
+
+		_FreeCredentialsHandle = (FREE_CREDENTIALS_HANDLE_FN)
+				GetProcAddress(hModule, "FreeCredentialsHandle");
+		if (!_FreeCredentialsHandle)
+			break;
 
 #ifdef UNICODE
-      _QuerySecurityPackageInfo = (QUERY_SECURITY_PACKAGE_INFO_FN)
-            GetProcAddress(hModule, "QuerySecurityPackageInfoW");
+		_InitializeSecurityContext = (INITIALIZE_SECURITY_CONTEXT_FN)
+				GetProcAddress(hModule, "InitializeSecurityContextW");
 #else
-      _QuerySecurityPackageInfo = (QUERY_SECURITY_PACKAGE_INFO_FN)
-            GetProcAddress(hModule, "QuerySecurityPackageInfoA");
+		_InitializeSecurityContext = (INITIALIZE_SECURITY_CONTEXT_FN)
+				GetProcAddress(hModule, "InitializeSecurityContextA");
 #endif
-      if (!_QuerySecurityPackageInfo)
-         break;
+		if (!_InitializeSecurityContext)
+			break;
 
+#ifdef UNICODE
+		_QuerySecurityPackageInfo = (QUERY_SECURITY_PACKAGE_INFO_FN)
+				GetProcAddress(hModule, "QuerySecurityPackageInfoW");
+#else
+		_QuerySecurityPackageInfo = (QUERY_SECURITY_PACKAGE_INFO_FN)
+				GetProcAddress(hModule, "QuerySecurityPackageInfoA");
+#endif
+		if (!_QuerySecurityPackageInfo)
+			break;
 
-      _QuerySecurityContextToken = (QUERY_SECURITY_CONTEXT_TOKEN_FN)
-            GetProcAddress(hModule, "QuerySecurityContextToken");
-      if (!_QuerySecurityContextToken)
-         break;
+		_QuerySecurityContextToken = (QUERY_SECURITY_CONTEXT_TOKEN_FN)
+				GetProcAddress(hModule, "QuerySecurityContextToken");
+		if (!_QuerySecurityContextToken)
+			break;
 
-      fAllFunctionsLoaded = TRUE;
+		fAllFunctionsLoaded = TRUE;
 
-   } while (NULL);
+	} while (NULL);
 
 	if (!fAllFunctionsLoaded) {
-         UnloadSecurityDll(hModule);
-         hModule = NULL;
-      }
+		UnloadSecurityDll(hModule);
+		hModule = NULL;
+	}
 
-   return hModule;
+	return hModule;
 }
 
 int sspi_enabled(void)
@@ -230,13 +228,13 @@ int sspi_request(char **dst, struct sspi_handle *sspi)
 
 	status = _InitializeSecurityContext(
 		&sspi->credentials,
-        NULL,
+		NULL,
 		TEXT(""),
 		ISC_REQ_CONFIDENTIALITY | ISC_REQ_REPLAY_DETECT | ISC_REQ_CONNECTION,
 		0,
-        SECURITY_NETWORK_DREP,
+		SECURITY_NETWORK_DREP,
 		NULL,
-        0,
+		0,
 		&sspi->context,
 		&tokenDesc,
 		&attrs,
