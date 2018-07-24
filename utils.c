@@ -913,7 +913,7 @@ void to_base64(unsigned char *out, const unsigned char *in, size_t len, size_t o
 		*out++ = base64[in[0] >> 2];
 		fragment = (in[0] << 4) & 0x30;
 		if (len > 1)
-		fragment |= in[1] >> 4;
+			fragment |= in[1] >> 4;
 		*out++ = base64[fragment];
 		*out++ = (len < 2) ? '=' : base64[(in[1] << 2) & 0x3c];
 		*out++ = '=';
