@@ -35,12 +35,12 @@
  * frees its items, but not recursively.
  */
 struct auth_s {
-	char user[MINIBUF_SIZE];
-	char domain[MINIBUF_SIZE];
-	char workstation[MINIBUF_SIZE];
-	char passlm[MINIBUF_SIZE];
-	char passnt[MINIBUF_SIZE];
-	char passntlm2[MINIBUF_SIZE];
+	char user[MINIBUF_SIZE]; ///< username as string
+	char domain[MINIBUF_SIZE]; ///< domain as string
+	char workstation[MINIBUF_SIZE]; ///< workstation name as string
+	char passlm[MINIBUF_SIZE]; ///< password/hash as binary data (no string)
+	char passnt[MINIBUF_SIZE]; ///< password/hash as binary data (no string)
+	char passntlm2[MINIBUF_SIZE]; ///< password/hash as binary data (no string)
 	int hashntlm2;
 	int hashnt;
 	int hashlm;
