@@ -39,6 +39,10 @@
 # define MIN(a, b)		((a) < (b) ? (a) : (b))
 #endif
 
+#if !defined(ARRAY_SIZE)
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+#endif
+
 /*
 #define isalnum(c)	(isalpha(c) || isdigit(c))
 #define isspace(c)	((c) == ' ' || (c) == '\f' || (c) == '\t' || (c) == '\r' || (c) == '\n')
@@ -151,6 +155,8 @@ extern void free_rr_data(rr_data_t * data);
 
 extern char *printmem(char *src, size_t len, int bitwidth) __attribute__((warn_unused_result));
 extern char *scanmem(char *src, int bitwidth) __attribute__((warn_unused_result));
+
+extern int is_memory_all_zero(const void * const p_memory, const size_t length) __attribute__((warn_unused_result, pure));
 
 extern void to_base64(unsigned char *out, const unsigned char *in, size_t len, size_t olen);
 extern int from_base64(char *out, const char *in);

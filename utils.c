@@ -859,7 +859,22 @@ char *scanmem(char *src, int bitwidth) {
 	return tmp;
 }
 
+/**
+ * Checks if the given memory contains only zeros.
+ *
+ * @param p_memory Pointer to the memory that is checked.
+ * @param length Number of bytes to check for zero.
+ * @return 0 means false (not only zeros), 1 means true (only zeros)
+ */
+int is_memory_all_zero(const void * const p_memory, const size_t length) {
+	for(size_t i = 0; i < length; ++i) {
+		if(((const unsigned char * const)p_memory)[i] != 0) {
+			return 0;
+		}
+	}
 
+	return 1;
+}
 
 /*
  * BASE64 CODE FROM MUTT BEGIN - ORIGINAL COPYRIGHT APPLIES:
