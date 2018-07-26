@@ -25,6 +25,7 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <pthread.h>
+#include <limits.h>
 #include <stdio.h>
 #include <errno.h>
 #include <netinet/in.h>
@@ -1592,7 +1593,7 @@ int main(int argc, char **argv) {
 				 */
 
 				pthread_attr_init(&pattr);
-				pthread_attr_setstacksize(&pattr, STACK_SIZE);
+				pthread_attr_setstacksize(&pattr, MAX(STACK_SIZE, PTHREAD_STACK_MIN));
 #ifndef __CYGWIN__
 				pthread_attr_setguardsize(&pattr, 256);
 #endif

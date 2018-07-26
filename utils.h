@@ -37,10 +37,11 @@
 
 #if !defined(__FreeBSD__) && !defined(__NetBSD__) && !defined(__OpenBSD__)
 # define MIN(a, b)		((a) < (b) ? (a) : (b))
+# define MAX(a, b)		((a) > (b) ? (a) : (b))
 #endif
 
 #if !defined(ARRAY_SIZE)
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+# define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #endif
 
 /*
