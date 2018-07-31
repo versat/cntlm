@@ -1342,19 +1342,19 @@ int main(int argc, char **argv) {
 	}
 
 	if (interactivehash) {
-		if (g_creds->passlm) {
+		if (!is_memory_all_zero(g_creds->passlm, ARRAY_SIZE(g_creds->passlm))) {
 			tmp = printmem(g_creds->passlm, 16, 8);
 			printf("PassLM          %s\n", tmp);
 			free(tmp);
 		}
 
-		if (g_creds->passnt) {
+		if (!is_memory_all_zero(g_creds->passnt, ARRAY_SIZE(g_creds->passnt))) {
 			tmp = printmem(g_creds->passnt, 16, 8);
 			printf("PassNT          %s\n", tmp);
 			free(tmp);
 		}
 
-		if (g_creds->passntlm2) {
+		if (!is_memory_all_zero(g_creds->passntlm2, ARRAY_SIZE(g_creds->passntlm2))) {
 			tmp = printmem(g_creds->passntlm2, 16, 8);
 			printf("PassNTLMv2      %s    # Only for user '%s', domain '%s'\n",
 				tmp, g_creds->user, g_creds->domain);
@@ -1367,9 +1367,9 @@ int main(int argc, char **argv) {
 	 * If we're going to need a password, check we really have it.
 	 */
 	if (!ntlmbasic && (
-			(g_creds->hashnt && !g_creds->passnt)
-			 || (g_creds->hashlm && !g_creds->passlm)
-			 || (g_creds->hashntlm2 && !g_creds->passntlm2))) {
+			    (g_creds->hashnt && is_memory_all_zero(g_creds->passnt, ARRAY_SIZE(g_creds->passnt)))
+			 || (g_creds->hashlm && is_memory_all_zero(g_creds->passlm, ARRAY_SIZE(g_creds->passlm)))
+			 || (g_creds->hashntlm2 &&  is_memory_all_zero(g_creds->passntlm2, ARRAY_SIZE(g_creds->passntlm2))))) {
 		syslog(LOG_ERR, "Parent proxy account password (or required hashes) missing.\n");
 		myexit(1);
 	}

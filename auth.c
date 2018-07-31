@@ -61,12 +61,9 @@ struct auth_s *copy_auth(struct auth_s *dst, struct auth_s *src, int fullcopy) {
 
 	if (fullcopy) {
 		strlcpy(dst->user, src->user, MINIBUF_SIZE);
-		if (src->passntlm2)
-			memcpy(dst->passntlm2, src->passntlm2, MINIBUF_SIZE);
-		if (src->passnt)
-			memcpy(dst->passnt, src->passnt, MINIBUF_SIZE);
-		if (src->passlm)
-			memcpy(dst->passlm, src->passlm, MINIBUF_SIZE);
+		memcpy(dst->passntlm2, src->passntlm2, MINIBUF_SIZE);
+		memcpy(dst->passnt, src->passnt, MINIBUF_SIZE);
+		memcpy(dst->passlm, src->passlm, MINIBUF_SIZE);
 	} else {
 		memset(dst->user, 0, MINIBUF_SIZE);
 		memset(dst->passntlm2, 0, MINIBUF_SIZE);
@@ -103,19 +100,20 @@ void dump_auth(struct auth_s *creds) {
 	printf("HashNT:     %d\n", creds->hashnt);
 	printf("HashLM:     %d\n", creds->hashlm);
 	printf("Flags:      %X\n", creds->flags);
-	if (creds->passntlm2) {
+
+	if (!is_memory_all_zero(creds->passntlm2, ARRAY_SIZE(creds->passntlm2))) {
 		tmp = printmem(creds->passntlm2, 16, 8);
 		printf("PassNTLMv2: %s\n", tmp);
 		free(tmp);
 	}
 
-	if (creds->passnt) {
+	if (!is_memory_all_zero(creds->passnt, ARRAY_SIZE(creds->passnt))) {
 		tmp = printmem(creds->passnt, 16, 8);
 		printf("PassNT:     %s\n", tmp);
 		free(tmp);
 	}
 
-	if (creds->passlm) {
+	if (!is_memory_all_zero(creds->passlm, ARRAY_SIZE(creds->passlm))) {
 		tmp = printmem(creds->passlm, 16, 8);
 		printf("PassLM:     %s\n\n", tmp);
 		free(tmp);
