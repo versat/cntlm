@@ -467,8 +467,11 @@ beginning:
 			if (debug)
 				hlist_dump(data[loop]->headers);
 
-			if (loop == 0 && data[0]->req)
-				syslog(LOG_DEBUG, "%s %s %s", inet_ntoa(caddr.sin_addr), data[0]->method, data[0]->url);
+			if (loop == 0 && data[0]->req) {
+				if (request_logging_level == 1) {
+					syslog(LOG_DEBUG, "%s %s %s", inet_ntoa(caddr.sin_addr), data[0]->method, data[0]->url);
+				}
+			}
 
 shortcut:
 			/*

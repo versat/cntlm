@@ -73,6 +73,13 @@
  */
 int debug = 0;					/* all debug printf's and possibly external modules */
 
+/**
+ * Values and their meaning:
+ * 0 - no requests are logged - default
+ * 1 - requests are logged (old behavior)
+ */
+int request_logging_level = 0;
+
 struct auth_s *g_creds = NULL;			/* throughout the whole module */
 
 int quit = 0;					/* sighandler() */
@@ -718,7 +725,7 @@ int main(int argc, char **argv) {
 	syslog(LOG_INFO, "Starting cntlm version " VERSION " for LITTLE endian\n");
 #endif
 
-	while ((i = getopt(argc, argv, ":-:T:a:c:d:fghIl:p:r:su:vw:A:BD:F:G:HL:M:N:O:P:R:S:U:X:")) != -1) {
+	while ((i = getopt(argc, argv, ":-:T:a:c:d:fghIl:p:r:su:vw:A:BD:F:G:HL:M:N:O:P:R:S:U:X:q:")) != -1) {
 		switch (i) {
 			case 'A':
 			case 'D':
@@ -871,6 +878,17 @@ int main(int argc, char **argv) {
 				help = 1;
 #endif
 				break;
+			case 'q':
+				if (*optarg == '0') {
+					request_logging_level = 0;
+				}
+				else if (*optarg == '1') {
+					request_logging_level = 1;
+				}
+				else {
+					fprintf(stderr, "Invalid argument for option -q, using default value of %d.\n", request_logging_level);
+				}
+				break;
 			case 'h':
 			default:
 				help = 1;
@@ -946,6 +964,11 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "\t-X  <sspi_handle_type>\n"
 				"\t    Use SSPI with specified handle type. Works only under Windows.\n"
 				"\t    Default is negotiate.\n\n");
+		fprintf(stderr, "\t-q  <level>\n"
+				"\t    Controls logging of requests like CONNECT/GET with URL."
+				"\t    level can be:\n"
+				"\t    0 no requests are logged - default"
+				"\t    1 requests are logged (old behavior)");
 		exit(1);
 	}
 
