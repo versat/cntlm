@@ -1662,7 +1662,7 @@ int main(int argc, char **argv) {
 				if (!tid) {
 					tj++;
 					if (debug)
-						printf("Joining thread %lu; rc: %d\n", t->key, i);
+						printf("Joined thread %lu; rc: %d\n", t->key, i);
 				} else
 					syslog(LOG_ERR, "Serious error during pthread_join: %d\n", tid);
 
