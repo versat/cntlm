@@ -351,7 +351,7 @@ hlist_t hlist_mod(hlist_t list, char *key, char *value, int add) {
 }
 
 /*
- * Return true is the key is in the list.
+ * Return true if the key is in the list.
  */
 int hlist_in(hlist_t list, const char *key) {
 	hlist_t t = list;
