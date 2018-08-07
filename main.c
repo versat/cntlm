@@ -373,7 +373,8 @@ void *proxy_thread(void *thread_data) {
 	 */
 	if (!serialize) {
 		pthread_mutex_lock(&threads_mtx);
-		threads_list = plist_add(threads_list, (unsigned long)pthread_self(), NULL);
+		pthread_t thread_id = pthread_self();
+		threads_list = plist_add(threads_list, (unsigned long)thread_id, NULL);
 		pthread_mutex_unlock(&threads_mtx);
 	}
 
@@ -408,7 +409,8 @@ void *tunnel_thread(void *thread_data) {
 	 * Add ourself to the "threads to join" list.
 	 */
 	pthread_mutex_lock(&threads_mtx);
-	threads_list = plist_add(threads_list, (unsigned long)pthread_self(), NULL);
+	pthread_t thread_id = pthread_self();
+	threads_list = plist_add(threads_list, (unsigned long)thread_id, NULL);
 	pthread_mutex_unlock(&threads_mtx);
 
 	return NULL;
