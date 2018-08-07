@@ -40,9 +40,7 @@
 # define MAX(a, b)		((a) > (b) ? (a) : (b))
 #endif
 
-#if !defined(ARRAY_SIZE)
-# define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-#endif
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 /*
 #define isalnum(c)	(isalpha(c) || isdigit(c))
