@@ -690,8 +690,8 @@ int main(int argc, char **argv) {
 	int nuid = 0;
 	int ngid = 0;
 	int gateway = 0;
-	int tc = 0;
-	int tj = 0;
+	unsigned int tc = 0; ///< Total number of created threads
+	unsigned int tj = 0; ///< Total number of joined threads
 	int interactivepwd = 0;
 	int interactivehash = 0;
 	int tracefile = 0;
@@ -1678,7 +1678,7 @@ bailout:
 	if (strlen(cpidfile))
 		unlink(cpidfile);
 
-	syslog(LOG_INFO, "Terminating with %d active threads\n", tc - tj);
+	syslog(LOG_INFO, "Terminating with %u active threads\n", tc - tj);
 	pthread_mutex_lock(&connection_mtx);
 	plist_free(connection_list);
 	pthread_mutex_unlock(&connection_mtx);
