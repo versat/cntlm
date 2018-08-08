@@ -858,8 +858,8 @@ void magic_auth_detect(const char *url) {
 	char *tmp, *pos, *host = NULL;
 
 	struct auth_s *tcreds;
-	char *authstr[5] = { "NTLMv2", "NTLM", "LM", "NT", "NTLM2SR" };
-	int prefs[MAGIC_TESTS][5] = {
+	const char *authstr[5] = { "NTLMv2", "NTLM", "LM", "NT", "NTLM2SR" };
+	const int prefs[MAGIC_TESTS][5] = {
 		/* NT, LM, NTLMv2, Flags, index to authstr[] */
 		{  0,  0,  1,      0,     0 },
 		{  1,  1,  0,      0,     1 },
