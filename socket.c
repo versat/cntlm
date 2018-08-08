@@ -165,6 +165,7 @@ int so_listen(int port, struct in_addr source) {
 	struct sockaddr_in saddr;
 	int fd;
 	socklen_t clen;
+	int retval;
 
 	fd = socket(PF_INET, SOCK_STREAM, 0);
 	if (fd < 0) {
@@ -174,7 +175,10 @@ int so_listen(int port, struct in_addr source) {
 	}
 
 	clen = 1;
-	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &clen, sizeof(clen));
+	retval = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &clen, sizeof(clen));
+	if (retval != 0) {
+		syslog(LOG_WARNING, "setsockopt() (option: SO_REUSEADDR, value: 1) failed: %s\n", strerror(errno));
+	}
 	memset((void *)&saddr, 0, sizeof(saddr));
 	saddr.sin_family = AF_INET;
 	saddr.sin_port = htons(port);
