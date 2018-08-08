@@ -234,6 +234,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 			challenge = zmalloc(strlen(tmp) + 5 + 1);
 			len = from_base64(challenge, tmp + 5);
 			if (len > NTLM_CHALLENGE_MIN) {
+				tmp = NULL;
 				len = ntlm_response(&tmp, challenge, len, credentials);
 				if (len > 0) {
 					strcpy(buf, "NTLM ");
@@ -243,6 +244,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 				} else {
 					syslog(LOG_ERR, "No target info block. Cannot do NTLMv2!\n");
 					free(challenge);
+					free(tmp);
 					close(*sd);
 					goto bailout;
 				}

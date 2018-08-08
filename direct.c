@@ -118,6 +118,7 @@ int www_authenticate(int sd, rr_data_t request, rr_data_t response, struct auth_
 			challenge = zmalloc(strlen(tmp) + 5 + 1);
 			len = from_base64(challenge, tmp + 5);
 			if (len > NTLM_CHALLENGE_MIN) {
+				tmp = NULL;
 				len = ntlm_response(&tmp, challenge, len, creds);
 				if (len > 0) {
 					strcpy(buf, "NTLM ");
@@ -128,6 +129,7 @@ int www_authenticate(int sd, rr_data_t request, rr_data_t response, struct auth_
 					syslog(LOG_ERR, "No target info block. Cannot do NTLMv2!\n");
 					response->errmsg = "Invalid NTLM challenge from web server";
 					free(challenge);
+					free(tmp);
 					goto bailout;
 				}
 			} else {
