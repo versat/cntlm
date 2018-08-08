@@ -1419,6 +1419,9 @@ int main(int argc, char **argv) {
 		setsid();
 		umask(0);
 		w = chdir("/");
+		if(w != 0) {
+			perror("chdir(\"/\") failed");
+		}
 		i = open("/dev/null", O_RDWR);
 		if (i >= 0) {
 			dup2(i, 0);
