@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
+#include <syslog.h>
 
 #include "utils.h"
 #include "socket.h"
@@ -503,6 +504,12 @@ length_t http_has_body(rr_data_t request, rr_data_t response) {
 	 * request body?
 	 */
 	current = (!response || response->empty ? request : response);
+
+	if (current == NULL) {
+		syslog(LOG_ERR, "Internal error in function http_has_body(): Both arguments to function seem to be invalid/NULL: request: %p response: %p\n",
+				request, response);
+		return 0;
+	}
 
 	/*
 	 * HTTP body length decisions. There MUST NOT be any body from
