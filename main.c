@@ -579,14 +579,16 @@ void *socks5_thread(void *thread_data) {
 		ver = 1;			/* IPv4, we know the length */
 		c = 4;
 	} else if (bs[3] == 3) {
+		uint8_t string_length;
 		ver = 2;			/* FQDN, get string length */
-		r = read(cd, &c, 1);
+		r = read(cd, &string_length, 1);
 		if (r != 1)
 			goto bailout;
+		c = string_length;
 	} else
 		goto bailout;
 
-	addr = (unsigned char *)zmalloc(c+10 + 1);
+	addr = (unsigned char *)zmalloc(c + 10 + 1);
 	r = read(cd, addr, c);
 	if (r != c)
 		goto bailout;
