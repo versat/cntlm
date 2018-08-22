@@ -30,11 +30,16 @@
 #include <ctype.h>
 #include <syslog.h>
 #include <assert.h>
+#ifdef __CYGWIN__
+#include <windows.h>
+#include <wincrypt.h>
+#endif
 
 #include "config/config.h"
 #include "swap.h"
 #include "utils.h"
 #include "socket.h"
+#include "globals.h"
 
 static const char hextab[17] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 0};
 static const int hexindex[128] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
@@ -980,3 +985,76 @@ int from_base64(char *out, const char *in)
 /*
  * CODE FROM MUTT END
  */
+
+/**
+ * Returns a 64 bit wide random number.
+ * First the function tries the best (most secure) ways to get a random number,
+ * falling back to less secure ones until only simple pseudo random numbers can
+ * be obtained if everything else is not possible.
+ *
+ * @return uint64_t random number
+ */
+uint64_t getrandom64(void)
+{
+	uint64_t random_number = 0;
+	int success = 0;
+
+#ifndef __CYGWIN__
+	// Try reading a better random number from /dev/urandom (only on real
+	// unix / linux systems since Cygwins urandom is not really secure).
+	FILE * fp = fopen("/dev/urandom", "rb");
+	if (fp != NULL) {
+		const size_t num_read = fread(&random_number, sizeof(random_number), 1, fp);
+		if (1 == num_read) {
+			success = 1;
+		}
+		else {
+			if (debug) {
+				printf("fread for /dev/urandom failed: %s\n", strerror(errno));
+			}
+		}
+		fclose(fp);
+	}
+	else {
+		if (debug) {
+			printf("/dev/urandom can not be opened for reading\n");
+		}
+	}
+#endif
+
+#ifdef __CYGWIN__
+#if 0
+	// BCryptGenRandom is the successor of the deprecated CryptGenRandom.
+	// Once it is established and available (in Cygwin) maybe without needing an external library it can be enabled.
+	// Needs bcrypt.h
+	if (!success) {
+		if (BCRYPT_SUCCESS(BCryptGenRandom(NULL, (PUCHAR)&random_number, sizeof(random_number), BCRYPT_USE_SYSTEM_PREFERRED_RNG))) {
+			success = 1;
+		}
+	}
+#endif
+
+	if (!success) {
+		HCRYPTPROV prov;
+		if (CryptAcquireContext(&prov, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT | CRYPT_SILENT)) {
+			if (CryptGenRandom(prov, sizeof(random_number), (BYTE *)&random_number)) {
+				success = 1;
+			}
+			CryptReleaseContext(prov, 0);
+		}
+	}
+#endif
+
+#if config_arc4random_buf == 1
+	if (!success) {
+		arc4random_buf(&random_number, sizeof(random_number));
+	}
+#else
+	if (!success) {
+		// Use random() as a fallback
+		random_number = ((uint64_t)random() << 32) | random();
+	}
+#endif
+
+	return random_number;
+}

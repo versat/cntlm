@@ -160,6 +160,8 @@ extern int is_memory_all_zero(const void * const p_memory, const size_t length) 
 extern void to_base64(unsigned char *out, const unsigned char *in, size_t len, size_t olen);
 extern int from_base64(char *out, const char *in);
 
+extern uint64_t getrandom64(void) __attribute__((warn_unused_result));
+
 #if config_gethostname == 1
 extern int gethostname(char *name, size_t len);
 #endif

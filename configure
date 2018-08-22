@@ -70,7 +70,7 @@ fi
 
 STAMP=configure-stamp
 CONFIG=config/config.h
-TESTS="endian strdup socklen_t gethostname"
+TESTS="endian strdup socklen_t gethostname arc4random_buf"
 
 #[ -f $STAMP ] && exit 0
 touch $STAMP

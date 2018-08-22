@@ -74,7 +74,7 @@ static void ntlm2_calc_resp(char **nthash, int *ntlen, char **lmhash, int *lmlen
 	int blen;
 
 	nonce = zmalloc(8 + 1);
-	VAL(nonce, uint64_t, 0) = ((uint64_t)random() << 32) | random();
+	VAL(nonce, uint64_t, 0) = getrandom64();
 	tw = ((uint64_t)time(NULL) + 11644473600LLU) * 10000000LLU;
 
 	if (debug) {
@@ -130,7 +130,7 @@ static void ntlm2sr_calc_rest(char **nthash, int *ntlen, char **lmhash, int *lml
 	char *sess, *nonce, *buf;
 
 	nonce = zmalloc(8 + 1);
-	VAL(nonce, uint64_t, 0) = ((uint64_t)random() << 32) | random();
+	VAL(nonce, uint64_t, 0) = getrandom64();
 
 	*lmlen = 24;
 	*lmhash = zmalloc(*lmlen + 1);
