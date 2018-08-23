@@ -855,7 +855,8 @@ bailout:
 void magic_auth_detect(const char *url) {
 	int i, nc, c, ign = 0, found = -1;
 	rr_data_t req, res;
-	char *tmp, *pos, *host = NULL;
+	const char *pos;
+	char *host = NULL;
 
 	struct auth_s *tcreds;
 	const char *authstr[5] = { "NTLMv2", "NTLM", "LM", "NT", "NTLM2SR" };
@@ -880,7 +881,7 @@ void magic_auth_detect(const char *url) {
 
 	pos = strstr(url, "://");
 	if (pos) {
-		tmp = strchr(pos+3, '/');
+		const char * const tmp = strchr(pos+3, '/');
 		host = substr(pos+3, 0, tmp ? tmp-pos-3 : 0);
 	} else {
 		fprintf(stderr, "Invalid URL (%s)\n", url);
@@ -962,16 +963,19 @@ void magic_auth_detect(const char *url) {
 		if (prefs[found][3])
 			printf("Flags           0x%x\n", prefs[found][3]);
 		if (prefs[found][0]) {
-			printf("PassNT          %s\n", tmp=printmem(tcreds->passnt, 16, 8));
-			free(tmp);
+			char * printbuf = printmem(tcreds->passnt, 16, 8);
+			printf("PassNT          %s\n", printbuf);
+			free(printbuf);
 		}
 		if (prefs[found][1]) {
-			printf("PassLM          %s\n", tmp=printmem(tcreds->passlm, 16, 8));
-			free(tmp);
+			char * printbuf = printmem(tcreds->passlm, 16, 8);
+			printf("PassLM          %s\n", printbuf);
+			free(printbuf);
 		}
 		if (prefs[found][2]) {
-			printf("PassNTLMv2      %s\n", tmp=printmem(tcreds->passntlm2, 16, 8));
-			free(tmp);
+			char * printbuf = printmem(tcreds->passntlm2, 16, 8);
+			printf("PassNTLMv2      %s\n", printbuf);
+			free(printbuf);
 		}
 		printf("------------------------------------------------\n");
 	} else if (ign == MAGIC_TESTS) {
