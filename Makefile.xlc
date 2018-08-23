@@ -42,7 +42,7 @@ uninstall:
 clean:
 	@rm -f *.o cntlm cntlm.exe configure-stamp build-stamp config/config.h 2>/dev/null
 	@rm -f cntlm-install win/cyg* win/cntlm* 2>/dev/null
-	@rm -f config/endian config/gethostname config/strdup config/socklen_t config/*.exe
+	@rm -f config/endian config/gethostname config/strdup config/socklen_t config/arc4random_buf config/*.exe
 	@if [ -h Makefile ]; then rm -f Makefile; mv Makefile.gcc Makefile; fi
 
 distclean: clean
