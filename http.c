@@ -67,7 +67,7 @@ char *get_http_header_name(const char *src) {
  * Extract the header value from the source.
  */
 char *get_http_header_value(const char *src) {
-	char *sub;
+	const char *sub;
 
 	if ((sub = strchr(src, ':'))) {
 		sub++;
