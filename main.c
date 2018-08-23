@@ -420,6 +420,9 @@ void *tunnel_thread(void *thread_data) {
  * SOCKS5 thread
  */
 void *socks5_thread(void *thread_data) {
+	static const uint8_t SOCKS5_AUTH_NO_AUTHENTICATION_REQUIRED = 0x00;
+	static const uint8_t SOCKS5_AUTH_USERNAME_PASSWORD = 0x02;
+	static const uint8_t SOCKS5_AUTH_NO_ACCEPTABLE_METHODS = 0xFF;
 	char *tmp, *thost, *tport, *uname, *upass;
 	unsigned short port;
 	int ver, r, c, i, w;
@@ -457,14 +460,22 @@ void *socks5_thread(void *thread_data) {
 	 * Are we wide open and client is OK with no auth?
 	 */
 	if (open) {
-		for (i = 0; i < c && (auths[i] || (found = 0)); ++i);
+		for (i = 0; i < c && found < 0; ++i) {
+			if (auths[i] == SOCKS5_AUTH_NO_AUTHENTICATION_REQUIRED) {
+				found = auths[i];
+			}
+		}
 	}
 
 	/*
 	 * If not, accept plain auth if offered
 	 */
 	if (found < 0) {
-		for (i = 0; i < c && (auths[i] != 2 || !(found = 2)); ++i);
+		for (i = 0; i < c && found < 0; ++i) {
+			if (auths[i] == SOCKS5_AUTH_USERNAME_PASSWORD) {
+				found = auths[i];
+			}
+		}
 	}
 
 	/*
@@ -473,15 +484,16 @@ void *socks5_thread(void *thread_data) {
 	 */
 	if (found < 0) {
 		bs[0] = 5;
-		bs[1] = 0xFF;
-		w = write(cd, bs, 2);
-		// We don't really care about the result - shut up GCC warning (unused-but-set-variable)
-		if (!w) w = 1;
+		bs[1] = SOCKS5_AUTH_NO_ACCEPTABLE_METHODS;
+		(void) write(cd, bs, 2); // We don't really care about the result
 		goto bailout;
 	} else {
 		bs[0] = 5;
 		bs[1] = found;
 		w = write(cd, bs, 2);
+		if (w != 2) {
+			syslog(LOG_ERR, "SOCKS5: write() for accepting AUTH method failed.\n");
+		}
 	}
 
 	/*
@@ -495,10 +507,10 @@ void *socks5_thread(void *thread_data) {
 		if (r != 2) {
 			bs[0] = 1;
 			bs[1] = 0xFF;		/* Unsuccessful (not supported) */
-			w = write(cd, bs, 2);
+			(void) write(cd, bs, 2);
 			goto bailout;
 		}
-		c = bs[1];
+		c = bs[1]; // ULEN
 
 		/*
 		 * Read username and pass len
@@ -509,7 +521,7 @@ void *socks5_thread(void *thread_data) {
 			free(uname);
 			goto bailout;
 		}
-		i = uname[c];
+		i = uname[c]; // PLEN
 		uname[c] = 0;
 		c = i;
 
@@ -541,6 +553,9 @@ void *socks5_thread(void *thread_data) {
 		 * Send response
 		 */
 		w = write(cd, bs, 2);
+		if (w != 2) {
+			syslog(LOG_ERR, "SOCKS5: write() for response of credentials check failed.\n");
+		}
 		free(upass);
 		free(uname);
 
@@ -567,7 +582,7 @@ void *socks5_thread(void *thread_data) {
 		bs[2] = 0;
 		bs[3] = 1;			/* Dummy IPv4 */
 		memset(bs+4, 0, 6);
-		w = write(cd, bs, 10);
+		(void) write(cd, bs, 10);
 		goto bailout;
 	}
 
@@ -637,7 +652,7 @@ void *socks5_thread(void *thread_data) {
 		bs[2] = 0;
 		bs[3] = 1;			/* Dummy IPv4 */
 		memset(bs+4, 0, 6);
-		w = write(cd, bs, 10);
+		(void) write(cd, bs, 10);
 		goto bailout;
 	} else {
 		/*
@@ -649,6 +664,9 @@ void *socks5_thread(void *thread_data) {
 		bs[3] = 1;			/* Dummy IPv4 */
 		memset(bs+4, 0, 6);
 		w = write(cd, bs, 10);
+		if (w != 10) {
+			syslog(LOG_ERR, "SOCKS5: write() for reporting success for connect failed.\n");
+		}
 	}
 
 	syslog(LOG_DEBUG, "%s SOCKS %s", inet_ntoa(caddr.sin_addr), thost);
