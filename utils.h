@@ -162,9 +162,6 @@ extern int from_base64(char *out, const char *in);
 
 extern uint64_t getrandom64(void) __attribute__((warn_unused_result));
 
-#if config_gethostname == 1
-extern int gethostname(char *name, size_t len);
-#endif
 #if config_strdup == 0
 extern char *strdup(const char *src)  __attribute__((warn_unused_result));
 #endif
