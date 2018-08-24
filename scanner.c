@@ -119,67 +119,77 @@ int scanner_hook(rr_data_t request, rr_data_t response, struct auth_s *credentia
 				strcat(buf, line);
 				len += c;
 
-				if (i >= 0 && (
-						((pos = strstr(line, "UpdatePage("))
-						&& isdigit(pos[11]))
-					     ||
-						((pos = strstr(line, "DownloadFinished("))
-						&& isdigit(pos[17])
-						&& (done = 1)) )) {
-					if (debug)
-						printf("scanner_hook: %s", line);
+				if (i >= 0) {
+					int update_page = 0;
+					int download_finished = 0;
 
-					if ((pos = strstr(line, "To be downloaded"))) {
-						filesize = atol(pos+16);
-						if (debug) {
-							if (filesize > 0) {
-								printf("scanner_hook: file size detected: %ld KiBs (max: %ld)\n", filesize/1024, maxKBs);
-							} else {
-								printf("scanner_hook: file size unknown -- quitting\n");
-								break;
-							}
+					if ((pos = strstr(line, "UpdatePage(")) && isdigit(pos[11])) {
+						update_page = 1;
+					}
+					else if ((pos = strstr(line, "DownloadFinished(")) && isdigit(pos[17])) {
+						download_finished = 1;
+					}
+
+					if (update_page || download_finished) {
+						if (download_finished) {
+							done = 1;
 						}
 
-						if (maxKBs && (maxKBs == 1 || filesize/1024 > maxKBs))
+						if (debug)
+							printf("scanner_hook: %s", line);
+
+						if ((pos = strstr(line, "To be downloaded"))) {
+							filesize = atol(pos+16);
+							if (debug) {
+								if (filesize > 0) {
+									printf("scanner_hook: file size detected: %ld KiBs (max: %ld)\n", filesize/1024, maxKBs);
+								} else {
+									printf("scanner_hook: file size unknown -- quitting\n");
+									break;
+								}
+							}
+
+							if (maxKBs && (maxKBs == 1 || filesize/1024 > maxKBs))
+								break;
+
+							/*
+							 * We have to send HTTP protocol ID so we can send the notification
+							 * headers during downloading. Once we've done that, it cannot appear
+							 * again, which it would if we returned PLUG_SENDHEAD, so we must
+							 * remember to not include it.
+							 */
+							headers_initiated = 1;
+							tmp = zmalloc(MINIBUF_SIZE);
+							snprintf(tmp, MINIBUF_SIZE, "%s 200 OK\r\n", request->http);
+							w = write(cd, tmp, strlen(tmp));
+							// We don't really care about the result - shut up GCC warning (unused-but-set-variable)
+							if (!w) w = 1;
+							free(tmp);
+						}
+
+						if (!headers_initiated) {
+							if (debug)
+								printf("scanner_hook: Giving up, \"To be downloaded\" line not found!\n");
 							break;
+						}
 
 						/*
-						 * We have to send HTTP protocol ID so we can send the notification
-						 * headers during downloading. Once we've done that, it cannot appear
-						 * again, which it would if we returned PLUG_SENDHEAD, so we must
-						 * remember to not include it.
+						 * Send a notification header to the client, just so it doesn't timeout
 						 */
-						headers_initiated = 1;
-						tmp = zmalloc(MINIBUF_SIZE);
-						snprintf(tmp, MINIBUF_SIZE, "%s 200 OK\r\n", request->http);
-						w = write(cd, tmp, strlen(tmp));
-						// We don't really care about the result - shut up GCC warning (unused-but-set-variable)
-						if (!w) w = 1;
-						free(tmp);
-					}
+						if (!done) {
+							tmp = zmalloc(MINIBUF_SIZE);
+							progress = atol(line+12);
+							snprintf(tmp, MINIBUF_SIZE, "ISA-Scanner: %ld of %ld\r\n", progress, filesize);
+							w = write(cd, tmp, strlen(tmp));
+							free(tmp);
+						}
 
-					if (!headers_initiated) {
-						if (debug)
-							printf("scanner_hook: Giving up, \"To be downloaded\" line not found!\n");
-						break;
+						/*
+						 * If download size is unknown beforehand, stop when downloaded amount is over ISAScannerSize
+						 */
+						if (!filesize && maxKBs && maxKBs != 1 && progress/1024 > maxKBs)
+							break;
 					}
-
-					/*
-					 * Send a notification header to the client, just so it doesn't timeout
-					 */
-					if (!done) {
-						tmp = zmalloc(MINIBUF_SIZE);
-						progress = atol(line+12);
-						snprintf(tmp, MINIBUF_SIZE, "ISA-Scanner: %ld of %ld\r\n", progress, filesize);
-						w = write(cd, tmp, strlen(tmp));
-						free(tmp);
-					}
-
-					/*
-					 * If download size is unknown beforehand, stop when downloaded amount is over ISAScannerSize
-					 */
-					if (!filesize && maxKBs && maxKBs != 1 && progress/1024 > maxKBs)
-						break;
 				}
 			} while (i > 0 && !done);
 
