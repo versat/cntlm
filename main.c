@@ -485,12 +485,12 @@ void *socks5_thread(void *thread_data) {
 	if (found < 0) {
 		bs[0] = 5;
 		bs[1] = SOCKS5_AUTH_NO_ACCEPTABLE_METHODS;
-		(void) write(cd, bs, 2); // We don't really care about the result
+		(void) write_wrapper(cd, bs, 2); // We don't really care about the result
 		goto bailout;
 	} else {
 		bs[0] = 5;
 		bs[1] = found;
-		w = write(cd, bs, 2);
+		w = write_wrapper(cd, bs, 2);
 		if (w != 2) {
 			syslog(LOG_ERR, "SOCKS5: write() for accepting AUTH method failed.\n");
 		}
@@ -507,7 +507,7 @@ void *socks5_thread(void *thread_data) {
 		if (r != 2) {
 			bs[0] = 1;
 			bs[1] = 0xFF;		/* Unsuccessful (not supported) */
-			(void) write(cd, bs, 2);
+			(void) write_wrapper(cd, bs, 2);
 			goto bailout;
 		}
 		c = bs[1]; // ULEN
@@ -552,7 +552,7 @@ void *socks5_thread(void *thread_data) {
 		/*
 		 * Send response
 		 */
-		w = write(cd, bs, 2);
+		w = write_wrapper(cd, bs, 2);
 		if (w != 2) {
 			syslog(LOG_ERR, "SOCKS5: write() for response of credentials check failed.\n");
 		}
@@ -582,7 +582,7 @@ void *socks5_thread(void *thread_data) {
 		bs[2] = 0;
 		bs[3] = 1;			/* Dummy IPv4 */
 		memset(bs+4, 0, 6);
-		(void) write(cd, bs, 10);
+		(void) write_wrapper(cd, bs, 10);
 		goto bailout;
 	}
 
@@ -652,7 +652,7 @@ void *socks5_thread(void *thread_data) {
 		bs[2] = 0;
 		bs[3] = 1;			/* Dummy IPv4 */
 		memset(bs+4, 0, 6);
-		(void) write(cd, bs, 10);
+		(void) write_wrapper(cd, bs, 10);
 		goto bailout;
 	} else {
 		/*
@@ -663,7 +663,7 @@ void *socks5_thread(void *thread_data) {
 		bs[2] = 0;
 		bs[3] = 1;			/* Dummy IPv4 */
 		memset(bs+4, 0, 6);
-		w = write(cd, bs, 10);
+		w = write_wrapper(cd, bs, 10);
 		if (w != 10) {
 			syslog(LOG_ERR, "SOCKS5: write() for reporting success for connect failed.\n");
 		}
@@ -1513,7 +1513,7 @@ int main(int argc, char **argv) {
 
 		tmp = zmalloc(50);
 		snprintf(tmp, 50, "%d\n", getpid());
-		w = write(cd, tmp, (len = strlen(tmp)));
+		w = write_wrapper(cd, tmp, (len = strlen(tmp)));
 		if (w != len) {
 			syslog(LOG_ERR, "Error writing to the PID file\n");
 			myexit(1);
@@ -1624,9 +1624,7 @@ int main(int argc, char **argv) {
 					syslog(LOG_WARNING, "Connection denied for %s:%d\n",
 						inet_ntoa(caddr.sin_addr), ntohs(caddr.sin_port));
 					tmp = gen_denied_page(inet_ntoa(caddr.sin_addr));
-					w = write(cd, tmp, strlen(tmp));
-					// We don't really care about the result - shut up GCC warning (unused-but-set-variable)
-					if (!w) w = 1;
+					(void) write_wrapper(cd, tmp, strlen(tmp)); // We don't really care about the result
 					free(tmp);
 					close(cd);
 					continue;

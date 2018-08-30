@@ -162,6 +162,8 @@ extern int from_base64(char *out, const char *in);
 
 extern uint64_t getrandom64(void) __attribute__((warn_unused_result));
 
+extern ssize_t write_wrapper(int fildes, const void *buf, const size_t nbyte);
+
 #if config_strdup == 0
 extern char *strdup(const char *src)  __attribute__((warn_unused_result));
 #endif

@@ -315,7 +315,7 @@ int headers_send(int fd, rr_data_t data) {
 	 * Flush it all down the toilet
 	 */
 	if (!so_closed(fd))
-		i = write(fd, buf, len+2);
+		i = write_wrapper(fd, buf, len+2);
 	else
 		i = -999;
 
@@ -362,7 +362,7 @@ int data_send(int dst, int src, length_t len) {
 		}
 
 		if (dst >= 0 && i > 0) {
-			j = write(dst, buf, i);
+			j = write_wrapper(dst, buf, i);
 			if (debug)
 				printf("data_send: wrote %d of %d\n", j, i);
 		}
@@ -417,7 +417,7 @@ int chunked_data_send(int dst, int src) {
 		}
 
 		if (dst >= 0)
-			i = write(dst, buf, strlen(buf));
+			i = write_wrapper(dst, buf, strlen(buf));
 
 		if (csize)
 			if (!data_send(dst, src, csize+2)) {
@@ -435,7 +435,7 @@ int chunked_data_send(int dst, int src) {
 		i = so_recvln(src, &buf, &bsize);
 		if (dst >= 0 && i > 0) {
 			len = strlen(buf);
-			w = write(dst, buf, len);
+			w = write_wrapper(dst, buf, len);
 		}
 	} while (w == len && i > 0 && buf[0] != '\r' && buf[0] != '\n');
 
@@ -474,7 +474,7 @@ int tunnel(int cd, int sd) {
 
 			ret = read(from, buf, BUFSIZE);
 			if (ret > 0) {
-				ret = write(to, buf, ret);
+				ret = write_wrapper(to, buf, ret);
 			} else {
 				free(buf);
 				return (ret == 0);

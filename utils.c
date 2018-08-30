@@ -1058,3 +1058,44 @@ uint64_t getrandom64(void)
 
 	return random_number;
 }
+
+/**
+ * Wrapper for the write() function that does retries and error handling.
+ * The parameters and return value have the same meaning as for write().
+ *
+ * @param[in] fildes File descriptor
+ * @param[in] buf Buffer that should be written
+ * @param[in] nbyte Number of bytes that should be written
+ * @return ssize_t The same values write() returns.
+ */
+ssize_t write_wrapper(int fildes, const void *buf, const size_t nbyte)
+{
+	ssize_t retval = 0;
+	const size_t max_retries = 50;
+	size_t bytes_written = 0;
+
+	if ((buf == NULL) || (nbyte == 0)) {
+		return 0;
+	}
+
+	for(size_t retry_cnt = 0;
+		(retry_cnt < max_retries) && (bytes_written < nbyte) && (retval >= 0);
+		++retry_cnt) {
+		retval = write(fildes, (const uint8_t *)(buf) + bytes_written, nbyte - bytes_written);
+		if (retval >= 0) {
+			bytes_written += retval;
+		}
+	}
+
+	if (retval < 0) {
+		syslog(LOG_ERR, "write() failed with error %d: %s\n", errno, strerror(errno));
+	}
+	else {
+		retval = (ssize_t)(bytes_written);
+		if(bytes_written < nbyte) {
+			syslog(LOG_ERR, "ERROR: write() only wrote %zu of %zu bytes after %zu retries.\n", bytes_written, nbyte, max_retries);
+		}
+	}
+
+	return retval;
+}

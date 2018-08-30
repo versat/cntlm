@@ -40,7 +40,7 @@
  */
 int scanner_hook(rr_data_t request, rr_data_t response, struct auth_s *credentials, int cd, int *sd, long maxKBs) {
 	char *buf, *line, *pos, *tmp, *pat, *post, *isaid, *uurl;
-	int bsize, lsize, size, len, i, w, nc;
+	int bsize, lsize, size, len, i, nc;
 	rr_data_t newreq, newres;
 	plist_t list;
 
@@ -161,9 +161,7 @@ int scanner_hook(rr_data_t request, rr_data_t response, struct auth_s *credentia
 							headers_initiated = 1;
 							tmp = zmalloc(MINIBUF_SIZE);
 							snprintf(tmp, MINIBUF_SIZE, "%s 200 OK\r\n", request->http);
-							w = write(cd, tmp, strlen(tmp));
-							// We don't really care about the result - shut up GCC warning (unused-but-set-variable)
-							if (!w) w = 1;
+							(void) write_wrapper(cd, tmp, strlen(tmp)); // We don't really care about the result
 							free(tmp);
 						}
 
@@ -180,7 +178,7 @@ int scanner_hook(rr_data_t request, rr_data_t response, struct auth_s *credentia
 							tmp = zmalloc(MINIBUF_SIZE);
 							progress = atol(line+12);
 							snprintf(tmp, MINIBUF_SIZE, "ISA-Scanner: %ld of %ld\r\n", progress, filesize);
-							w = write(cd, tmp, strlen(tmp));
+							(void) write_wrapper(cd, tmp, strlen(tmp));
 							free(tmp);
 						}
 
@@ -238,7 +236,7 @@ int scanner_hook(rr_data_t request, rr_data_t response, struct auth_s *credentia
 				 * The POST request for the real file
 				 */
 				reset_rr_data(newres);
-				if (nc && headers_send(nc, newreq) && write(nc, post, strlen(post)) && headers_recv(nc, newres)) {
+				if (nc && headers_send(nc, newreq) && write_wrapper(nc, post, strlen(post)) && headers_recv(nc, newres)) {
 					if (debug)
 						hlist_dump(newres->headers);
 
@@ -291,7 +289,7 @@ int scanner_hook(rr_data_t request, rr_data_t response, struct auth_s *credentia
 			return PLUG_ERROR;
 		}
 
-		size = write(cd, buf, len);
+		size = write_wrapper(cd, buf, len);
 		if (size > 0)
 			ok = PLUG_SENDDATA;
 		else
