@@ -853,13 +853,12 @@ bailout:
 #define MAGIC_TESTS	5
 
 void magic_auth_detect(const char *url) {
-	int i, nc, c, ign = 0, found = -1;
+	int i, nc, ign = 0, found = -1;
 	rr_data_t req, res;
 	const char *pos;
 	char *host = NULL;
 
 	struct auth_s *tcreds;
-	const char *authstr[5] = { "NTLMv2", "NTLM", "LM", "NT", "NTLM2SR" };
 	const int prefs[MAGIC_TESTS][5] = {
 		/* NT, LM, NTLMv2, Flags, index to authstr[] */
 		{  0,  0,  1,      0,     0 },
@@ -889,6 +888,7 @@ void magic_auth_detect(const char *url) {
 	}
 
 	for (i = 0; i < MAGIC_TESTS; ++i) {
+		int c;
 		res = new_rr_data();
 		req = new_rr_data();
 
@@ -958,6 +958,7 @@ void magic_auth_detect(const char *url) {
 	}
 
 	if (found > -1) {
+		const char *authstr[5] = { "NTLMv2", "NTLM", "LM", "NT", "NTLM2SR" };
 		printf("----------------------------[ Profile %2d ]------\n", found);
 		printf("Auth            %s\n", authstr[prefs[found][4]]);
 		if (prefs[found][3])
