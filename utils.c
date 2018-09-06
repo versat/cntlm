@@ -56,7 +56,7 @@ void myexit(int rc) {
 	exit(rc);
 }
 
-void croak(const char *msg, int console) {
+void croak(const char *msg, const int console) {
 	if (console)
 		printf("%s", msg);
 	else
@@ -74,7 +74,7 @@ void croak(const char *msg, int console) {
  * This list type allows to store an arbitrary pointer
  * associating it with the key.
  */
-plist_t plist_add(plist_t list, unsigned long key, void *aux) {
+plist_t plist_add(plist_t list, const unsigned long key, void *aux) {
 	plist_t tmp, t = list;
 
 	tmp = malloc(sizeof(struct plist_s));
@@ -97,7 +97,7 @@ plist_t plist_add(plist_t list, unsigned long key, void *aux) {
  * Delete an item from the list, possibly returning NULL when
  * the list is empty or nothing was found.
  */
-plist_t plist_del(plist_t list, unsigned long key) {
+plist_t plist_del(plist_t list, const unsigned long key) {
 	plist_t ot = NULL, t = list;
 
 	while (t) {
@@ -125,7 +125,7 @@ plist_t plist_del(plist_t list, unsigned long key) {
 /*
  * Return true if an item is present in the list.
  */
-int plist_in(plist_t list, unsigned long key) {
+int plist_in(plist_t list, const unsigned long key) {
 	plist_t t = list;
 
 	while (t) {
@@ -154,7 +154,7 @@ void plist_dump(plist_t list) {
 /*
  * Return the pointer associated with the key.
  */
-char *plist_get(plist_t list, int key) {
+char *plist_get(plist_t list, const int key) {
 	plist_t t = list;
 
 	while (t) {
@@ -533,7 +533,7 @@ rr_data_t new_rr_data(void) {
 /*
  * Copy the req/res data.
  */
-rr_data_t copy_rr_data(rr_data_t dst, rr_data_t src) {
+rr_data_t copy_rr_data(rr_data_t dst, const rr_data_t src) {
 	if (dst == NULL) {
 		fprintf(stderr, "Internal error in copy_rr_data: Pointer dst is NULL\n");
 		assert(0);
@@ -579,7 +579,7 @@ rr_data_t copy_rr_data(rr_data_t dst, rr_data_t src) {
 /*
  * Duplicate the req/res data.
  */
-rr_data_t dup_rr_data(rr_data_t data) {
+rr_data_t dup_rr_data(const rr_data_t data) {
 	rr_data_t tmp;
 
 	if (data == NULL) {
@@ -662,7 +662,7 @@ void free_rr_data(rr_data_t * pdata) {
 /*
  * Cut the whitespace at the end of a string.
  */
-char *trimr(char *buf) {
+char *trimr(char * const buf) {
 	int i;
 
 	assert(buf != NULL);
@@ -765,7 +765,7 @@ char *zmalloc(size_t size) {
 /*
  * Self-explanatory.
  */
-char *lowercase(char *str) {
+char *lowercase(char * const str) {
 	size_t i;
 
 	assert(str != NULL);
@@ -779,7 +779,7 @@ char *lowercase(char *str) {
 /*
  * Self-explanatory.
  */
-char *uppercase(char *str) {
+char *uppercase(char * const str) {
 	size_t i;
 
 	assert(str != NULL);
@@ -790,7 +790,7 @@ char *uppercase(char *str) {
 	return str;
 }
 
-int unicode(char **dst, char *src) {
+int unicode(char **dst, const char * const src) {
 	char *tmp;
 	int l, i;
 
@@ -808,7 +808,7 @@ int unicode(char **dst, char *src) {
 	return 2*l;
 }
 
-char *urlencode(const char *str) {
+char *urlencode(const char * const str) {
 	char *tmp;
 	size_t i;
 	size_t pos;
@@ -826,7 +826,7 @@ char *urlencode(const char *str) {
 	return tmp;
 }
 
-char *printmem(char *src, size_t len, int bitwidth) {
+char *printmem(const char * const src, const size_t len, const int bitwidth) {
 	char *tmp;
 	size_t i;
 
@@ -839,7 +839,7 @@ char *printmem(char *src, size_t len, int bitwidth) {
 	return tmp;
 }
 
-char *scanmem(char *src, int bitwidth) {
+char *scanmem(const char * const src, const int bitwidth) {
 	int h, l;
 	size_t i;
 	size_t bytes;

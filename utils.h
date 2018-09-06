@@ -113,13 +113,13 @@ struct thread_arg_s {
 };
 
 extern void myexit(int rc) __attribute__((noreturn));
-extern void croak(const char *msg, int console) __attribute__((noreturn));
+extern void croak(const char *msg, const int console) __attribute__((noreturn));
 
 extern plist_t plist_add(plist_t list, unsigned long key, void *aux);
-extern plist_t plist_del(plist_t list, unsigned long key);
-extern int plist_in(plist_t list, unsigned long key) __attribute__((warn_unused_result));
+extern plist_t plist_del(plist_t list, const unsigned long key);
+extern int plist_in(plist_t list, const unsigned long key) __attribute__((warn_unused_result));
 extern void plist_dump(plist_t list);
-extern char *plist_get(plist_t list, int key) __attribute__((warn_unused_result));
+extern char *plist_get(plist_t list, const int key) __attribute__((warn_unused_result));
 extern int plist_pop(plist_t *list, void **aux);
 extern int plist_count(plist_t list) __attribute__((warn_unused_result));
 extern plist_t plist_free(plist_t list);
@@ -139,21 +139,21 @@ extern void hlist_dump(hlist_t list);
 extern char *substr(const char *src, int pos, int len) __attribute__((warn_unused_result));
 extern size_t strlcpy(char *dst, const char *src, size_t siz);
 extern size_t strlcat(char *dst, const char *src, size_t siz);
-extern char *trimr(char *buf);
-extern char *lowercase(char *str);
-extern char *uppercase(char *str);
-extern int unicode(char **dst, char *src);
+extern char *trimr(char * const buf);
+extern char *lowercase(char * const str);
+extern char *uppercase(char * const str);
+extern int unicode(char **dst, const char * const src);
 extern char *zmalloc(size_t size) __attribute__((warn_unused_result, malloc));
-extern char *urlencode(const char *str) __attribute__((warn_unused_result));
+extern char *urlencode(const char * const str) __attribute__((warn_unused_result));
 
 extern rr_data_t new_rr_data(void) __attribute__((warn_unused_result));
-extern rr_data_t copy_rr_data(rr_data_t dst, rr_data_t src);
-extern rr_data_t dup_rr_data(rr_data_t data) __attribute__((warn_unused_result));
+extern rr_data_t copy_rr_data(rr_data_t dst, const rr_data_t src);
+extern rr_data_t dup_rr_data(const rr_data_t data) __attribute__((warn_unused_result));
 extern rr_data_t reset_rr_data(rr_data_t data);
 extern void free_rr_data(rr_data_t * data);
 
-extern char *printmem(char *src, size_t len, int bitwidth) __attribute__((warn_unused_result));
-extern char *scanmem(char *src, int bitwidth) __attribute__((warn_unused_result));
+extern char *printmem(const char * const src, const size_t len, const int bitwidth) __attribute__((warn_unused_result));
+extern char *scanmem(const char * const src, const int bitwidth) __attribute__((warn_unused_result));
 
 extern int is_memory_all_zero(const void * const p_memory, const size_t length) __attribute__((warn_unused_result, pure));
 
