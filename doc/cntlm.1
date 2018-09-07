@@ -47,7 +47,7 @@ until the client <-> server connection is fully negotiated. Only then real data 
 An example of \fBcntlm\fP compared to NTLMAPS: \fBcntlm\fP gave avg 76 kB/s with peak CPU usage of 0.3%
 whereas with NTLMAPS it was avg 48 kB/s with peak CPU at 98% (Pentium M 1.8 GHz). The extreme difference in
 resource usage is one of many important benefits for laptop use. Peak memory consumption (several complex
-sites, 50 paralell connections/threads; values are in KiB):
+sites, 50 parallel connections/threads; values are in KiB):
 .nf
 .ft C
 
@@ -66,7 +66,7 @@ Valgrind's virtual CPU during a typical production lifetime of the proxy.
 
 .SH OPTIONS
 Most options can be pre-set in a configuration file. Specifying an option more than once is not an error, but
-\fBcntlm\fP ignores all occurences except the last one. This does not apply to options like\ \fB-L\fP, each of
+\fBcntlm\fP ignores all occurrences except the last one. This does not apply to options like\ \fB-L\fP, each of
 which creates a new instance of some feature. \fBCntlm\fP can be built with a hardcoded configuration file
 (e.g. /etc/cntlm.conf), which is always loaded, if possible. See\ \fB-c\fP option on how to override some or
 all of its settings.
@@ -124,7 +124,7 @@ username in the password dialog: "domain\\username".
 .B -c <filename>
 Configuration file. Command-line options, if used, override its single options or are added at the top of the
 list for multi options (tunnels, parent proxies, etc) with the exception of ACLs, which are completely
-overriden. Use \fI/dev/null\fP to disable any config file.
+overridden. Use \fI/dev/null\fP to disable any config file.
 
 .TP
 .B -D IP/mask\ \ \ \ (Deny)
@@ -137,7 +137,7 @@ The domain or workgroup of the proxy account. This value can also be specified a
 
 .TP
 .B -F <flags>\ \ \ \ (Flags)
-NTLM authentication flags. This option is rater delicate and I do not recommend to change the default built-in
+NTLM authentication flags. This option is rather delicate and I do not recommend to change the default built-in
 values unless you had no success with parent proxy auth and tried magic autodetection (\fB-M\fP) and all
 possible values for the \fBAuth\fP option (\fB-a\fP). Remember that each NT/LM hash combination requires
 different flags. This option is sort of a complete "manual override" and you'll have to deal with it yourself.
@@ -468,7 +468,7 @@ Create a new SOCKS5 proxy account. See \fB-R\fP for more.
 
 .TP
 .B NTLMToBasic yes|no
-Enable/disable NTLM-to-basic authenticatoin. See \fB-B\fP for more.
+Enable/disable NTLM-to-basic authentication. See \fB-B\fP for more.
 
 .TP
 .B Tunnel [<saddr>:]<lport>:<rhost>:<rport>
