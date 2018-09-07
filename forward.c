@@ -319,7 +319,7 @@ bailout:
  *
  * We return NULL when we're finished or a pointer to another request.
  * Returned request means server name has changed and needs to be checked
- * agains NoProxy exceptions.
+ * against NoProxy exceptions.
  *
  * thread_data is NOT freed
  * request is NOT freed
@@ -368,7 +368,7 @@ beginning:
 	pthread_mutex_unlock(&connection_mtx);
 	if (i) {
 		if (debug)
-			printf("Found autenticated connection %d!\n", i);
+			printf("Found authenticated connection %d!\n", i);
 		sd = i;
 		authok = 1;
 		was_cached = 1;
@@ -376,7 +376,7 @@ beginning:
 		tcreds = new_auth();
 		sd = proxy_connect(tcreds);
 		if (sd < 0) {
-			tmp = gen_502_page(request->http, "Parent proxy unreacheable");
+			tmp = gen_502_page(request->http, "Parent proxy unreachable");
 			(void) write_wrapper(cd, tmp, strlen(tmp));
 			free(tmp);
 			rc = (void *)-1;
@@ -573,8 +573,8 @@ shortcut:
 			}
 
 			/*
-			 * Is final reply from proxy still 407 denied? If this is a chached
-			 * connection or we thougth proxy was noauth (so we didn't auth), make a new
+			 * Is final reply from proxy still 407 denied? If this is a cached
+			 * connection or we thought proxy was noauth (so we didn't auth), make a new
 			 * connect and try to auth.
 			 */
 			if (loop == 1 && data[1]->code == 407 && (was_cached || noauth)) {
@@ -987,4 +987,3 @@ void magic_auth_detect(const char *url) {
 	if (host)
 		free(host);
 }
-
