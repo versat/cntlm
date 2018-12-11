@@ -42,6 +42,9 @@
 #include <syslog.h>
 #include <termios.h>
 #include <fnmatch.h>
+#ifdef __CYGWIN__
+#include <windows.h>
+#endif
 
 /*
  * Some helping routines like linked list manipulation substr(), memory
@@ -1047,6 +1050,34 @@ int main(int argc, char **argv) {
 				printf("Default config file opened successfully\n");
 			else
 				syslog(LOG_ERR, "Could not open default config file\n");
+		}
+	}
+#endif
+
+#ifdef __CYGWIN__
+	/*
+	 * Still no configuration file found?
+	 * Check if there is one in the same directory as the executable.
+	 */
+	if (!cf) {
+		const unsigned int path_size = PATH_MAX;
+		char path[path_size];
+
+		if (GetModuleFileNameA(NULL, path, path_size) > 0) {
+			path[path_size - 1] = '\0';
+			// Remove the *.exe part at the end
+			for(unsigned int index = strlen(path); index > 0; --index) {
+				if(path[index - 1] == '\\') {
+					path[index] = '\0';
+					break;
+				}
+			}
+			strlcat(path, "cntlm.ini", path_size);
+			path[path_size - 1] = '\0';
+			cf = config_open(path);
+			if (cf) {
+				syslog(LOG_INFO, "Using config file %s\n", path);
+			}
 		}
 	}
 #endif
