@@ -143,6 +143,40 @@ int www_authenticate(int sd, rr_data_t request, rr_data_t response, struct auth_
 			response->errmsg = "Web server reply missing NTLM challenge";
 			goto bailout;
 		}
+// Naresh begins
+	} else if(auth->code == 407) {
+		if (!http_body_drop(sd, auth)) {
+			goto bailout;
+		}
+		// Get the Proxy-Authenticate header to see if the authentication is requested
+		tmp = hlist_get(auth->headers, "Proxy-Authenticate");
+		if(tmp && strlen(tmp) > 6 + 8) {
+			// First generate the authentication string and put it in a buffer
+			char *bufout = zmalloc(BUFSIZE);
+			memset(bufout, 0, BUFSIZE);
+			strcpy(buf, "Basic ");
+			strcat(bufout, creds->b64pwd);
+			strcat(buf, bufout);
+
+			if(debug) {
+				printf("Generated Authentication String: %s\n", buf);
+			}
+
+			// Delete the un-needed headers if they are present...
+			request->headers = hlist_del(request->headers, "Cache-Control");
+			request->headers = hlist_del(request->headers, "Proxy-Authenticate");
+
+			// Modify the Proxy-Authorization header to include the proxy string
+			request->headers = hlist_mod(request->headers, "Proxy-Authorization", buf, 1);
+
+			if (debug) {
+				printf("\n\nBeginning: Dumping Generated Header Data!\n\n");
+				hlist_dump(request->headers);
+				printf("\n\nEnd: Dumping Generated Header Data!\n\n");
+			}
+			free (bufout);
+		}
+// Naresh ends
 	} else {
 		goto bailout;
 	}

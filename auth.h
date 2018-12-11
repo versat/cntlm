@@ -48,6 +48,10 @@ struct auth_s {
 	struct sspi_handle sspi;
 #endif
 	uint32_t flags;
+// Naresh begins
+	char b64pwd[MINIBUF_SIZE];
+	int hashb64pwd;
+// Naresh ends
 };
 
 #define auth_strcpy(creds, var, value) \

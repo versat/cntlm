@@ -248,6 +248,33 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 					close(*sd);
 					goto bailout;
 				}
+// Naresh begins
+			} else if(credentials->hashb64pwd == 1) {
+				syslog(LOG_WARNING, "Proxy returning invalid challenge! Trying BASIC_AUTH now...\n");
+				// First generate the authentication string and put it in a buffer
+				char *bufout = zmalloc(BUFSIZE);
+				strcpy(buf, "Basic ");
+				strcat(bufout, credentials->b64pwd);
+				strcat(buf, bufout);
+
+				if(debug) {
+					printf("Generated Authentication String: %s\n", buf);
+				}
+
+				// Delete the un-needed headers if they are present...
+				request->headers = hlist_del(request->headers, "Cache-Control");
+				request->headers = hlist_del(request->headers, "Proxy-Authenticate");
+
+				// Modify the Proxy-Authorization header to include the proxy string
+				request->headers = hlist_mod(request->headers, "Proxy-Authorization", buf, 1);
+
+				if (debug) {
+					printf("\n\nBeginning: Dumping Generated Header Data!\n\n");
+					hlist_dump(request->headers);
+					printf("\n\nEnd: Dumping Generated Header Data!\n\n");
+				}
+				free (bufout);
+// Naresh ends
 			} else {
 				syslog(LOG_ERR, "Proxy returning invalid challenge!\n");
 				free(challenge);
