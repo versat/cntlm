@@ -3,6 +3,9 @@ compiler:
   - gcc
   - clang
 
+git:
+  depth: false
+
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
@@ -24,6 +27,8 @@ addons:
     build_command_prepend: "make distclean && ./configure"
     build_command: "make"
     branch_pattern: coverity_scan
+  sonarcloud:
+    organization: "versat"
 
 script:
   - ./configure
@@ -41,3 +46,8 @@ script:
   - make distclean
   - ./configure
   - scan-build --force-analyze-debug-code make
+  # SonarCloud build and scan
+  - ./configure
+  - make clean
+  - build-wrapper-linux-x86-64 --out-dir bw-output make
+  - sonar-scanner -Dsonar.projectVersion="$(head -n 1 VERSION)"
