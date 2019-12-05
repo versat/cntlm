@@ -143,7 +143,7 @@ extern char *trimr(char * const buf);
 extern char *lowercase(char * const str);
 extern char *uppercase(char * const str);
 extern int unicode(char **dst, const char * const src);
-extern char *zmalloc(size_t size) __attribute__((warn_unused_result, malloc));
+extern char *zmalloc(size_t size) __attribute__((warn_unused_result, malloc, alloc_size(1)));
 extern char *urlencode(const char * const str) __attribute__((warn_unused_result));
 
 extern rr_data_t new_rr_data(void) __attribute__((warn_unused_result));
