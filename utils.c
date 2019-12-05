@@ -431,6 +431,9 @@ int hlist_subcmp_all(hlist_t list, const char *key, const char *substr) {
 	int found = 0;
 	char *tmp, *low;
 
+	assert(key != NULL);
+	assert(substr != NULL);
+
 	lowercase(low = strdup(substr));
 	while (t) {
 		if (!strcasecmp(t->key, key)) {
@@ -489,6 +492,8 @@ char *substr(const char *src, int pos, int len) {
 	char *tmp;
 
 	assert(src != NULL);
+	assert(pos >= 0);
+	assert(len >= 0);
 
 	if (len == 0)
 		len = strlen(src);

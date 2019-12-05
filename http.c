@@ -239,6 +239,8 @@ int headers_recv(int fd, rr_data_t data) {
 				data->port = 80;
 		}
 
+		assert(data != NULL);
+		assert(data->hostname != NULL);
 		if (!strlen(data->hostname) || !data->port) {
 			i = -5;
 			goto bailout;

@@ -44,6 +44,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <assert.h>
 
 #include "xcrypt.h"
 #include "swap.h"
@@ -833,6 +834,8 @@ void * memxor (void *dest, const void *src, size_t n) {
   char const *s = src;
   char *d = dest;
 
+  assert((dest != NULL && src != NULL) || n == 0);
+
   for (; n > 0; n--)
     *d++ ^= *s++;
 
@@ -895,6 +898,7 @@ int hmac_md5 (const void *key, size_t keylen, const void *in, size_t inlen, void
 void
 md5_init_ctx (struct md5_ctx *ctx)
 {
+  assert(ctx != NULL);
   ctx->A = 0x67452301;
   ctx->B = 0xefcdab89;
   ctx->C = 0x98badcfe;
@@ -912,6 +916,8 @@ md5_init_ctx (struct md5_ctx *ctx)
 void *
 md5_read_ctx (const struct md5_ctx *ctx, void *resbuf)
 {
+  assert(ctx != NULL);
+  assert(resbuf != NULL);
   ((uint32_t *) resbuf)[0] = SWAP (ctx->A);
   ((uint32_t *) resbuf)[1] = SWAP (ctx->B);
   ((uint32_t *) resbuf)[2] = SWAP (ctx->C);
@@ -928,6 +934,8 @@ md5_read_ctx (const struct md5_ctx *ctx, void *resbuf)
 void *
 md5_finish_ctx (struct md5_ctx *ctx, void *resbuf)
 {
+  assert(ctx != NULL);
+  assert(resbuf != NULL);
   /* Take yet unprocessed bytes into account.  */
   uint32_t bytes = ctx->buflen;
   size_t size = (bytes < 56) ? 64 / 4 : 64 * 2 / 4;
