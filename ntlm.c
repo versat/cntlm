@@ -466,8 +466,10 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 	memcpy(MEM(buf, char, 64), udomain, dlen);
 	memcpy(MEM(buf, char, 64+dlen), uuser, ulen);
 	memcpy(MEM(buf, char, 64+dlen+ulen), uhost, hlen);
-	memcpy(MEM(buf, char, 64+dlen+ulen+hlen), lmhash, lmlen);
-	memcpy(MEM(buf, char, 64+dlen+ulen+hlen+24), nthash, ntlen);
+	if (lmhash)
+		memcpy(MEM(buf, char, 64+dlen+ulen+hlen), lmhash, lmlen);
+	if (nthash)
+		memcpy(MEM(buf, char, 64+dlen+ulen+hlen+24), nthash, ntlen);
 
 	if (nthash)
 		free(nthash);
