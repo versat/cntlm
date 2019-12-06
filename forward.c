@@ -884,6 +884,7 @@ void magic_auth_detect(const char *url) {
 		host = substr(pos+3, 0, tmp ? tmp-pos-3 : 0);
 	} else {
 		fprintf(stderr, "Invalid URL (%s)\n", url);
+		free(tcreds);
 		return;
 	}
 
