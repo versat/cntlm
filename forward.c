@@ -142,7 +142,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 
 	buf = zmalloc(BUFSIZE);
 
-	strcpy(buf, "NTLM ");
+	strlcpy(buf, "NTLM ", BUFSIZE);
 	len = ntlm_request(&tmp, credentials);
 	if (len) {
 		to_base64(MEM(buf, uint8_t, 5), MEM(tmp, uint8_t, 0), len, BUFSIZE-5);
@@ -237,7 +237,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 				tmp = NULL;
 				len = ntlm_response(&tmp, challenge, len, credentials);
 				if (len > 0) {
-					strcpy(buf, "NTLM ");
+					strlcpy(buf, "NTLM ", BUFSIZE);
 					to_base64(MEM(buf, uint8_t, 5), MEM(tmp, uint8_t, 0), len, BUFSIZE-5);
 					request->headers = hlist_mod(request->headers, "Proxy-Authorization", buf, 1);
 					free(tmp);
