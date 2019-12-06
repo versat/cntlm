@@ -28,17 +28,6 @@
 #include "config.h"
 #include "utils.h"
 
-/*
-static const char *globals[] = {
-	"Allow",
-	"Deny",
-	"Gateway",
-	"Listen",
-	"SOCKS5Proxy",
-	"SOCKS5User",
-	"NTLMToBasic",
-	"Tunnel" };
-*/
 
 config_t config_open(const char *fname) {
 	config_t rc;
@@ -46,8 +35,6 @@ config_t config_open(const char *fname) {
 	char *buf, *tmp, *key, *value;
 	char section[MINIBUF_SIZE] = "global";
 	int i, j, slen, len, quote;
-
-	//printf("sizeof = %d\n", sizeof(globals) / sizeof(char *));
 
 	fp = fopen(fname, "r");
 	if (!fp)
