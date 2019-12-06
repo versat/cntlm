@@ -288,23 +288,24 @@ int headers_send(int fd, rr_data_t data) {
 	/*
 	 * We know how much memory we need now...
 	 */
-	buf = zmalloc(len);
+	const int buf_len = len;
+	buf = zmalloc(buf_len);
 
 	/*
 	 * Prepare the first request/response line
 	 */
 	len = 0;
 	if (data->req)
-		len = sprintf(buf, "%s %s %s\r\n", data->method, data->url, data->http);
+		len = snprintf(buf, buf_len, "%s %s %s\r\n", data->method, data->url, data->http);
 	else if (!data->skip_http)
-		len = sprintf(buf, "%s %03d %s\r\n", data->http, data->code, data->msg);
+		len = snprintf(buf, buf_len, "%s %03d %s\r\n", data->http, data->code, data->msg);
 
 	/*
 	 * Now add all headers.
 	 */
 	t = data->headers;
 	while (t) {
-		len += sprintf(buf+len, "%s: %s\r\n", t->key, t->value);
+		len += snprintf(buf+len, buf_len - len, "%s: %s\r\n", t->key, t->value);
 		t = t->next;
 	}
 
