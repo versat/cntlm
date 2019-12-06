@@ -55,7 +55,9 @@ int host_connect(const char *hostname, int port) {
 }
 
 int www_authenticate(int sd, rr_data_t request, rr_data_t response, struct auth_s *creds) {
-	char *tmp, *buf, *challenge;
+	char *tmp;
+	char *buf;
+	char *challenge;
 	rr_data_t auth;
 	int len;
 
@@ -63,7 +65,7 @@ int www_authenticate(int sd, rr_data_t request, rr_data_t response, struct auth_
 
 	buf = zmalloc(BUFSIZE);
 
-	strcpy(buf, "NTLM ");
+	strlcpy(buf, "NTLM ", BUFSIZE);
 	len = ntlm_request(&tmp, creds);
 	if (len) {
 		to_base64(MEM(buf, uint8_t, 5), MEM(tmp, uint8_t, 0), len, BUFSIZE-5);
@@ -119,7 +121,7 @@ int www_authenticate(int sd, rr_data_t request, rr_data_t response, struct auth_
 				tmp = NULL;
 				len = ntlm_response(&tmp, challenge, len, creds);
 				if (len > 0) {
-					strcpy(buf, "NTLM ");
+					strlcpy(buf, "NTLM ", BUFSIZE);
 					to_base64(MEM(buf, uint8_t, 5), MEM(tmp, uint8_t, 0), len, BUFSIZE-5);
 					request->headers = hlist_mod(request->headers, "Authorization", buf, 1);
 					free(tmp);
@@ -177,10 +179,13 @@ bailout:
 }
 
 rr_data_t direct_request(void *cdata, rr_data_t request) {
-	rr_data_t data[2], rc = NULL;
+	rr_data_t data[2] = { NULL, NULL };
+	rr_data_t rc = NULL;
 	struct auth_s *tcreds = NULL;
-	int *rsocket[2], *wsocket[2];
-	int loop, sd;
+	int *rsocket[2];
+	int *wsocket[2];
+	int loop;
+	int sd;
 	char *tmp;
 
 	char *hostname = NULL;
@@ -443,8 +448,10 @@ bailout:
 }
 
 void direct_tunnel(void *thread_data) {
-	int sd, port = 0;
-	char *pos, *hostname;
+	int sd;
+	int port = 0;
+	char *pos;
+	char *hostname;
 
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
 	char *thost = ((struct thread_arg_s *)thread_data)->target;
