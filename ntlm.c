@@ -196,9 +196,10 @@ char *ntlm2_hash_password(char *username, char *domain, char *password) {
 
 	passnt = ntlm_hash_nt_password(password);
 
-	buf = zmalloc(strlen(username)+strlen(domain) + 1);
-	strcat(buf, username);
-	strcat(buf, domain);
+	const size_t buf_len = strlen(username) + strlen(domain) + 1;
+	buf = zmalloc(buf_len);
+	strlcat(buf, username, buf_len);
+	strlcat(buf, domain, buf_len);
 	uppercase(buf);
 	len = unicode(&tmp, buf);
 
