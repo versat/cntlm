@@ -31,12 +31,15 @@ addons:
     organization: "versat"
 
 script:
+  # Verify normal build
   - ./configure
   - make
   - make distclean
+  # Verify debug build
   - ./configure
   - make DEBUG=1
   - make distclean
+  # Verify package creation and installation
   - ./configure
   - make rpm
   - make deb
@@ -44,6 +47,7 @@ script:
   - sudo make install
   - sudo make uninstall
   - make distclean
+  # Build via scan-build
   - ./configure
   - scan-build --force-analyze-debug-code make
   # SonarCloud build and scan
