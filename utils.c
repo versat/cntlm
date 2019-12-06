@@ -822,12 +822,17 @@ char *urlencode(const char * const str) {
 	size_t i;
 	size_t pos;
 
-	tmp = zmalloc(strlen(str)*3 + 1);
-	for (pos = 0, i = 0; i < strlen(str); ++i) {
+	assert(str != NULL);
+
+	const size_t str_length = strlen(str);
+	const size_t tmp_length = str_length * 3 + 1;
+	tmp = zmalloc(tmp_length);
+	for (pos = 0, i = 0; i < str_length; ++i) {
 		if (isdigit(str[i]) || (tolower(str[i]) >= 'a' && tolower(str[i]) <= 'z') || str[i] == '.' || str[i] == '-' || str[i] == '_' || str[i] == '~') {
-			tmp[pos++] = str[i];
+			tmp[pos] = str[i];
+			++pos;
 		} else {
-			sprintf(tmp+pos, "%%%X", (unsigned char)str[i]);
+			snprintf(tmp+pos, tmp_length - pos, "%%%X", (unsigned char)str[i]);
 			pos += 3;
 		}
 	}
