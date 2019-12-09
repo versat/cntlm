@@ -246,14 +246,14 @@ void tunnel_add(plist_t *list, char *spec, int gateway) {
 	pos = 0;
 	if (count == 4) {
 		if (!so_resolv(&source, field[pos])) {
-			syslog(LOG_ERR, "Cannot resolve tunel bind address: %s\n", field[pos]);
+			syslog(LOG_ERR, "Cannot resolve tunnel bind address: %s\n", field[pos]);
 			myexit(1);
 		}
 		pos++;
 	} else
 		source.s_addr = htonl(gateway ? INADDR_ANY : INADDR_LOOPBACK);
 
-	if (count-pos == 3) {
+	if (count - pos == 3) {
 		port = atoi(field[pos]);
 		if (port == 0) {
 			syslog(LOG_ERR, "Invalid tunnel local port: %s\n", field[pos]);
@@ -265,10 +265,11 @@ void tunnel_add(plist_t *list, char *spec, int gateway) {
 			myexit(1);
 		}
 
-		tmp = zmalloc(strlen(field[pos+1]) + strlen(field[pos+2]) + 2 + 1);
-		strcpy(tmp, field[pos+1]);
-		strcat(tmp, ":");
-		strcat(tmp, field[pos+2]);
+		const size_t tmp_len = strlen(field[pos+1]) + strlen(field[pos+2]) + 2 + 1;
+		tmp = zmalloc(tmp_len);
+		strlcpy(tmp, field[pos+1], tmp_len);
+		strlcat(tmp, ":", tmp_len);
+		strlcat(tmp, field[pos+2], tmp_len);
 
 		i = so_listen(port, source);
 		if (i >= 0) {
@@ -616,7 +617,7 @@ void *socks5_thread(void *thread_data) {
 	 * Convert the address to character string
 	 */
 	if (ver == 1) {
-		sprintf(thost, "%d.%d.%d.%d", addr[0], addr[1], addr[2], addr[3]);	/* It's in network byte order */
+		snprintf(thost, MINIBUF_SIZE, "%d.%d.%d.%d", addr[0], addr[1], addr[2], addr[3]);	/* It's in network byte order */
 	} else {
 		strlcpy(thost, (char *)addr, MINIBUF_SIZE);
 	}
@@ -633,7 +634,7 @@ void *socks5_thread(void *thread_data) {
 		sd = host_connect(thost, ntohs(port));
 		i = (sd >= 0);
 	} else {
-		sprintf(tport, "%d", ntohs(port));
+		snprintf(tport, MINIBUF_SIZE, "%d", ntohs(port));
 		strlcat(thost, ":", MINIBUF_SIZE);
 		strlcat(thost, tport, MINIBUF_SIZE);
 
