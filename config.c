@@ -32,9 +32,16 @@
 config_t config_open(const char *fname) {
 	config_t rc;
 	FILE *fp;
-	char *buf, *tmp, *key, *value;
+	char *buf;
+	char *tmp;
+	char *key;
+	char *value;
 	char section[MINIBUF_SIZE] = "global";
-	int i, j, slen, len, quote;
+	int i;
+	int j;
+	int slen;
+	int len;
+	int quote;
 
 	fp = fopen(fname, "r");
 	if (!fp)
