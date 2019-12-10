@@ -312,7 +312,7 @@ int headers_send(int fd, rr_data_t data) {
 	/*
 	 * Terminate headers
 	 */
-	strcat(buf, "\r\n");
+	strlcat(buf, "\r\n", buf_len);
 
 	/*
 	 * Flush it all down the toilet
