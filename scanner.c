@@ -116,7 +116,7 @@ int scanner_hook(rr_data_t request, rr_data_t response, struct auth_s *credentia
 						buf = tmp;
 				}
 
-				strcat(buf, line);
+				strlcat(buf, line, bsize);
 				len += c;
 
 				if (i >= 0) {
