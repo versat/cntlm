@@ -27,6 +27,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <strings.h>
+#include <assert.h>
 
 #include "utils.h"
 #include "globals.h"
@@ -51,7 +52,8 @@ pthread_mutex_t parent_mtx = PTHREAD_MUTEX_INITIALIZER;
  */
 int proxy_connect(struct auth_s *credentials) {
 	proxy_t *aux;
-	int i, prev;
+	int i;
+	int prev;
 	plist_t list, tmp;
 	int loop = 0;
 
@@ -133,7 +135,9 @@ int proxy_connect(struct auth_s *credentials) {
  *
  */
 int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct auth_s *credentials) {
-	char *tmp, *buf, *challenge;
+	char *tmp;
+	char *buf;
+	char *challenge;
 	rr_data_t auth;
 	int len;
 
@@ -325,9 +329,14 @@ bailout:
  * request is NOT freed
  */
 rr_data_t forward_request(void *thread_data, rr_data_t request) {
-	int i, loop, plugin, retry = 0;
-	int *rsocket[2], *wsocket[2];
-	rr_data_t data[2], rc = NULL;
+	int i;
+	int loop;
+	int plugin;
+	int retry = 0;
+	int *rsocket[2];
+	int *wsocket[2];
+	rr_data_t data[2] = {NULL, NULL};
+	rr_data_t rc = NULL;
 	hlist_t tl;
 	char *tmp;
 	struct auth_s *tcreds = NULL;						/* Per-thread credentials */
@@ -339,6 +348,7 @@ rr_data_t forward_request(void *thread_data, rr_data_t request) {
 	int was_cached;
 
 	int sd;
+	assert(thread_data != NULL);
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
 	struct sockaddr_in caddr = ((struct thread_arg_s *)thread_data)->addr;
 
@@ -746,7 +756,8 @@ bailout:
  * Return 1 for success, 0 failure.
  */
 int prepare_http_connect(int sd, struct auth_s *credentials, const char *thost) {
-	rr_data_t data1, data2;
+	rr_data_t data1;
+	rr_data_t data2;
 	int rc = 0;
 	hlist_t tl;
 
@@ -823,6 +834,7 @@ void forward_tunnel(void *thread_data) {
 	struct auth_s *tcreds;
 	int sd;
 
+	assert(thread_data != NULL);
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
 	char *thost = ((struct thread_arg_s *)thread_data)->target;
 	struct sockaddr_in caddr = ((struct thread_arg_s *)thread_data)->addr;
@@ -853,7 +865,10 @@ bailout:
 #define MAGIC_TESTS	5
 
 void magic_auth_detect(const char *url) {
-	int i, nc, ign = 0, found = -1;
+	int i;
+	int nc;
+	int ign = 0;
+	int found = -1;
 	rr_data_t req, res;
 	const char *pos;
 	char *host = NULL;
@@ -878,6 +893,7 @@ void magic_auth_detect(const char *url) {
 		exit(1);
 	}
 
+	assert(url != NULL);
 	pos = strstr(url, "://");
 	if (pos) {
 		const char * const tmp = strchr(pos+3, '/');
