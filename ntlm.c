@@ -95,7 +95,7 @@ static void ntlm2_calc_resp(char **nthash, int *ntlen, char **lmhash, int *lmlen
 	VAL(blob, uint64_t, 16) = U64LE(VAL(nonce, uint64_t, 0));
 	VAL(blob, uint32_t, 24) = U32LE(0);
 	memcpy(blob+28, MEM(challenge, char, tbofs), tblen);
-	VAL(blob, uint32_t, 28+tblen) = U32LE(0);
+	memset(blob+28+tblen, 0, 4);
 	blen = 28+tblen+4;
 
 	if (0 && debug) {
