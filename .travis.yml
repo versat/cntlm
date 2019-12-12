@@ -35,6 +35,10 @@ script:
   - ./configure
   - make
   - make distclean
+  # Verify build with -DUNICODE
+  - ./configure
+  - CFLAGS=-DUNICODE make
+  - make distclean
   # Verify debug build
   - ./configure
   - make DEBUG=1
