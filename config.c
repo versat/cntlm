@@ -33,15 +33,10 @@ config_t config_open(const char *fname) {
 	config_t rc;
 	FILE *fp;
 	char *buf;
-	char *tmp;
-	char *key;
-	char *value;
 	char section[MINIBUF_SIZE] = "global";
 	int i;
 	int j;
 	int slen;
-	int len;
-	int quote;
 
 	fp = fopen(fname, "r");
 	if (!fp)
@@ -52,12 +47,12 @@ config_t config_open(const char *fname) {
 	rc->options = NULL;
 
 	while (!feof(fp)) {
-		quote = 0;
-		tmp = fgets(buf, BUFSIZE, fp);
+		int quote = 0;
+		const char *tmp = fgets(buf, BUFSIZE, fp);
 		if (!tmp)
 			break;
 
-		len = MIN(BUFSIZE, strlen(buf));
+		const int len = MIN(BUFSIZE, strlen(buf));
 		if (!len || feof(fp))
 			continue;
 
@@ -98,14 +93,16 @@ config_t config_open(const char *fname) {
 		/*
 		 * It's an OK keyword
 		 */
-		key = substr(buf, i, j-i);
+		char * key = substr(buf, i, j-i);
 
 		/*
 		 * Find next non-empty character
 		 */
 		for (i = j; j < len && isspace(buf[j]); ++j);
-		if (j >= len || buf[j] == '#' || buf[j] == ';')
+		if (j >= len || buf[j] == '#' || buf[j] == ';') {
+			free(key);
 			continue;
+		}
 
 		/*
 		 * Is value quoted?
@@ -113,15 +110,17 @@ config_t config_open(const char *fname) {
 		if (buf[j] == '"') {
 			quote = 1;
 			for (i = ++j; j < len && buf[i] != '"'; ++i);
-			if (i >= len)
+			if (i >= len) {
+				free(key);
 				continue;
+			}
 		} else
 			i = len;
 
 		/*
 		 * Get value as quoted or until EOL/comment
 		 */
-		value = substr(buf, j, i-j);
+		char * value = substr(buf, j, i-j);
 		if (!quote) {
 			i = strcspn(value, "#");
 			if (i != strlen(value))
