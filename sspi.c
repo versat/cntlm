@@ -115,7 +115,7 @@ HMODULE LoadSecurityDll(void) {
 			break;
 
 		// CompleteAuthToken is not present on Windows 9x Secur32.dll
-		// Do not check for the availablity of the function if it is NULL;
+		// Do not check for the availability of the function if it is NULL;
 		_CompleteAuthToken = (COMPLETE_AUTH_TOKEN_FN)
 				GetProcAddress(hModule, "CompleteAuthToken");
 
@@ -184,7 +184,7 @@ int sspi_set(char* mode)
 	if (sspi_dll)
 	{
 #ifdef UNICODE
-		sspi_mode = new(sizeof(wchar_t) * strlen(mode));
+		sspi_mode = zmalloc(sizeof(wchar_t) * strlen(mode));
 		mbstowcs(sspi_mode, mode, strlen(mode));
 #else
 		sspi_mode = strdup(mode);
