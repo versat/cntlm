@@ -136,7 +136,8 @@ void sighandler(int p) {
  * Parse proxy parameter and add it to the global list.
  */
 int parent_add(char *parent, int port) {
-	int len, i;
+	int len;
+	int i;
 	char *proxy;
 	proxy_t *aux;
 
@@ -195,7 +196,10 @@ int parent_add(char *parent, int port) {
  */
 void listen_add(const char *service, plist_t *list, char *spec, int gateway) {
 	struct in_addr source;
-	int i, p, len, port;
+	int i;
+	int p;
+	int len;
+	int port;
 	char *tmp;
 
 	len = strlen(spec);
@@ -230,7 +234,11 @@ void listen_add(const char *service, plist_t *list, char *spec, int gateway) {
  */
 void tunnel_add(plist_t *list, char *spec, int gateway) {
 	struct in_addr source;
-	int i, len, count, pos, port;
+	int i;
+	int len;
+	int count;
+	int pos;
+	int port;
 	char *field[4];
 	char *tmp;
 
@@ -289,7 +297,8 @@ void tunnel_add(plist_t *list, char *spec, int gateway) {
  * Add no-proxy hostname/IP
  */
 plist_t noproxy_add(plist_t list, char *spec) {
-	char *tok, *save;
+	char *tok;
+	char *save;
 
 	tok = strtok_r(spec, ", ", &save);
 	while ( tok != NULL ) {
@@ -325,7 +334,8 @@ int noproxy_match(const char *addr) {
  * Proxy thread - decide between direct and forward based on NoProxy
  */
 void *proxy_thread(void *thread_data) {
-	rr_data_t request, ret;
+	rr_data_t request;
+	rr_data_t ret;
 	int keep_alive;				/* Proxy-Connection */
 
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
@@ -394,7 +404,8 @@ void *proxy_thread(void *thread_data) {
  * their HTTP CONNECT in the first place.
  */
 void *tunnel_thread(void *thread_data) {
-	char *hostname, *pos;
+	char *hostname;
+	char *pos;
 	char *thost = ((struct thread_arg_s *)thread_data)->target;
 
 	hostname = strdup(thost);
@@ -427,12 +438,22 @@ void *socks5_thread(void *thread_data) {
 	static const uint8_t SOCKS5_AUTH_NO_AUTHENTICATION_REQUIRED = 0x00;
 	static const uint8_t SOCKS5_AUTH_USERNAME_PASSWORD = 0x02;
 	static const uint8_t SOCKS5_AUTH_NO_ACCEPTABLE_METHODS = 0xFF;
-	char *tmp, *thost, *tport, *uname, *upass;
+	char *tmp;
+	char *thost;
+	char *tport;
+	char *uname;
+	char *upass;
 	unsigned short port;
-	int ver, r, c, i, w;
+	int ver;
+	int r;
+	int c;
+	int i;
+	int w;
 
 	struct auth_s *tcreds = NULL;
-	unsigned char *bs = NULL, *auths = NULL, *addr = NULL;
+	unsigned char *bs = NULL;
+	unsigned char *auths = NULL;
+	unsigned char *addr = NULL;
 	int found = -1;
 	int sd = -1;
 	int open = !hlist_count(users_list);
@@ -701,15 +722,26 @@ bailout:
 }
 
 int main(int argc, char **argv) {
-	char *tmp, *head;
-	char *cpassword, *cpassntlm2, *cpassnt, *cpasslm;
-	char *cuser, *cdomain, *cworkstation, *cuid, *cpidfile, *cauth;
+	char *tmp;
+	char *head;
+	char *cpassword;
+	char *cpassntlm2;
+	char *cpassnt;
+	char *cpasslm;
+	char *cuser;
+	char *cdomain;
+	char *cworkstation;
+	char *cuid;
+	char *cpidfile;
+	char *cauth;
 	struct passwd *pw;
-	struct termios termold, termnew;
+	struct termios termold;
+	struct termios termnew;
 	pthread_attr_t pattr;
 	pthread_t pthr;
 	hlist_t list;
-	int i, w;
+	int i;
+	int w;
 
 	int cd = 0;
 	int help = 0;
