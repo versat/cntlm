@@ -178,7 +178,7 @@ bailout:
 	return rc;
 }
 
-rr_data_t direct_request(void *cdata, rr_data_t request) {
+rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 	rr_data_t data[2] = { NULL, NULL };
 	rr_data_t rc = NULL;
 	struct auth_s *tcreds = NULL;
