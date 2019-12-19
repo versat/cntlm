@@ -148,8 +148,8 @@ extern char *zmalloc(size_t size) __attribute__((warn_unused_result, malloc, all
 extern char *urlencode(const char * const str) __attribute__((warn_unused_result));
 
 extern rr_data_t new_rr_data(void) __attribute__((warn_unused_result));
-extern rr_data_t copy_rr_data(rr_data_t dst, const rr_data_t src);
-extern rr_data_t dup_rr_data(const rr_data_t data) __attribute__((warn_unused_result));
+extern rr_data_t copy_rr_data(rr_data_t dst, const rr_data_const_t src);
+extern rr_data_t dup_rr_data(const rr_data_const_t data) __attribute__((warn_unused_result));
 extern rr_data_t reset_rr_data(rr_data_t data);
 extern void free_rr_data(rr_data_t * data);
 

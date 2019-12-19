@@ -541,7 +541,7 @@ rr_data_t new_rr_data(void) {
 /*
  * Copy the req/res data.
  */
-rr_data_t copy_rr_data(rr_data_t dst, const rr_data_t src) {
+rr_data_t copy_rr_data(rr_data_t dst, const rr_data_const_t src) {
 	if (dst == NULL) {
 		fprintf(stderr, "Internal error in copy_rr_data: Pointer dst is NULL\n");
 		assert(0);
@@ -587,7 +587,7 @@ rr_data_t copy_rr_data(rr_data_t dst, const rr_data_t src) {
 /*
  * Duplicate the req/res data.
  */
-rr_data_t dup_rr_data(const rr_data_t data) {
+rr_data_t dup_rr_data(const rr_data_const_t data) {
 	rr_data_t tmp;
 
 	if (data == NULL) {
