@@ -85,10 +85,13 @@ char *get_http_header_value(const char *src) {
  * Returns: 1 if OK, 0 in case of socket EOF or other error
  */
 int headers_recv(int fd, rr_data_t data) {
-	int i, bsize;
-	int len, is_http = 0;
+	int i;
+	int bsize;
+	int len;
+	int is_http = 0;
 	char *buf;
-	char *tok, *s3 = 0;
+	char *tok;
+	char *s3 = NULL;
 	char *orig = NULL;
 	char *ccode = NULL;
 	char *host = NULL;
@@ -269,7 +272,8 @@ bailout:
 int headers_send(int fd, rr_data_t data) {
 	hlist_t t;
 	char *buf;
-	int i, len;
+	int i;
+	int len;
 
 	/*
 	 * First compute required buffer size (avoid realloc, etc)
@@ -340,7 +344,8 @@ int headers_send(int fd, rr_data_t data) {
  */
 int data_send(int dst, int src, length_t len) {
 	char *buf;
-	int i, block;
+	int i;
+	int block;
 	int c = 0;
 	int j = 1;
 
@@ -392,8 +397,11 @@ int data_send(int dst, int src, length_t len) {
  */
 int chunked_data_send(int dst, int src) {
 	char *buf;
-	int bsize, len;
-	int i, w, csize;
+	int bsize;
+	int len;
+	int i;
+	int w;
+	int csize;
 
 	char *err = NULL;
 
@@ -452,7 +460,10 @@ int chunked_data_send(int dst, int src) {
  */
 int tunnel(int cd, int sd) {
 	fd_set set;
-	int from, to, ret, sel;
+	int from;
+	int to;
+	int ret;
+	int sel;
 	char *buf;
 
 	buf = zmalloc(BUFSIZE);
@@ -630,7 +641,10 @@ int http_body_drop(int fd, rr_data_t response) {
  * Return 1 = creds parsed OK, 0 = no creds, -1 = invalid creds
  */
 int http_parse_basic(hlist_t headers, const char *header, struct auth_s *tcreds) {
-	char *tmp = NULL, *pos = NULL, *buf = NULL, *dom = NULL;
+	char *tmp = NULL;
+	char *pos = NULL;
+	char *buf = NULL;
+	char *dom = NULL;
 	size_t i;
 
 	if (!hlist_subcmp(headers, header, "basic"))
