@@ -41,10 +41,10 @@ extern char *get_http_header_name(const char *src);
 extern char *get_http_header_value(const char *src);
 extern int http_parse_basic(hlist_t headers, const char *header, struct auth_s *tcreds);
 extern int headers_recv(int fd, rr_data_t data);
-extern int headers_send(int fd, rr_data_t data);
+extern int headers_send(int fd, rr_data_const_t data);
 extern int tunnel(int cd, int sd);
-extern length_t http_has_body(rr_data_t request, rr_data_t response);
-extern int http_body_send(int writefd, int readfd, rr_data_t request, rr_data_t response);
-extern int http_body_drop(int fd, rr_data_t response);
+extern length_t http_has_body(rr_data_const_t request, rr_data_const_t response);
+extern int http_body_send(int writefd, int readfd, rr_data_const_t request, rr_data_const_t response);
+extern int http_body_drop(int fd, rr_data_const_t response);
 
 #endif /* _HTTP_H */

@@ -269,7 +269,7 @@ bailout:
  * Send HTTP request/response to the given socket based on what's in "data".
  * Returns: 1 if OK, 0 in case of socket error
  */
-int headers_send(int fd, rr_data_t data) {
+int headers_send(int fd, rr_data_const_t data) {
 	hlist_t t;
 	char *buf;
 	int i;
@@ -507,8 +507,8 @@ int tunnel(int cd, int sd) {
  * Return 0 if no body, -1 if body until EOF, number if size known
  * One of request/response can be NULL
  */
-length_t http_has_body(rr_data_t request, rr_data_t response) {
-	rr_data_t current;
+length_t http_has_body(rr_data_const_t request, rr_data_const_t response) {
+	rr_data_const_t current;
 	length_t length;
 	int nobody;
 	char *tmp;
@@ -571,10 +571,10 @@ length_t http_has_body(rr_data_t request, rr_data_t response) {
 /*
  * Send a HTTP body (if any) between descriptors readfd and writefd
  */
-int http_body_send(int writefd, int readfd, rr_data_t request, rr_data_t response) {
+int http_body_send(int writefd, int readfd, rr_data_const_t request, rr_data_const_t response) {
 	length_t bodylen;
 	int rc = 1;
-	rr_data_t current;
+	rr_data_const_t current;
 
 	/*
 	 * Are we checking a complete req+res conversation or just the
@@ -615,7 +615,7 @@ int http_body_send(int writefd, int readfd, rr_data_t request, rr_data_t respons
  * Connection cleanup - C-L or chunked body
  * Return 0 if connection closed or EOF, 1 if OK to continue
  */
-int http_body_drop(int fd, rr_data_t response) {
+int http_body_drop(int fd, rr_data_const_t response) {
 	length_t bodylen;
 	int rc = 1;
 

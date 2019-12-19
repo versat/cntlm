@@ -84,6 +84,7 @@ typedef enum {
  * kept in this. See below for (de)allocation routines.
  */
 typedef struct rr_data_s *rr_data_t;
+typedef const struct rr_data_s *rr_data_const_t;
 struct rr_data_s {
 	int req;
 	hlist_t headers;
