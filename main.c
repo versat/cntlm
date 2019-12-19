@@ -438,7 +438,6 @@ void *socks5_thread(void *thread_data) {
 	static const uint8_t SOCKS5_AUTH_NO_AUTHENTICATION_REQUIRED = 0x00;
 	static const uint8_t SOCKS5_AUTH_USERNAME_PASSWORD = 0x02;
 	static const uint8_t SOCKS5_AUTH_NO_ACCEPTABLE_METHODS = 0xFF;
-	char *tmp;
 	char *thost;
 	char *tport;
 	char *uname;
@@ -565,7 +564,7 @@ void *socks5_thread(void *thread_data) {
 		/*
 		 * Check credentials against the list
 		 */
-		tmp = hlist_get(users_list, uname);
+		const char * tmp = hlist_get(users_list, uname);
 		if (!hlist_count(users_list) || (tmp && !strcmp(tmp, upass))) {
 			bs[0] = 1;
 			bs[1] = 0;		/* Success */
