@@ -75,7 +75,8 @@ void croak(const char *msg, const int console) {
  * associating it with the key.
  */
 plist_t plist_add(plist_t list, const unsigned long key, void *aux) {
-	plist_t tmp, t = list;
+	plist_t tmp;
+	plist_t t = list;
 
 	tmp = malloc(sizeof(struct plist_s));
 	tmp->key = key;
@@ -98,7 +99,8 @@ plist_t plist_add(plist_t list, const unsigned long key, void *aux) {
  * the list is empty or nothing was found.
  */
 plist_t plist_del(plist_t list, const unsigned long key) {
-	plist_t ot = NULL, t = list;
+	plist_t ot = NULL;
+	plist_t t = list;
 
 	while (t) {
 		if (t->key == key)
@@ -182,7 +184,8 @@ char *plist_get(plist_t list, const int key) {
  */
 
 int plist_pop(plist_t *list, void **aux) {
-	plist_t tmp, t;
+	plist_t tmp;
+	plist_t t;
 	int id = 0;
 	int ok = 0;
 	void *a = NULL;

@@ -869,7 +869,8 @@ void magic_auth_detect(const char *url) {
 	int nc;
 	int ign = 0;
 	int found = -1;
-	rr_data_t req, res;
+	rr_data_t req;
+	rr_data_t res;
 	const char *pos;
 	char *host = NULL;
 
