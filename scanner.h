@@ -36,6 +36,6 @@
  */
 #define SAMPLE		4096
 
-extern int scanner_hook(rr_data_t request, rr_data_t response, struct auth_s *credentials, int cd, int *sd, long maxKBs);
+extern int scanner_hook(rr_data_const_t request, rr_data_t response, struct auth_s *credentials, int cd, int *sd, long maxKBs);
 
 #endif /* _SCANNER_H */

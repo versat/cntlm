@@ -38,7 +38,7 @@
  * This code is a piece of shit, but it works. Cannot rewrite it now, because
  * I don't have ISA AV filter anymore - wouldn't be able to test it.
  */
-int scanner_hook(rr_data_t request, rr_data_t response, struct auth_s *credentials, int cd, int *sd, long maxKBs) {
+int scanner_hook(rr_data_const_t request, rr_data_t response, struct auth_s *credentials, int cd, int *sd, long maxKBs) {
 	char *buf, *line, *pos, *tmp, *pat, *post, *isaid, *uurl;
 	int bsize, lsize, size, len, i, nc;
 	rr_data_t newreq, newres;
