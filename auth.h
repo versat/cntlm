@@ -65,8 +65,8 @@ struct auth_s {
  * new_auth() is also just a convenience malloc/memset() wrapper
  */
 extern struct auth_s *new_auth(void);
-extern struct auth_s *copy_auth(struct auth_s *dst, struct auth_s *src, int fullcopy);
-extern struct auth_s *dup_auth(struct auth_s *creds, int fullcopy);
-extern void dump_auth(struct auth_s *creds);
+extern struct auth_s *copy_auth(struct auth_s *dst, const struct auth_s *src, int fullcopy);
+extern struct auth_s *dup_auth(const struct auth_s *creds, int fullcopy);
+extern void dump_auth(const struct auth_s *creds);
 
 #endif /* _AUTH_H */

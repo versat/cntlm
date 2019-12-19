@@ -50,7 +50,7 @@ struct auth_s *new_auth(void) {
 	return tmp;
 }
 
-struct auth_s *copy_auth(struct auth_s *dst, struct auth_s *src, int fullcopy) {
+struct auth_s *copy_auth(struct auth_s *dst, const struct auth_s *src, int fullcopy) {
 	dst->hashntlm2 = src->hashntlm2;
 	dst->hashnt = src->hashnt;
 	dst->hashlm = src->hashlm;
@@ -74,7 +74,7 @@ struct auth_s *copy_auth(struct auth_s *dst, struct auth_s *src, int fullcopy) {
 	return dst;
 }
 
-struct auth_s *dup_auth(struct auth_s *creds, int fullcopy) {
+struct auth_s *dup_auth(const struct auth_s *creds, int fullcopy) {
 	struct auth_s *tmp;
 
 	tmp = new_auth();
@@ -84,7 +84,7 @@ struct auth_s *dup_auth(struct auth_s *creds, int fullcopy) {
 	return copy_auth(tmp, creds, fullcopy);
 }
 
-void dump_auth(struct auth_s *creds) {
+void dump_auth(const struct auth_s *creds) {
 	char *tmp;
 
 	printf("Credentials structure dump:\n");
