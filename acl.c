@@ -99,13 +99,10 @@ int acl_add(plist_t *rules, char *spec, enum acl_t acl) {
  * targeting either "*" or "0/0" to explicitly express
  * one's intentions.
  */
-enum acl_t acl_check(plist_t rules, struct in_addr naddr) {
-	network_t *aux;
-	unsigned int mask;
-
+enum acl_t acl_check(plist_const_t rules, const struct in_addr naddr) {
 	while (rules) {
-		aux = (network_t *)rules->aux;
-		mask = swap32(~(((uint64_t)1 << (32-aux->mask)) - 1));
+		const network_t * const aux = (network_t *)rules->aux;
+		const unsigned int mask = swap32(~(((uint64_t)1 << (32-aux->mask)) - 1));
 
 		if ((naddr.s_addr & mask) == (aux->ip & mask))
 			return ACL_DENY;

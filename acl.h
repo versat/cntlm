@@ -40,6 +40,6 @@ typedef struct {
 } network_t;
 
 extern int acl_add(plist_t *rules, char *spec, enum acl_t acl);
-extern enum acl_t acl_check(plist_t rules, struct in_addr naddr);
+extern enum acl_t acl_check(plist_const_t rules, const struct in_addr naddr);
 
 #endif /* _ACL_H */

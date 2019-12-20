@@ -68,6 +68,7 @@ struct hlist_s {
 };
 
 typedef struct plist_s *plist_t;
+typedef const struct plist_s *plist_const_t;
 struct plist_s {
 	unsigned long key;
 	void *aux;
