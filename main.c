@@ -42,6 +42,7 @@
 #include <syslog.h>
 #include <termios.h>
 #include <fnmatch.h>
+#include <assert.h>
 #ifdef __CYGWIN__
 #include <windows.h>
 #endif
@@ -406,7 +407,9 @@ void *proxy_thread(void *thread_data) {
 void *tunnel_thread(void *thread_data) {
 	char *hostname;
 	char *pos;
-	char *thost = ((struct thread_arg_s *)thread_data)->target;
+
+	assert(thread_data != NULL);
+	const char * const thost = ((struct thread_arg_s *)thread_data)->target;
 
 	hostname = strdup(thost);
 	if ((pos = strchr(hostname, ':')) != NULL)
@@ -733,7 +736,6 @@ int main(int argc, char **argv) {
 	char *cuid;
 	char *cpidfile;
 	char *cauth;
-	struct passwd *pw;
 	struct termios termold;
 	struct termios termnew;
 	pthread_attr_t pattr;
@@ -1542,7 +1544,7 @@ int main(int argc, char **argv) {
 					myexit(1);
 				}
 			} else {
-				pw = getpwnam(cuid);
+				const struct passwd * const pw = getpwnam(cuid);
 				if (!pw || !pw->pw_uid) {
 					syslog(LOG_ERR, "Username %s in -U is invalid\n", cuid);
 					myexit(1);
