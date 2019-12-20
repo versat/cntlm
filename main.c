@@ -1004,6 +1004,11 @@ int main(int argc, char **argv) {
 				"\t    Create a PID file upon successful start.\n");
 		fprintf(stderr, "\t-p  <password>\n"
 				"\t    Account password. Will not be visible in \"ps\", /proc, etc.\n");
+		fprintf(stderr, "\t-q  <level>\n"
+				"\t    Controls logging of requests like CONNECT/GET with URL.\n"
+				"\t    level can be:\n"
+				"\t    0 no requests are logged - default\n"
+				"\t    1 requests are logged (old behavior)\n");
 		fprintf(stderr, "\t-r  \"HeaderName: value\"\n"
 				"\t    Add a header substitution. All such headers will be added/replaced\n"
 				"\t    in the client's requests.\n");
@@ -1022,12 +1027,8 @@ int main(int argc, char **argv) {
 				"\t    Some proxies require correct NetBIOS hostname.\n");
 		fprintf(stderr, "\t-X  <sspi_handle_type>\n"
 				"\t    Use SSPI with specified handle type. Works only under Windows.\n"
-				"\t    Default is negotiate.\n\n");
-		fprintf(stderr, "\t-q  <level>\n"
-				"\t    Controls logging of requests like CONNECT/GET with URL."
-				"\t    level can be:\n"
-				"\t    0 no requests are logged - default"
-				"\t    1 requests are logged (old behavior)");
+				"\t    Default is negotiate.\n");
+		fprintf(stderr, "\n");
 		exit(1);
 	}
 
