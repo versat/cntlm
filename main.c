@@ -949,15 +949,17 @@ int main(int argc, char **argv) {
 				}
 				break;
 			case 'h':
-			default:
 				help = 1;
+				break;
+			default:
+				help = 2;
 		}
 	}
 
 	/*
 	 * Help requested?
 	 */
-	if (help) {
+	if (help > 0) {
 		printf("CNTLM - Accelerating NTLM Authentication Proxy version " VERSION "\n");
 		printf("Copyright (c) 2oo7-2o1o David Kubicek\n\n"
 			"This program comes with NO WARRANTY, to the extent permitted by law. You\n"
@@ -965,71 +967,78 @@ int main(int argc, char **argv) {
 			"newer. For more information about these matters, see the file LICENSE.\n"
 			"For copyright holders of included encryption routines see headers.\n\n");
 
-		fprintf(stderr, "Usage: %s [-AaBcDdFfgHhILlMPpSsTUuvw] <proxy_host>[:]<proxy_port> ...\n", argv[0]);
-		fprintf(stderr, "\t-A  <address>[/<net>]\n"
+		FILE * stream = stdout;
+		int exit_code = 0;
+		if (help > 1) {
+			stream = stderr;
+			exit_code = 1;
+		}
+
+		fprintf(stream, "Usage: %s [-AaBcDdFfgHhILlMPpSsTUuvw] <proxy_host>[:]<proxy_port> ...\n", argv[0]);
+		fprintf(stream, "\t-A  <address>[/<net>]\n"
 				"\t    ACL allow rule. IP or hostname, net must be a number (CIDR notation)\n");
-		fprintf(stderr, "\t-a  ntlm | nt | lm\n"
+		fprintf(stream, "\t-a  ntlm | nt | lm\n"
 				"\t    Authentication type - combined NTLM, just LM, or just NT. Default NTLM.\n"
 				"\t    It is the most versatile setting and likely to work for you.\n");
-		fprintf(stderr, "\t-B  Enable NTLM-to-basic authentication.\n");
-		fprintf(stderr, "\t-c  <config_file>\n"
+		fprintf(stream, "\t-B  Enable NTLM-to-basic authentication.\n");
+		fprintf(stream, "\t-c  <config_file>\n"
 				"\t    Configuration file. Other arguments can be used as well, overriding\n"
 				"\t    config file settings.\n");
-		fprintf(stderr, "\t-D  <address>[/<net>]\n"
+		fprintf(stream, "\t-D  <address>[/<net>]\n"
 				"\t    ACL deny rule. Syntax same as -A.\n");
-		fprintf(stderr, "\t-d  <domain>\n"
+		fprintf(stream, "\t-d  <domain>\n"
 				"\t    Domain/workgroup can be set separately.\n");
-		fprintf(stderr, "\t-f  Run in foreground, do not fork into daemon mode.\n");
-		fprintf(stderr, "\t-F  <flags>\n"
+		fprintf(stream, "\t-f  Run in foreground, do not fork into daemon mode.\n");
+		fprintf(stream, "\t-F  <flags>\n"
 				"\t    NTLM authentication flags.\n");
-		fprintf(stderr, "\t-G  <pattern>\n"
+		fprintf(stream, "\t-G  <pattern>\n"
 				"\t    User-Agent matching for the trans-isa-scan plugin.\n");
-		fprintf(stderr, "\t-g  Gateway mode - listen on all interfaces, not only loopback.\n");
-		fprintf(stderr, "\t-H  Print password hashes for use in config file (NTLMv2 needs -u and -d).\n");
-		fprintf(stderr, "\t-h  Print this help info along with version number.\n");
-		fprintf(stderr, "\t-I  Prompt for the password interactively.\n");
-		fprintf(stderr, "\t-L  [<saddr>:]<lport>:<rhost>:<rport>\n"
+		fprintf(stream, "\t-g  Gateway mode - listen on all interfaces, not only loopback.\n");
+		fprintf(stream, "\t-H  Print password hashes for use in config file (NTLMv2 needs -u and -d).\n");
+		fprintf(stream, "\t-h  Print this help info along with version number.\n");
+		fprintf(stream, "\t-I  Prompt for the password interactively.\n");
+		fprintf(stream, "\t-L  [<saddr>:]<lport>:<rhost>:<rport>\n"
 				"\t    Forwarding/tunneling a la OpenSSH. Same syntax - listen on lport\n"
 				"\t    and forward all connections through the proxy to rhost:rport.\n"
 				"\t    Can be used for direct tunneling without corkscrew, etc.\n");
-		fprintf(stderr, "\t-l  [<saddr>:]<lport>\n"
+		fprintf(stream, "\t-l  [<saddr>:]<lport>\n"
 				"\t    Main listening port for the NTLM proxy.\n");
-		fprintf(stderr, "\t-M  <testurl>\n"
+		fprintf(stream, "\t-M  <testurl>\n"
 				"\t    Magic autodetection of proxy's NTLM dialect.\n");
-		fprintf(stderr, "\t-N  \"<hostname_wildcard1>[, <hostname_wildcardN>\"\n"
+		fprintf(stream, "\t-N  \"<hostname_wildcard1>[, <hostname_wildcardN>\"\n"
 				"\t    List of URL's to serve directly as stand-alone proxy (e.g. '*.local')\n");
-		fprintf(stderr, "\t-O  [<saddr>:]<lport>\n"
+		fprintf(stream, "\t-O  [<saddr>:]<lport>\n"
 				"\t    Enable SOCKS5 proxy on port lport (binding to address saddr)\n");
-		fprintf(stderr, "\t-P  <pidfile>\n"
+		fprintf(stream, "\t-P  <pidfile>\n"
 				"\t    Create a PID file upon successful start.\n");
-		fprintf(stderr, "\t-p  <password>\n"
+		fprintf(stream, "\t-p  <password>\n"
 				"\t    Account password. Will not be visible in \"ps\", /proc, etc.\n");
-		fprintf(stderr, "\t-q  <level>\n"
+		fprintf(stream, "\t-q  <level>\n"
 				"\t    Controls logging of requests like CONNECT/GET with URL.\n"
 				"\t    level can be:\n"
 				"\t    0 no requests are logged - default\n"
 				"\t    1 requests are logged (old behavior)\n");
-		fprintf(stderr, "\t-r  \"HeaderName: value\"\n"
+		fprintf(stream, "\t-r  \"HeaderName: value\"\n"
 				"\t    Add a header substitution. All such headers will be added/replaced\n"
 				"\t    in the client's requests.\n");
-		fprintf(stderr, "\t-S  <size_in_kb>\n"
+		fprintf(stream, "\t-S  <size_in_kb>\n"
 				"\t    Enable automation of GFI WebMonitor ISA scanner for files < size_in_kb.\n");
-		fprintf(stderr, "\t-s  Do not use threads, serialize all requests - for debugging only.\n");
-		fprintf(stderr, "\t-T  <file.log>\n"
+		fprintf(stream, "\t-s  Do not use threads, serialize all requests - for debugging only.\n");
+		fprintf(stream, "\t-T  <file.log>\n"
 				"\t    Redirect all debug information into a trace file for support upload.\n"
 				"\t    MUST be the first argument on the command line, implies -v.\n");
-		fprintf(stderr, "\t-U  <uid>\n"
+		fprintf(stream, "\t-U  <uid>\n"
 				"\t    Run as uid. It is an important security measure not to run as root.\n");
-		fprintf(stderr, "\t-u  <user>[@<domain]\n"
+		fprintf(stream, "\t-u  <user>[@<domain]\n"
 				"\t    Domain/workgroup can be set separately.\n");
-		fprintf(stderr, "\t-v  Print debugging information.\n");
+		fprintf(stream, "\t-v  Print debugging information.\n");
 		fprintf(stderr, "\t-w  <workstation>\n"
 				"\t    Some proxies require correct NetBIOS hostname.\n");
-		fprintf(stderr, "\t-X  <sspi_handle_type>\n"
+		fprintf(stream, "\t-X  <sspi_handle_type>\n"
 				"\t    Use SSPI with specified handle type. Works only under Windows.\n"
 				"\t    Default is negotiate.\n");
-		fprintf(stderr, "\n");
-		exit(1);
+		fprintf(stream, "\n");
+		exit(exit_code);
 	}
 
 	if (debug) {
