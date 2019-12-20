@@ -1,8 +1,8 @@
 # Cntlm
 
-|Travis CI (Linux)|AppVeyor Build (Cygwin)|Coverity Scan|Codacy Analysis|
-|:--:|:--:|:--:|:--:|
-|[![Travis Build Status](https://travis-ci.org/versat/cntlm.svg?branch=master)](https://travis-ci.org/versat/cntlm)|[![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/rthu5vjr0ksalyls/branch/master?svg=true)](https://ci.appveyor.com/project/versat/cntlm/branch/master)|[![Coverity Scan Build Status](https://img.shields.io/coverity/scan/15940.svg)](https://scan.coverity.com/projects/versat-cntlm)|[![Codacy Badge](https://api.codacy.com/project/badge/Grade/c506885b133047d38cd2c9dd4505320b)](https://www.codacy.com/app/versat/cntlm?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=versat/cntlm&amp;utm_campaign=Badge_Grade)|
+|Travis CI (Linux)|AppVeyor Build (Cygwin)|Coverity Scan|Codacy Analysis|License|
+|:--:|:--:|:--:|:--:|:--:|
+|[![Travis Build Status](https://travis-ci.org/versat/cntlm.svg?branch=master)](https://travis-ci.org/versat/cntlm)|[![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/rthu5vjr0ksalyls/branch/master?svg=true)](https://ci.appveyor.com/project/versat/cntlm/branch/master)|[![Coverity Scan Build Status](https://img.shields.io/coverity/scan/15940.svg)](https://scan.coverity.com/projects/versat-cntlm)|[![Codacy Badge](https://api.codacy.com/project/badge/Grade/c506885b133047d38cd2c9dd4505320b)](https://www.codacy.com/app/versat/cntlm?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=versat/cntlm&amp;utm_campaign=Badge_Grade)|[![License](https://img.shields.io/badge/license-GPL2.0-blue.svg)](https://opensource.org/licenses/GPL-2.0)|
 
 ## Installation using packages
 
