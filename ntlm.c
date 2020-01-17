@@ -36,7 +36,7 @@
 
 extern int debug;
 
-static void ntlm_set_key(unsigned char *src, gl_des_ctx *context) {
+static void ntlm_set_key(const unsigned char *src, gl_des_ctx *context) {
 	char key[8];
 
 	key[0] = src[0];
@@ -51,7 +51,7 @@ static void ntlm_set_key(unsigned char *src, gl_des_ctx *context) {
 	gl_des_setkey(context, key);
 }
 
-static int ntlm_calc_resp(char **dst, char *keys, char *challenge) {
+static int ntlm_calc_resp(char **dst, char *keys, const char *challenge) {
 	gl_des_ctx context;
 
 	*dst = zmalloc(24 + 1);
@@ -69,8 +69,11 @@ static int ntlm_calc_resp(char **dst, char *keys, char *challenge) {
 }
 
 static void ntlm2_calc_resp(char **nthash, int *ntlen, char **lmhash, int *lmlen,
-		char *passnt2, char *challenge, int tbofs, int tblen) {
-	char *tmp, *blob, *nonce, *buf;
+		const char *passnt2, char *challenge, int tbofs, int tblen) {
+	char *tmp;
+	char *blob;
+	char *nonce;
+	char *buf;
 	int64_t tw;
 	int blen;
 
@@ -128,7 +131,9 @@ static void ntlm2_calc_resp(char **nthash, int *ntlen, char **lmhash, int *lmlen
 }
 
 static void ntlm2sr_calc_rest(char **nthash, int *ntlen, char **lmhash, int *lmlen, char *passnt, char *challenge) {
-	char *sess, *nonce, *buf;
+	char *sess;
+	char *nonce;
+	char *buf;
 
 	nonce = zmalloc(8 + 1);
 	VAL(nonce, uint64_t, 0) = getrandom64();
@@ -153,10 +158,11 @@ static void ntlm2sr_calc_rest(char **nthash, int *ntlen, char **lmhash, int *lml
 	return;
 }
 
-char *ntlm_hash_lm_password(char *password) {
+char *ntlm_hash_lm_password(const char *password) {
 	char magic[8] = {0x4B, 0x47, 0x53, 0x21, 0x40, 0x23, 0x24, 0x25};
 	gl_des_ctx context;
-	char *keys, *pass;
+	char *keys;
+	char *pass;
 
 	keys = zmalloc(21 + 1);
 	pass = zmalloc(14 + 1);
@@ -175,8 +181,9 @@ char *ntlm_hash_lm_password(char *password) {
 	return keys;
 }
 
-char *ntlm_hash_nt_password(char *password) {
-	char *u16, *keys;
+char *ntlm_hash_nt_password(const char *password) {
+	char *u16;
+	char *keys;
 	int len;
 
 	keys = zmalloc(21 + 1);
@@ -190,8 +197,11 @@ char *ntlm_hash_nt_password(char *password) {
 	return keys;
 }
 
-char *ntlm2_hash_password(char *username, char *domain, char *password) {
-	char *tmp, *buf, *passnt, *passnt2;
+char *ntlm2_hash_password(const char *username, const char *domain, const char *password) {
+	char *tmp;
+	char *buf;
+	char *passnt;
+	char *passnt2;
 	int len;
 
 	passnt = ntlm_hash_nt_password(password);
@@ -220,8 +230,10 @@ int ntlm_request(char **dst, struct auth_s *creds) {
 		return sspi_request(dst, &creds->sspi);
 	}
 #endif
-	char *buf, *tmp;
-	int dlen, hlen;
+	char *buf;
+	char *tmp;
+	int dlen;
+	int hlen;
 	uint32_t flags = 0xb206;
 
 	*dst = NULL;
@@ -279,7 +291,7 @@ int ntlm_request(char **dst, struct auth_s *creds) {
 	return 32+dlen+hlen;
 }
 
-static char *printuc(char *src, int len) {
+static char *printuc(const char *src, int len) {
 	char *tmp;
 	int i;
 
@@ -313,11 +325,23 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 		return sspi_response(dst, challenge, challen, &creds->sspi);
 	}
 #endif
-	char *buf, *udomain, *uuser, *uhost, *tmp;
-	int dlen, ulen, hlen;
-	uint16_t tpos, tlen, ttype = -1, tbofs = 0, tblen = 0;
-	char *lmhash = NULL, *nthash = NULL;
-	int lmlen = 0, ntlen = 0;
+	char *buf;
+	char *udomain;
+	char *uuser;
+	char *uhost;
+	char *tmp;
+	int dlen;
+	int ulen;
+	int hlen;
+	uint16_t tpos;
+	uint16_t tlen;
+	uint16_t ttype = -1;
+	uint16_t tbofs = 0;
+	uint16_t tblen = 0;
+	char *lmhash = NULL;
+	char *nthash = NULL;
+	int lmlen = 0;
+	int ntlen = 0;
 
 	if (debug) {
 		printf("NTLM Challenge:\n");

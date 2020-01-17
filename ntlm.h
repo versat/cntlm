@@ -28,9 +28,9 @@
 #define NTLM_BUFSIZE		1024
 #define NTLM_CHALLENGE_MIN	40
 
-extern char *ntlm_hash_lm_password(char *password);
-extern char *ntlm_hash_nt_password(char *password);
-extern char *ntlm2_hash_password(char *username, char *domain, char *password);
+extern char *ntlm_hash_lm_password(const char *password);
+extern char *ntlm_hash_nt_password(const char *password);
+extern char *ntlm2_hash_password(const char *username, const char *domain, const char *password);
 extern int ntlm_request(char **dst, struct auth_s *creds);
 extern int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds);
 
