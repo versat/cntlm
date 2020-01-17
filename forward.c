@@ -54,7 +54,8 @@ int proxy_connect(struct auth_s *credentials) {
 	proxy_t *aux;
 	int i;
 	int prev;
-	plist_t list, tmp;
+	plist_t list;
+	plist_t tmp;
 	int loop = 0;
 
 	prev = parent_curr;
