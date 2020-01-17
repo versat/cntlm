@@ -51,7 +51,9 @@ int so_resolv(struct in_addr *host, const char *name) {
 	memcpy(host, resolv->h_addr_list[0], resolv->h_length);
 	return 1;
 */
-	struct addrinfo hints, *res, *p;
+	struct addrinfo hints;
+	struct addrinfo *res;
+	struct addrinfo *p;
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
@@ -93,7 +95,9 @@ int so_resolv(struct in_addr *host, const char *name) {
  * Returns: socket descriptor
  */
 int so_connect(struct in_addr host, int port) {
-	int flags, fd, rc;
+	int flags;
+	int fd;
+	int rc;
 	struct sockaddr_in saddr;
 	// struct timeval tv;
 	// fd_set fds;
