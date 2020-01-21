@@ -127,8 +127,8 @@ plist_t plist_del(plist_t list, const unsigned long key) {
 /*
  * Return true if an item is present in the list.
  */
-int plist_in(plist_t list, const unsigned long key) {
-	plist_t t = list;
+int plist_in(plist_const_t list, const unsigned long key) {
+	plist_const_t t = list;
 
 	while (t) {
 		if (t->key == key)
@@ -143,8 +143,8 @@ int plist_in(plist_t list, const unsigned long key) {
  * For debugging purposes - dump the entire contents
  * of a list.
  */
-void plist_dump(plist_t list) {
-	plist_t t;
+void plist_dump(plist_const_t list) {
+	plist_const_t t;
 
 	t = list;
 	while (t) {
@@ -156,8 +156,8 @@ void plist_dump(plist_t list) {
 /*
  * Return the pointer associated with the key.
  */
-char *plist_get(plist_t list, const int key) {
-	plist_t t = list;
+char *plist_get(plist_const_t list, const int key) {
+	plist_const_t t = list;
 
 	while (t) {
 		if (t->key == key)
@@ -224,8 +224,8 @@ int plist_pop(plist_t *list, void **aux) {
 /*
  * Return the number of items in a list.
  */
-int plist_count(plist_t list) {
-	plist_t t = list;
+int plist_count(plist_const_t list) {
+	plist_const_t t = list;
 	int rc = 0;
 
 	while (t) {
@@ -266,7 +266,8 @@ plist_t plist_free(plist_t list) {
  * bugs throughout the code and tons of free's.
  */
 hlist_t hlist_add(hlist_t list, char *key, char *value, hlist_add_t allockey, hlist_add_t allocvalue) {
-	hlist_t tmp, t = list;
+	hlist_t tmp;
+	hlist_t t = list;
 
 	if (key == NULL || value == NULL)
 		return list;
@@ -291,8 +292,9 @@ hlist_t hlist_add(hlist_t list, char *key, char *value, hlist_add_t allockey, hl
 /*
  * Return a duplicate of the list (copy).
  */
-hlist_t hlist_dup(hlist_t list) {
-	hlist_t tmp = NULL, t = list;
+hlist_t hlist_dup(hlist_const_t list) {
+	hlist_t tmp = NULL;
+	hlist_const_t t = list;
 
 	while (t) {
 		tmp = hlist_add(tmp, t->key, t->value, HLIST_ALLOC, HLIST_ALLOC);
@@ -306,7 +308,8 @@ hlist_t hlist_dup(hlist_t list) {
  * Remove an item from the list.
  */
 hlist_t hlist_del(hlist_t list, const char *key) {
-	hlist_t ot = NULL, t = list;
+	hlist_t ot = NULL;
+	hlist_t t = list;
 
 	while (t) {
 		if (!strcasecmp(t->key, key))
@@ -361,8 +364,8 @@ hlist_t hlist_mod(hlist_t list, char *key, char *value, int add) {
 /*
  * Return true if the key is in the list.
  */
-int hlist_in(hlist_t list, const char *key) {
-	hlist_t t = list;
+int hlist_in(hlist_const_t list, const char *key) {
+	hlist_const_t t = list;
 
 	while (t) {
 		if (!strcasecmp(t->key, key))
@@ -376,8 +379,8 @@ int hlist_in(hlist_t list, const char *key) {
 /*
  * Return the number of items in a list.
  */
-int hlist_count(hlist_t list) {
-	hlist_t t = list;
+int hlist_count(hlist_const_t list) {
+	hlist_const_t t = list;
 	int rc = 0;
 
 	while (t) {
@@ -391,8 +394,8 @@ int hlist_count(hlist_t list) {
 /*
  * Return the value for the key.
  */
-char *hlist_get(hlist_t list, const char *key) {
-	hlist_t t = list;
+char *hlist_get(hlist_const_t list, const char *key) {
+	hlist_const_t t = list;
 
 	while (t) {
 		if (!strcasecmp(t->key, key))
@@ -407,9 +410,10 @@ char *hlist_get(hlist_t list, const char *key) {
  * Test if substr is part of the header's value.
  * Both case-insensitive.
  */
-int hlist_subcmp(hlist_t list, const char *key, const char *substr) {
+int hlist_subcmp(hlist_const_t list, const char *key, const char *substr) {
 	int found = 0;
-	char *tmp, *low;
+	char *tmp;
+	char *low;
 
 	lowercase(low = strdup(substr));
 	tmp = hlist_get(list, key);
@@ -429,10 +433,11 @@ int hlist_subcmp(hlist_t list, const char *key, const char *substr) {
  * Test if substr is part of the header's value.
  * Both case-insensitive, checks all headers, not just first one.
  */
-int hlist_subcmp_all(hlist_t list, const char *key, const char *substr) {
-	hlist_t t = list;
+int hlist_subcmp_all(hlist_const_t list, const char *key, const char *substr) {
+	hlist_const_t t = list;
 	int found = 0;
-	char *tmp, *low;
+	char *tmp;
+	char *low;
 
 	assert(key != NULL);
 	assert(substr != NULL);
@@ -476,8 +481,8 @@ hlist_t hlist_free(hlist_t list) {
 /*
  * This is for debugging purposes.
  */
-void hlist_dump(hlist_t list) {
-	hlist_t t;
+void hlist_dump(hlist_const_t list) {
+	hlist_const_t t;
 
 	t = list;
 	while (t) {
@@ -804,7 +809,8 @@ char *uppercase(char * const str) {
 
 int unicode(char **dst, const char * const src) {
 	char *tmp;
-	int l, i;
+	int l;
+	int i;
 
 	if (!src) {
 		*dst = NULL;

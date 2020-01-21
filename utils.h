@@ -43,11 +43,6 @@
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 /*
-#define isalnum(c)	(isalpha(c) || isdigit(c))
-#define isspace(c)	((c) == ' ' || (c) == '\f' || (c) == '\t' || (c) == '\r' || (c) == '\n')
-*/
-
-/*
  * Solaris doesn't have LOG_PERROR
  */
 #ifndef LOG_PERROR
@@ -60,6 +55,7 @@
  * Each has a different set of manipulation routines.
  */
 typedef struct hlist_s *hlist_t;
+typedef const struct hlist_s *hlist_const_t;
 struct hlist_s {
 	char *key;
 	char *value;
@@ -119,24 +115,24 @@ extern void croak(const char *msg, const int console) __attribute__((noreturn));
 
 extern plist_t plist_add(plist_t list, unsigned long key, void *aux);
 extern plist_t plist_del(plist_t list, const unsigned long key);
-extern int plist_in(plist_t list, const unsigned long key) __attribute__((warn_unused_result));
-extern void plist_dump(plist_t list);
-extern char *plist_get(plist_t list, const int key) __attribute__((warn_unused_result));
+extern int plist_in(plist_const_t list, const unsigned long key) __attribute__((warn_unused_result));
+extern void plist_dump(plist_const_t list);
+extern char *plist_get(plist_const_t list, const int key) __attribute__((warn_unused_result));
 extern int plist_pop(plist_t *list, void **aux);
-extern int plist_count(plist_t list) __attribute__((warn_unused_result));
+extern int plist_count(plist_const_t list) __attribute__((warn_unused_result));
 extern plist_t plist_free(plist_t list);
 
 extern hlist_t hlist_add(hlist_t list, char *key, char *value, hlist_add_t allockey, hlist_add_t allocvalue);
-extern hlist_t hlist_dup(hlist_t list) __attribute__((warn_unused_result));
+extern hlist_t hlist_dup(hlist_const_t list) __attribute__((warn_unused_result));
 extern hlist_t hlist_del(hlist_t list, const char *key);
 extern hlist_t hlist_mod(hlist_t list, char *key, char *value, int add);
-extern int hlist_in(hlist_t list, const char *key) __attribute__((warn_unused_result));
-extern int hlist_count(hlist_t list) __attribute__((warn_unused_result));
-extern char *hlist_get(hlist_t list, const char *key) __attribute__((warn_unused_result));
-extern int hlist_subcmp(hlist_t list, const char *key, const char *substr) __attribute__((warn_unused_result));
-extern int hlist_subcmp_all(hlist_t list, const char *key, const char *substr) __attribute__((warn_unused_result));
+extern int hlist_in(hlist_const_t list, const char *key) __attribute__((warn_unused_result));
+extern int hlist_count(hlist_const_t list) __attribute__((warn_unused_result));
+extern char *hlist_get(hlist_const_t list, const char *key) __attribute__((warn_unused_result));
+extern int hlist_subcmp(hlist_const_t list, const char *key, const char *substr) __attribute__((warn_unused_result));
+extern int hlist_subcmp_all(hlist_const_t list, const char *key, const char *substr) __attribute__((warn_unused_result));
 extern hlist_t hlist_free(hlist_t list);
-extern void hlist_dump(hlist_t list);
+extern void hlist_dump(hlist_const_t list);
 
 extern char *substr(const char *src, int pos, int len) __attribute__((warn_unused_result));
 extern size_t strlcpy(char *dst, const char *src, size_t siz);
