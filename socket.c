@@ -53,7 +53,7 @@ int so_resolv(struct in_addr *host, const char *name) {
 */
 	struct addrinfo hints;
 	struct addrinfo *res;
-	struct addrinfo *p;
+	const struct addrinfo *p;
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
@@ -69,7 +69,7 @@ int so_resolv(struct in_addr *host, const char *name) {
 		printf("Resolve %s:\n", name);
 	int addr_set = 0;
 	for (p = res; p != NULL; p = p->ai_next) {
-		struct sockaddr_in *ad = (struct sockaddr_in*)(p->ai_addr);
+		const struct sockaddr_in *ad = (struct sockaddr_in*)(p->ai_addr);
 		if (ad == NULL) {
 			freeaddrinfo(res);
 			return 0;
