@@ -270,7 +270,7 @@ bailout:
  * Returns: 1 if OK, 0 in case of socket error
  */
 int headers_send(int fd, rr_data_const_t data) {
-	hlist_t t;
+	hlist_const_t t;
 	char *buf;
 	int i;
 	int len;
@@ -511,7 +511,7 @@ length_t http_has_body(rr_data_const_t request, rr_data_const_t response) {
 	rr_data_const_t current;
 	length_t length;
 	int nobody;
-	char *tmp;
+	const char *tmp;
 
 	/*
 	 * Are we checking a complete req+res conversation or just the
@@ -640,7 +640,7 @@ int http_body_drop(int fd, rr_data_const_t response) {
  *
  * Return 1 = creds parsed OK, 0 = no creds, -1 = invalid creds
  */
-int http_parse_basic(hlist_t headers, const char *header, struct auth_s *tcreds) {
+int http_parse_basic(hlist_const_t headers, const char *header, struct auth_s *tcreds) {
 	char *tmp = NULL;
 	char *pos = NULL;
 	char *buf = NULL;
