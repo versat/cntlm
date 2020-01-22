@@ -313,7 +313,7 @@ plist_t noproxy_add(plist_t list, char *spec) {
 }
 
 int noproxy_match(const char *addr) {
-	plist_t list;
+	plist_const_t list;
 
 	list = noproxy_list;
 	while (list) {
@@ -740,7 +740,7 @@ int main(int argc, char **argv) {
 	struct termios termnew;
 	pthread_attr_t pattr;
 	pthread_t pthr;
-	hlist_t list;
+	hlist_const_t list;
 	int i;
 	int w;
 
