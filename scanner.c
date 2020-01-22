@@ -39,9 +39,22 @@
  * I don't have ISA AV filter anymore - wouldn't be able to test it.
  */
 int scanner_hook(rr_data_const_t request, rr_data_t response, struct auth_s *credentials, int cd, int *sd, long maxKBs) {
-	char *buf, *line, *pos, *tmp, *pat, *post, *isaid, *uurl;
-	int bsize, lsize, size, len, i, nc;
-	rr_data_t newreq, newres;
+	char *buf;
+	char *line;
+	char *tmp;
+	char *pat;
+	char *post;
+	char *isaid;
+	char *uurl;
+	const char *pos;
+	int bsize;
+	int lsize;
+	int size;
+	int len;
+	int i;
+	int nc;
+	rr_data_t newreq;
+	rr_data_t newres;
 	plist_t list;
 
 	int ok = 1;
