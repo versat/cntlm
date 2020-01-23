@@ -1562,7 +1562,11 @@ int main(int argc, char **argv) {
 				nuid = pw->pw_uid;
 				ngid = pw->pw_gid;
 			}
-			setgid(ngid);
+			if (setgid(ngid)) {
+				syslog(LOG_ERR, "Setting group identity failed: %s\n", strerror(errno));
+				syslog(LOG_ERR, "Terminating\n");
+				myexit(1);
+			}
 			i = setuid(nuid);
 			syslog(LOG_INFO, "Changing uid:gid to %d:%d - %s\n", nuid, ngid, strerror(errno));
 			if (i) {
