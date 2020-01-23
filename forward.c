@@ -54,7 +54,6 @@ int proxy_connect(struct auth_s *credentials) {
 	proxy_t *aux;
 	int i;
 	int prev;
-	plist_t list;
 	plist_t tmp;
 	int loop = 0;
 
@@ -105,7 +104,7 @@ int proxy_connect(struct auth_s *credentials) {
 	 */
 	if (prev != parent_curr) {
 		pthread_mutex_lock(&connection_mtx);
-		list = connection_list;
+		plist_const_t list = connection_list;
 		while (list) {
 			tmp = list->next;
 			close(list->key);
