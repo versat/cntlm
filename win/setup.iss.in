@@ -7,20 +7,21 @@ AppContact=cntlm@awk.cz
 AppPublisher=David Kubicek
 AppPublisherURL=http://cntlm.sf.net/
 LicenseFile=LICENSE.txt
+ArchitecturesAllowed=x64
 
 DefaultDirName={pf}\Cntlm
 DefaultGroupName=Cntlm
 SetupIconFile=cntlm.ico
 UninstallDisplayIcon={app}\cntlm.ico
 Uninstallable=yes
-OutputBaseFileName=cntlm-$VERSION-win32
+OutputBaseFileName=cntlm-$VERSION-win64
 OutputDir=..
 
 [Files]
 Source: "cntlm.exe"; DestDir: "{app}"
 Source: "cygrunsrv.exe"; DestDir: "{app}"
 Source: "cygwin1.dll"; DestDir: "{app}"
-Source: "cyggcc_s-1.dll"; DestDir: "{app}"
+Source: "cyggcc_s-seh-1.dll"; DestDir: "{app}"
 Source: "cygstdc++-6.dll"; DestDir: "{app}"
 Source: "cntlm.ini"; DestDir: "{app}"; Flags: uninsneveruninstall confirmoverwrite
 Source: "cntlm_manual.pdf"; DestDir: "{app}"

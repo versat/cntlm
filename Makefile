@@ -18,7 +18,7 @@ VER		:= $(shell cat VERSION)
 OS		:= $(shell uname -s)
 OSLDFLAGS	:= $(shell [ $(OS) = "SunOS" ] && echo "-lrt -lsocket -lnsl")
 LDFLAGS		:= -lpthread $(OSLDFLAGS)
-CYGWIN_REQS	:= cygwin1.dll cyggcc_s-1.dll cygstdc++-6.dll cygrunsrv.exe 
+CYGWIN_REQS	:= cygwin1.dll cyggcc_s-seh-1.dll cygstdc++-6.dll cygrunsrv.exe 
 GCC_GTEQ_430 := $(shell expr `${CC} -dumpversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 40300)
 GCC_GTEQ_450 := $(shell expr `${CC} -dumpversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 40500)
 GCC_GTEQ_600 := $(shell expr `${CC} -dumpversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 60000)
@@ -26,6 +26,8 @@ GCC_GTEQ_700 := $(shell expr `${CC} -dumpversion | sed -e 's/\.\([0-9][0-9]\)/\1
 
 CFLAGS	+= -std=c99 -D__BSD_VISIBLE -D_ALL_SOURCE -D_XOPEN_SOURCE=600 -D_POSIX_C_SOURCE=200112 -D_ISOC99_SOURCE -D_REENTRANT -D_BSD_SOURCE -DVERSION=\"'$(VER)'\"
 CFLAGS	+= -Wall -Wextra -pedantic -Wshadow -Wcast-qual -Wbad-function-cast -Wstrict-prototypes
+#CFLAGS  += -ftrapv
+#CFLAGS  += -fsanitize=undefined -fsanitize-undefined-trap-on-error
 ifeq "$(GCC_GTEQ_430)" "1"
 	CFLAGS += -Wlogical-op
 endif
@@ -40,13 +42,18 @@ ifeq "$(GCC_GTEQ_700)" "1"
 	CFLAGS += -Wduplicated-branches
 endif
 #CFLAGS	+= -fstack-protector-strong
-#CFLAGS	+= -v
-ifeq ($(DEBUG),1)
-	# DEBUG
-	CFLAGS	+= -g -O3
+CFLAGS	+= -v
+ifeq ($(COVERAGE),1)
+	# COVERAGE REPORT
+	CFLAGS  += -g --coverage
 else
-	# RELEASE
-	CFLAGS	+= -O3
+	ifeq ($(DEBUG),1)
+		# DEBUG
+		CFLAGS	+= -g -O1
+	else
+		# RELEASE
+		CFLAGS	+= -O3
+	endif
 endif
 
 ifneq ($(findstring CYGWIN,$(OS)),)
@@ -75,7 +82,7 @@ configure-stamp:
 	./configure
 
 win/resources.o: win/resources.rc
-	@echo Win32: adding ICON resource
+	@echo Win64: adding ICON resource
 	@windres $^ -o $@
 
 install: $(NAME)
@@ -134,23 +141,23 @@ rpm:
 		fakeroot rpm/rules clean; \
 	fi
 
-win: win/setup.iss $(NAME) win/cntlm_manual.pdf win/cntlm.ini win/LICENSE.txt $(NAME)-$(VER)-win32.exe $(NAME)-$(VER)-win32.zip
+win: win/setup.iss $(NAME) win/cntlm_manual.pdf win/cntlm.ini win/LICENSE.txt $(NAME)-$(VER)-win64.exe $(NAME)-$(VER)-win64.zip
 
-$(NAME)-$(VER)-win32.exe:
-	@echo Win32: preparing binaries for GUI installer
+$(NAME)-$(VER)-win64.exe:
+	@echo Win64: preparing binaries for GUI installer
 	@cp $(patsubst %, /bin/%, $(CYGWIN_REQS)) win/
 ifeq ($(DEBUG),1)
-	@echo Win32: copy DEBUG executable
+	@echo Win64: copy DEBUG executable
 	@cp -p cntlm.exe win/
 else
-	@echo Win32: copy release executable
+	@echo Win64: copy release executable
 	@strip -o win/cntlm.exe cntlm.exe
 endif
-	@echo Win32: generating GUI installer
+	@echo Win64: generating GUI installer
 	@win/Inno5/ISCC.exe /Q win/setup.iss #/Q win/setup.iss
 
-$(NAME)-$(VER)-win32.zip: 
-	@echo Win32: creating ZIP release for manual installs
+$(NAME)-$(VER)-win64.zip: 
+	@echo Win64: creating ZIP release for manual installs
 	@ln -s win $(NAME)-$(VER)
 	zip -9 $@ $(patsubst %, $(NAME)-$(VER)/%, cntlm.exe $(CYGWIN_REQS) cntlm.ini LICENSE.txt cntlm_manual.pdf) 
 	@rm -f $(NAME)-$(VER)
@@ -162,7 +169,7 @@ win/LICENSE.txt: COPYRIGHT LICENSE
 	@cat COPYRIGHT LICENSE | unix2dos > $@
 
 win/cntlm_manual.pdf: doc/cntlm.1 
-	@echo Win32: generating PDF manual
+	@echo Win64: generating PDF manual
 	@rm -f $@
 	@groff -t -e -mandoc -Tps doc/cntlm.1 | ps2pdf - $@
 

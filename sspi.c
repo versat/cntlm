@@ -1,6 +1,6 @@
 /*
  * These are SSPI authentication routines for the NTLM module of CNTLM
- * Used only on Win32 (Cygwin)
+ * Used only on Win32/64 (Cygwin)
  *
  * CNTLM is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
