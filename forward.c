@@ -29,6 +29,7 @@
 #include <strings.h>
 #include <assert.h>
 
+#include "direct.h"
 #include "utils.h"
 #include "globals.h"
 #include "auth.h"
@@ -45,6 +46,68 @@
 
 int parent_curr = 0;
 pthread_mutex_t parent_mtx = PTHREAD_MUTEX_INITIALIZER;
+
+int single_proxy_connect(proxy_t *proxy) {
+	proxy_t *aux = proxy;
+	int i = 0;
+
+	if (aux->resolved == 0) {
+		if (debug)
+			syslog(LOG_INFO, "Resolving proxy %s...\n", aux->hostname);
+		if (so_resolv(&aux->host, aux->hostname)) {
+			aux->resolved = 1;
+		} else {
+			syslog(LOG_ERR, "Cannot resolve proxy %s\n", aux->hostname);
+		}
+	}
+
+    if (aux->resolved != 0)
+        i = so_connect(aux->host, aux->port);
+
+    return i;
+}
+
+int pac_proxy_connect(proxy_t *proxy, struct auth_s *credentials) {
+	int i = 0;
+
+	i = single_proxy_connect(proxy);
+	if (i > 0 && credentials != NULL)
+		copy_auth(credentials, g_creds, /* fullcopy */ !ntlmbasic);
+
+	return i;
+}
+
+rr_data_t pac_forward_request(void *thread_data, rr_data_t request, plist_t proxy_list) {
+	int parent_curr = 0;
+	int parent_count;
+	int w;
+	char *tmp;
+	proxy_t *aux;
+	rr_data_t ret = (void *)-1;
+	int cd = ((struct thread_arg_s *)thread_data)->fd;
+
+	parent_count = plist_count(proxy_list);
+
+	while (parent_curr < parent_count && ret == (void *)-1) {
+		aux = (proxy_t *)plist_get(proxy_list, ++parent_curr);
+		if (aux->type == DIRECT) {
+			syslog(LOG_INFO, "Going directly as demanded by PAC\n");
+			ret = direct_request(thread_data, request);
+		} else {
+			syslog(LOG_INFO, "Using PAC proxy %s:%d\n", aux->hostname, aux->port);
+			ret = forward_request(thread_data, request, aux);
+		}
+
+	}
+	printf("ret = %d\n", ret);
+	if (ret == (void *)-1) {
+		syslog(LOG_INFO, "Could not establish connection using PAC\n");
+		//tmp = gen_502_page(request->http, "Could not establisch connection using PAC");
+		//w = write(cd, tmp, strlen(tmp));
+		//free(tmp);
+	}
+	return ret;
+}
 
 /*
  * Connect to the selected proxy. If the request fails, pick next proxy
@@ -342,7 +405,9 @@ bailout:
 }
 
 /*
- * Forwarding thread. Connect to the proxy, process auth then request.
+ * Forwarding thread. Connect to the proxy, process auth then
+ * request. If pac_aux is non-null, use this proxy over the static
+ * configured proxies.
  *
  * First read request, then call proxy_authenticate() which will send
  * the request. If proxy returns 407, it will compute NTLM reply and
@@ -370,6 +435,7 @@ bailout:
  *
  * thread_data is NOT freed
  * request is NOT freed
+ * pac_aux is NOT freed
  */
 rr_data_t forward_request(void *thread_data, rr_data_t request) {
 	int i;
@@ -427,13 +493,21 @@ beginning:
 		was_cached = 1;
 	} else {
 		tcreds = new_auth();
-		sd = proxy_connect(tcreds);
-		if (sd < 0) {
-			tmp = gen_502_page(request->http, "Parent proxy unreachable");
-			(void) write_wrapper(cd, tmp, strlen(tmp));
-			free(tmp);
-			rc = (void *)-1;
-			goto bailout;
+		if (pac_aux) {
+			sd = pac_proxy_connect(pac_aux, tcreds);
+			if (sd <= 0) {
+				rc = (void *)-1;
+				goto bailout;
+			}
+		} else {
+			sd = proxy_connect(tcreds);
+			if (sd <= 0) {
+				tmp = gen_502_page(request->http, "Parent proxy unreachable");
+				(void) write_wrapper(cd, tmp, strlen(tmp));
+				free(tmp);
+				rc = (void *)-1;
+				goto bailout;
+			}
 		}
 	}
 

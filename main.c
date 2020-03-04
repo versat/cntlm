@@ -124,13 +124,24 @@ hlist_t users_list = NULL;			/* socks5_thread() */
 plist_t scanner_agent_list = NULL;		/* scanner_hook() */
 plist_t noproxy_list = NULL;			/* proxy_thread() */
 
+/* 1 = Pacparser engine is initialized and in use. */
+int pacparser_initialized = 0;
+
+/*
+ * Pacparser Mutex
+ */
+pthread_mutex_t pacparser_mtx = PTHREAD_MUTEX_INITIALIZER;
+
 /*
  * General signal handler. If in debug mode, quit immediately.
  */
 void sighandler(int p) {
-	if (!quit)
+	if (!quit) {
 		syslog(LOG_INFO, "Signal %d received, issuing clean shutdown\n", p);
-	else
+		if (pacparser_initialized) {
+			pacparser_cleanup();
+		}
+	} else
 		syslog(LOG_INFO, "Signal %d received, forcing shutdown\n", p);
 
 	if (quit++ || debug)
@@ -187,6 +198,7 @@ int parent_add(char *parent, int port) {
 	*/
 
 	aux = (proxy_t *)zmalloc(sizeof(proxy_t));
+	aux->type = PROXY;
 	strlcpy(aux->hostname, proxy, sizeof(aux->hostname));
 	aux->port = port;
 	aux->resolved = 0;
@@ -194,6 +206,79 @@ int parent_add(char *parent, int port) {
 
 	free(proxy);
 	return 1;
+}
+
+/*
+ * Create list of proxy_t structs parsed from the PAC string returned
+ * by Pacparser.
+ * TODO: Harden against malformed pacp_str.
+ */
+plist_t pac_create_list(plist_t paclist, char *pacp_str) {
+	int paclist_count = 0;
+	proxy_t *aux;
+	char *pacp_tmp = NULL;
+	char *cur_proxy = NULL;
+
+	if (pacp_str == NULL) {
+		paclist = NULL;
+		return 0;
+	}
+
+	/* Make a copy of shared PAC string pacp_str (coming
+	 * from pacparser) to avoid manipulation by strsep.
+	 */
+	pacp_tmp = new(sizeof(char) * strlen(pacp_str) + 1);
+	strcpy(pacp_tmp, pacp_str);
+
+	cur_proxy = strsep(&pacp_tmp, ";");
+
+	if (debug)
+		printf("Parsed PAC Proxies:\n");
+
+	while (cur_proxy != NULL) {
+		int type = DIRECT; // default is DIRECT
+		char *type_str = NULL;
+		char *hostname = NULL;
+		char *port = NULL;
+
+		/* skip whitespace after semicolon */
+		if (*cur_proxy == ' ')
+			cur_proxy = cur_proxy + 1;
+
+		type_str = strsep(&cur_proxy, " ");
+		if (strcmp(type_str, "PROXY") == 0) {
+			type = PROXY; // TODO: support more types
+			hostname = strsep(&cur_proxy, ":");
+			port = cur_proxy; // last token is always the port
+		}
+
+		if (debug) {
+			if (type != DIRECT) {
+				printf("   %s %s %s\n", type_str, hostname, port);
+			} else {
+				printf("   %s\n", type_str);
+			}
+		}
+
+		aux = (proxy_t *)new(sizeof(proxy_t));
+		aux->type = type;
+		if (type == PROXY) {
+			strlcpy(aux->hostname, hostname, sizeof(aux->hostname));
+			aux->port = atoi(port);
+			aux->resolved = 0;
+		}
+		paclist = plist_add(paclist, ++paclist_count, (char *)aux);
+		cur_proxy = strsep(&pacp_tmp, ";"); /* get next proxy */
+	}
+
+	if (debug) {
+		printf("Created PAC list with %d item(s):\n", paclist_count);
+		plist_dump(paclist);
+	}
+
+	free(pacp_tmp);
+
+	return paclist;
 }
 
 /*
@@ -342,7 +427,9 @@ void *proxy_thread(void *thread_data) {
 	rr_data_t request;
 	rr_data_t ret;
 	int keep_alive;				/* Proxy-Connection */
+	char *pacp_str;
 
+	plist_t pac_list = NULL;
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
 
 	do {
@@ -371,10 +458,37 @@ void *proxy_thread(void *thread_data) {
 
 			keep_alive = hlist_subcmp(request->headers, "Proxy-Connection", "keep-alive");
 
-			if (noproxy_match(request->hostname))
-				ret = direct_request(thread_data, request);
-			else
-				ret = forward_request(thread_data, request);
+			/*
+			 * Create proxy list for request from PAC file.
+			 */
+			pthread_mutex_lock(&pacparser_mtx);
+			// strcat req->http req->url
+			pacp_str = pacparser_find_proxy(request->url, request->hostname);
+			pthread_mutex_unlock(&pacparser_mtx);
+
+			if (debug) {
+				if (pacp_str)
+					printf("PAC string: '%s' for URL %s\n", pacp_str, request->url);
+			}
+
+			pac_list = pac_create_list(pac_list, pacp_str);
+
+			/* If PAC is available, use it to serve request else use
+			 * static configured proxy. */
+			if (pacparser_initialized) {
+				if (!noproxy_match(request->hostname)) {
+					ret = pac_forward_request(thread_data, request, pac_list);
+				} else {
+					ret = direct_request(thread_data, request);
+				}
+			} else {
+				if (noproxy_match(request->hostname)) {
+					ret = direct_request(thread_data, request);
+				} else {
+					ret = forward_request(thread_data, request, NULL);
+				}
+			}
+
 
 			if (debug)
 				printf("proxy_thread: request rc = %p\n", (void *)ret);
@@ -397,6 +511,7 @@ void *proxy_thread(void *thread_data) {
 		pthread_mutex_unlock(&threads_mtx);
 	}
 
+	plist_free(pac_list);
 	free(thread_data);
 	close(cd);
 
@@ -767,6 +882,9 @@ int main(int argc, char **argv) {
 	plist_t rules = NULL;
 	config_t cf = NULL;
 	char *magic_detect = NULL;
+	char *pac_file = NULL;
+	/* Used only to check if we can access a file. */
+	FILE *test_fd = NULL;
 
 	g_creds = new_auth();
 	cuser = zmalloc(MINIBUF_SIZE);
@@ -788,7 +906,7 @@ int main(int argc, char **argv) {
 	syslog(LOG_INFO, "Starting cntlm version " VERSION " for LITTLE endian\n");
 #endif
 
-	while ((i = getopt(argc, argv, ":-:T:a:c:d:fghIl:p:r:su:vw:A:BD:F:G:HL:M:N:O:P:R:S:U:X:q:")) != -1) {
+	while ((i = getopt(argc, argv, ":-:T:a:c:d:fghIl:p:r:su:vw:x:A:BD:F:G:HL:M:N:O:P:R:S:U:X:q:")) != -1) {
 		switch (i) {
 			case 'A':
 			case 'D':
@@ -806,6 +924,15 @@ int main(int argc, char **argv) {
 				break;
 			case 'd':
 				strlcpy(cdomain, optarg, MINIBUF_SIZE);
+				break;
+			case 'x':
+				if (!(test_fd = fopen(optarg, "r"))) {
+					syslog(LOG_ERR, "Cannot access specified PAC file: %s\n", optarg);
+					myexit(1);
+				} else {
+					pac_file = optarg;
+					fclose(test_fd);
+				}
 				break;
 			case 'F':
 				cflags = swap32(strtoul(optarg, &tmp, 0));
@@ -1312,6 +1439,17 @@ int main(int argc, char **argv) {
 	}
 
 	config_close(cf);
+
+	/* Start Pacparser engine if pac_file available */
+	/* TODO: pac file option in config file */
+	if (pac_file != NULL) {
+		pacparser_init();
+		pacparser_parse_pac(pac_file);
+		if (debug)
+			printf("Pacparser initialized with PAC file %s\n", pac_file);
+		// TODO handle parsing errors from pacparser
+		pacparser_initialized = 1;
+	}
 
 	if (!interactivehash && !parent_list)
 		croak("Parent proxy address missing.\n", interactivepwd || magic_detect);
@@ -1826,4 +1964,3 @@ bailout:
 
 	exit(0);
 }
-
