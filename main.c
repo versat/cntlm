@@ -422,11 +422,13 @@ int noproxy_match(const char *addr) {
 
 /*
  * Proxy thread - decide between direct and forward based on NoProxy
+ * TODO: update
  */
 void *proxy_thread(void *thread_data) {
 	rr_data_t request;
 	rr_data_t ret;
 	int keep_alive;				/* Proxy-Connection */
+	int pac_found = 0;
 	char *pacp_str;
 
 	plist_t pac_list = NULL;
@@ -447,6 +449,19 @@ void *proxy_thread(void *thread_data) {
 			break;
 		}
 
+		if (!pac_found) {
+			pac_found = 1;
+
+			/*
+			 * Create proxy list for request from PAC file.
+			 */
+			pthread_mutex_lock(&pacparser_mtx);
+			pacp_str = pacparser_find_proxy(request->url, request->hostname);
+			pthread_mutex_unlock(&pacparser_mtx);
+
+			pac_list = pac_create_list(pac_list, pacp_str);
+		}
+
 		do {
 			/*
 			 * Are we being returned a request by forward_request or direct_request?
@@ -454,52 +469,42 @@ void *proxy_thread(void *thread_data) {
 			if (ret) {
 				free_rr_data(&request);
 				request = ret;
+
+				/*
+				 * Create proxy list for new request from PAC file.
+				 */
+				pthread_mutex_lock(&pacparser_mtx);
+				pacp_str = pacparser_find_proxy(request->url, request->hostname);
+				pthread_mutex_unlock(&pacparser_mtx);
+
+				plist_free(pac_list);
+				pac_list = NULL;
+				pac_list = pac_create_list(pac_list, pacp_str);
 			}
 
 			keep_alive = hlist_subcmp(request->headers, "Proxy-Connection", "keep-alive");
 
-			/*
-			 * Create proxy list for request from PAC file.
-			 */
-			pthread_mutex_lock(&pacparser_mtx);
-			// strcat req->http req->url
-			pacp_str = pacparser_find_proxy(request->url, request->hostname);
-			pthread_mutex_unlock(&pacparser_mtx);
-
-			if (debug) {
-				if (pacp_str)
-					printf("PAC string: '%s' for URL %s\n", pacp_str, request->url);
-			}
-
-			pac_list = pac_create_list(pac_list, pacp_str);
-
-			/* If PAC is available, use it to serve request else use
-			 * static configured proxy. */
-			if (pacparser_initialized) {
-				if (!noproxy_match(request->hostname)) {
-					ret = pac_forward_request(thread_data, request, pac_list);
-				} else {
-					ret = direct_request(thread_data, request);
-				}
+			if (noproxy_match(request->hostname)) {
+				/* No-proxy-list has highest precedence */
+				ret = direct_request(thread_data, request);
+			} else if (pacparser_initialized) {
+				/* If PAC is available, use it to serve request. */
+				ret = pac_forward_request(thread_data, request, pac_list);
 			} else {
-				if (noproxy_match(request->hostname)) {
-					ret = direct_request(thread_data, request);
-				} else {
-					ret = forward_request(thread_data, request, NULL);
-				}
+				/* Else use statically configured proxies. */
+				ret = forward_request(thread_data, request, NULL);
 			}
-
 
 			if (debug)
 				printf("proxy_thread: request rc = %p\n", (void *)ret);
-		} while (ret != NULL && ret != (void *)-1);
+		} while (ret != NULL && ret != (void *)-1 && ret != (void *)-2);
 
 		free_rr_data(&request);
 	/*
 	 * If client asked for proxy keep-alive, loop unless the last server response
 	 * requested (Proxy-)Connection: close.
 	 */
-	} while (keep_alive && ret != (void *)-1 && !serialize);
+	} while (keep_alive && ret != (void *)-1 && ret != (void *)-2 && !serialize);
 
 	/*
 	 * Add ourselves to the "threads to join" list.

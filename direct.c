@@ -205,7 +205,8 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 		(void) write_wrapper(cd, tmp, strlen(tmp)); // We don't really care about the result
 		free(tmp);
 
-		rc = (void *)-1;
+		rc = (void *)-2;
+
 		goto bailout;
 	}
 
@@ -482,4 +483,3 @@ bailout:
 
 	return;
 }
-
