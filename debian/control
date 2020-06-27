@@ -2,7 +2,7 @@ Source: cntlm
 Section: net
 Priority: optional
 Maintainer: David Watson <dwatson@debian.org>
-Build-Depends: debhelper (>= 5)
+Build-Depends: debhelper (>= 5), krb5-multidev
 Standards-Version: 3.8.0
 Vcs-Git: git://planetwatson.co.uk/cntlm
 Vcs-Browser: http://projects.planetwatson.co.uk/repositories/show/cntlm
@@ -10,7 +10,7 @@ Homepage: http://cntlm.sourceforge.net/
 
 Package: cntlm
 Architecture: any
-Depends: adduser, ${misc:Depends}, ${shlibs:Depends}
+Depends: adduser, libgssapi-krb5-2, ${misc:Depends}, ${shlibs:Depends}
 Replaces: ntlmaps
 Description: Fast NTLM authentication proxy with tunneling
  Cntlm is a fast and efficient NTLM proxy, with support for TCP/IP tunneling,

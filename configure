@@ -97,5 +97,19 @@ for i in $TESTS; do
 	echo $rc >> $CONFIG
 	echo $RET
 done
+
+while [ $1 ]
+do
+	case $1 in
+		--enable-kerberos)
+			printf "#define ENABLE_KERBEROS" >> $CONFIG
+			;;
+		*)
+			echo "Unknown flag $1"
+			rm -f $CONFIG
+			;;
+	esac
+	shift
+done
 echo "" >> $CONFIG
 echo "#endif // CONFIGURE_CONFIG_H" >> $CONFIG

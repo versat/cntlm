@@ -47,6 +47,9 @@ struct auth_s {
 #ifdef __CYGWIN__
 	struct sspi_handle sspi;
 #endif
+#ifdef ENABLE_KERBEROS
+	int haskrb;
+#endif
 	uint32_t flags;
 };
 
