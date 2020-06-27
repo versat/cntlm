@@ -90,8 +90,16 @@ static void display_status_1(char *m, OM_uint32 code, int type) {
 	while (1) {
 		maj_stat = gss_display_status(&min_stat, code, type, GSS_C_NULL_OID,
 				&msg_ctx, &msg);
-		if (1)
+		if (maj_stat == GSS_S_COMPLETE)
 			syslog(LOG_ERR, "GSS-API error %s: %s\n", m, (char *) msg.value);
+		else if (maj_stat == GSS_S_BAD_MECH)
+			syslog(LOG_ERR, "GSS-API error that could not be translated due to a bad mechanism (GSS_S_BAD_MECH)\n");
+		else if (maj_stat == GSS_S_BAD_STATUS)
+			syslog(LOG_ERR, "GSS-API error that is unknown (or this function was called with a wrong status type) (GSS_S_BAD_STATUS)\n");
+		else if (maj_stat == GSS_S_FAILURE)
+			syslog(LOG_ERR, "GSS-API error and gss_display_status failed with minor status code %lo (GSS_S_FAILURE)\n", (long unsigned int)min_stat);
+		else
+			syslog(LOG_ERR, "GSS-API error unrecognized return value from gss_display_status\n");
 		(void) gss_release_buffer(&min_stat, &msg);
 
 		if (!msg_ctx)
@@ -240,7 +248,7 @@ int client_establish_context(char *service_name,
  */
 int acquire_kerberos_token(proxy_t* proxy, struct auth_s *credentials,
 		char* buf) {
-	char service_name[BUFSIZE], token[BUFSIZE];
+	char service_name[BUFSIZE];
 	OM_uint32 ret_flags, min_stat;
 
 	if (credentials->haskrb == KRB_KO) {
@@ -251,16 +259,13 @@ int acquire_kerberos_token(proxy_t* proxy, struct auth_s *credentials,
 	}
 
 	if (!(credentials->haskrb & KRB_CREDENTIAL_AVAILABLE)) {
-		//try to get credential
-//		if(acquire_credential(credentials)){
-			credentials->haskrb |= check_credential();
-			if (!(credentials->haskrb & KRB_CREDENTIAL_AVAILABLE)){
-				//no credential -> no token
-				if (debug)
-					syslog(LOG_INFO, "No valid credential available\n");
-				return 0;
-			}
-//		}
+		credentials->haskrb |= check_credential();
+		if (!(credentials->haskrb & KRB_CREDENTIAL_AVAILABLE)){
+			//no credential -> no token
+			if (debug)
+				syslog(LOG_INFO, "No valid credential available\n");
+			return 0;
+		}
 	}
 
 	gss_buffer_desc send_tok;
@@ -271,6 +276,7 @@ int acquire_kerberos_token(proxy_t* proxy, struct auth_s *credentials,
 	int rc = client_establish_context(service_name, &ret_flags, &send_tok);
 
 	if (rc == GSS_S_COMPLETE) {
+		char token[BUFSIZE];
 		credentials->haskrb = KRB_OK;
 
 		to_base64((unsigned char *) token, send_tok.value, send_tok.length,
@@ -325,42 +331,4 @@ int check_credential() {
 		return KRB_CREDENTIAL_AVAILABLE;
 	}
 	return 0;
-}
-
-int acquire_credential(struct auth_s *credentials) {
-	OM_uint32 min_stat, maj_stat;
-	gss_name_t target_name;
-	OM_uint32 lifetime = GSS_C_INDEFINITE;
-	gss_cred_id_t *id;
-
-	char *password = credentials->passnt;
-
-	//!(g_creds->haskrb & KRB_CREDENTIAL_AVAILABLE)
-	if (credentials->user && password) {
-		char name[BUFSIZ];
-		strcpy(name, credentials->user);
-		if (credentials->domain) {
-			strcat(name, "@");
-			strcat(name, credentials->domain);
-		}
-
-		if ((maj_stat = acquire_name(&target_name, name, GSS_C_NT_USER_NAME))
-				!= GSS_S_COMPLETE)
-			return KRB_NO_CREDS;
-
-		//TODO
-		maj_stat = gss_acquire_cred(&min_stat, target_name, lifetime,
-				GSS_C_NO_OID_SET, GSS_C_INITIATE, id, NULL, NULL);
-		if (maj_stat != GSS_S_COMPLETE) {
-			display_status("Acquire credential", maj_stat, min_stat);
-			return KRB_NO_CREDS;
-		}
-
-		(void) gss_release_cred(&min_stat, id);
-
-		(void) gss_release_name(&min_stat, &target_name);
-
-		return KRB_CREDENTIAL_AVAILABLE;
-	}
-	return KRB_NO_CREDS;
 }
