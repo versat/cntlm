@@ -68,6 +68,10 @@
 #include "sspi.h"				/* code for SSPI management */
 #endif
 
+#ifdef ENABLE_KERBEROS
+#include "kerberos.h"
+#endif
+
 #define STACK_SIZE	sizeof(void *)*8*1024
 
 /*
@@ -979,6 +983,9 @@ int main(int argc, char **argv) {
 				"\t    ACL allow rule. IP or hostname, net must be a number (CIDR notation)\n");
 		fprintf(stream, "\t-a  ntlm | nt | lm\n"
 				"\t    Authentication type - combined NTLM, just LM, or just NT. Default NTLM.\n"
+#ifdef ENABLE_KERBEROS
+				"\t    GSS activates kerberos auth: you need a cached credential.\n"
+#endif
 				"\t    It is the most versatile setting and likely to work for you.\n");
 		fprintf(stream, "\t-B  Enable NTLM-to-basic authentication.\n");
 		fprintf(stream, "\t-c  <config_file>\n"
@@ -1349,6 +1356,14 @@ int main(int argc, char **argv) {
 			g_creds->hashnt = 2;
 			g_creds->hashlm = 0;
 			g_creds->hashntlm2 = 0;
+#ifdef ENABLE_KERBEROS
+		} else if (!strcasecmp("gss", cauth)) {
+			g_creds->haskrb = KRB_FORCE_USE_KRB;
+			g_creds->hashnt = 0;
+			g_creds->hashlm = 0;
+			g_creds->hashntlm2 = 0;
+			syslog(LOG_INFO, "Forcing GSS auth.\n");
+#endif
 		} else {
 			syslog(LOG_ERR, "Unknown NTLM auth combination.\n");
 			myexit(1);
@@ -1439,6 +1454,12 @@ int main(int argc, char **argv) {
 		memset(cpassword, 0, strlen(cpassword));
 	}
 
+#ifdef ENABLE_KERBEROS
+	g_creds->haskrb |= check_credential();
+	if(g_creds->haskrb & KRB_CREDENTIAL_AVAILABLE)
+		syslog(LOG_INFO, "Using cached credential for GSS auth.\n");
+#endif
+
 	auth_strcpy(g_creds, user, cuser);
 	auth_strcpy(g_creds, domain, cdomain);
 	auth_strcpy(g_creds, workstation, cworkstation);
@@ -1486,8 +1507,11 @@ int main(int argc, char **argv) {
 	/*
 	 * If we're going to need a password, check we really have it.
 	 */
-	if (!ntlmbasic && (
-			    (g_creds->hashnt && is_memory_all_zero(g_creds->passnt, ARRAY_SIZE(g_creds->passnt)))
+	if (!ntlmbasic &&
+#ifdef ENABLE_KERBEROS
+			!g_creds->haskrb &&
+#endif
+			    ((g_creds->hashnt && is_memory_all_zero(g_creds->passnt, ARRAY_SIZE(g_creds->passnt)))
 			 || (g_creds->hashlm && is_memory_all_zero(g_creds->passlm, ARRAY_SIZE(g_creds->passlm)))
 			 || (g_creds->hashntlm2 &&  is_memory_all_zero(g_creds->passntlm2, ARRAY_SIZE(g_creds->passntlm2))))) {
 		syslog(LOG_ERR, "Parent proxy account password (or required hashes) missing.\n");

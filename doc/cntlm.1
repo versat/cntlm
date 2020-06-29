@@ -87,7 +87,7 @@ the list of unused options). There you can also see warnings about possibly inco
 the \fIIP\fP part has more bits than you declare by \fImask\fP (e.g. 10.20.30.40/24 should be 10.20.30.0/24).
 
 .TP 
-.B -a NTLMv2 | NTLM2SR | NT | NTLM | LM\ \ \ \ (Auth)
+.B -a NTLMv2 | NTLM2SR | NT | NTLM | LM | GSS\ \ \ \ (Auth)
 Authentication type. NTLM(v2) comprises of one or two hashed responses, NT and LM or NTLM2SR or NTv2 and LMv2,
 which are computed from the password hash. Each response uses a different hashing algorithm; as new response
 types were invented, stronger algorithms were used. When you first install \fBcntlm\fP, find the strongest one
@@ -100,6 +100,15 @@ compatibility flags option\ \fB-F\fP or submit a Support Request.
 NT\ 4.0\ SP4. That's for \fBa very long time\fP! I strongly suggest you use it to protect your credentials
 on-line. You should also replace plaintext \fBPassword\fP options with hashed \fBPass[NTLMv2|NT|LM]\fP
 equivalents. NTLMv2 is the most and possibly the only secure authentication of the NTLM family.
+.br
+\fBGSS:\fP GSS option activates the kerberos authentication. You need a cached credential (see kinit doc): per default
+the cache file is in /tmp/krb5cc_<uid>, you can override this using the environment variable KRB5CCNAME.
+In example KRB5CCNAME=FILE:/tmp/my_krb5cc_for_LDS.IT
+If GSS is specified, at each connection sends the auth token without to ask the proxy if auth is needed.
+If GSS credentials are not available will fallback to the NTLM discovery procedure
+If no Auth type is specified and there is a GSS cached credential available and the server asks for a
+'Negotiate' auth, then a GSS token is used, else the NTLM auth is used
+
 
 .ne 4
 .TP
