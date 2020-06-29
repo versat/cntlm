@@ -1173,6 +1173,8 @@ int main(int argc, char **argv) {
 		fprintf(stream, "\t-v  Print debugging information.\n");
 		fprintf(stderr, "\t-w  <workstation>\n"
 				"\t    Some proxies require correct NetBIOS hostname.\n");
+		fprintf(stderr, "\t-x  <PAC_file>\n"
+				"\t    Specify a PAC file to load.\n");
 		fprintf(stream, "\t-X  <sspi_handle_type>\n"
 				"\t    Use SSPI with specified handle type. Works only under Windows.\n"
 				"\t    Default is negotiate.\n");
@@ -1456,7 +1458,7 @@ int main(int argc, char **argv) {
 		pacparser_initialized = 1;
 	}
 
-	if (!interactivehash && !parent_list)
+	if (!interactivehash && !parent_list && pac_file == NULL)
 		croak("Parent proxy address missing.\n", interactivepwd || magic_detect);
 
 	if (!interactivehash && !magic_detect && !proxyd_list)
