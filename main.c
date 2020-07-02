@@ -43,6 +43,7 @@
 #include <termios.h>
 #include <fnmatch.h>
 #include <assert.h>
+#include <pacparser.h>
 #ifdef __CYGWIN__
 #include <windows.h>
 #endif
@@ -227,7 +228,7 @@ plist_t pac_create_list(plist_t paclist, char *pacp_str) {
 	/* Make a copy of shared PAC string pacp_str (coming
 	 * from pacparser) to avoid manipulation by strsep.
 	 */
-	pacp_tmp = new(sizeof(char) * strlen(pacp_str) + 1);
+	pacp_tmp = zmalloc(sizeof(char) * strlen(pacp_str) + 1);
 	strcpy(pacp_tmp, pacp_str);
 
 	cur_proxy = strsep(&pacp_tmp, ";");
@@ -260,7 +261,7 @@ plist_t pac_create_list(plist_t paclist, char *pacp_str) {
 			}
 		}
 
-		aux = (proxy_t *)new(sizeof(proxy_t));
+		aux = (proxy_t *)zmalloc(sizeof(proxy_t));
 		aux->type = type;
 		if (type == PROXY) {
 			strlcpy(aux->hostname, hostname, sizeof(aux->hostname));

@@ -439,7 +439,7 @@ bailout:
  * request is NOT freed
  * pac_aux is NOT freed
  */
-rr_data_t forward_request(void *thread_data, rr_data_t request) {
+rr_data_t forward_request(void *thread_data, rr_data_t request, proxy_t *proxy) {
 	int i;
 	int loop;
 	int plugin;
@@ -496,8 +496,8 @@ beginning:
 		was_cached = 1;
 	} else {
 		tcreds = new_auth();
-		if (pac_aux) {
-			sd = pac_proxy_connect(pac_aux, tcreds);
+		if (proxy) {
+			sd = pac_proxy_connect(proxy, tcreds);
 			if (sd < 0) {
 				rc = (void *)-2;
 				goto bailout;
