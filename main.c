@@ -888,9 +888,10 @@ int main(int argc, char **argv) {
 	plist_t rules = NULL;
 	config_t cf = NULL;
 	char *magic_detect = NULL;
-	char *pac_file = NULL;
-	/* Used only to check if we can access a file. */
-	FILE *test_fd = NULL;
+	int pac = 0;
+	char *pac_file;
+
+	pac_file = zmalloc(PATH_MAX);
 
 	g_creds = new_auth();
 	cuser = zmalloc(MINIBUF_SIZE);
@@ -932,12 +933,15 @@ int main(int argc, char **argv) {
 				strlcpy(cdomain, optarg, MINIBUF_SIZE);
 				break;
 			case 'x':
-				if (!(test_fd = fopen(optarg, "r"))) {
-					syslog(LOG_ERR, "Cannot access specified PAC file: %s\n", optarg);
+				pac = 1;
+				/*
+				 * Resolve relative paths if necessary.
+				 * Don't care if the named file does not exist (ENOENT) because
+				 * later on we check the file's availability anyway.
+				 */
+				if (!realpath(optarg, pac_file) && errno != ENOENT) {
+					syslog(LOG_ERR, "Resolving path to PAC file failed: %s\n", strerror(errno));
 					myexit(1);
-				} else {
-					pac_file = optarg;
-					fclose(test_fd);
 				}
 				break;
 			case 'F':
@@ -1333,6 +1337,18 @@ int main(int argc, char **argv) {
 		}
 
 		/*
+		 * Check if PAC mode is requested.
+		 */
+		tmp = zmalloc(MINIBUF_SIZE);
+		CFG_DEFAULT(cf, "Pac", tmp, MINIBUF_SIZE);
+		if (!strcasecmp("yes", tmp)) {
+			pac = 1;
+		}
+		free(tmp);
+
+		CFG_DEFAULT(cf, "PacFile", pac_file, MINIBUF_SIZE);
+
+		/*
 		 * Add the rest of parent proxies.
 		 */
 		while ((tmp = config_pop(cf, "Proxy"))) {
@@ -1448,9 +1464,20 @@ int main(int argc, char **argv) {
 
 	config_close(cf);
 
+
+
 	/* Start Pacparser engine if pac_file available */
 	/* TODO: pac file option in config file */
-	if (pac_file != NULL) {
+	if (pac) {
+		/* Check if PAC file can be opened. */
+		FILE *test_fd = NULL;
+		if (!(test_fd = fopen(pac_file, "r"))) {
+			syslog(LOG_ERR, "Cannot access specified PAC file: '%s'\n", pac_file);
+			myexit(1);
+		}
+		fclose(test_fd);
+
+		/* Initiailize Pacparser. */
 		pacparser_init();
 		pacparser_parse_pac(pac_file);
 		if (debug)
@@ -1459,7 +1486,7 @@ int main(int argc, char **argv) {
 		pacparser_initialized = 1;
 	}
 
-	if (!interactivehash && !parent_list && pac_file == NULL)
+	if (!interactivehash && !parent_list && !pac)
 		croak("Parent proxy address missing.\n", interactivepwd || magic_detect);
 
 	if (!interactivehash && !magic_detect && !proxyd_list)
@@ -1962,6 +1989,8 @@ bailout:
 	plist_free(proxyd_list);
 	plist_free(socksd_list);
 	plist_free(rules);
+
+	free(pac_file);
 
 	free(cuid);
 	free(cpidfile);
