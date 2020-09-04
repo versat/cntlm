@@ -23,7 +23,7 @@ test -n "$3" && HOSTS_FILE="$(realpath $3)"
 hostname=$(hostname)
 
 # Get interface name of first entry in routing table.
-defroute_if=$(cat /proc/net/route | head -n 2 | tail -n 1 | cut -f 1)
+defroute_if=$(head -n 2 /proc/net/route | tail -n 1 | cut -f 1)
 
 if [ -n "$defroute_if" ]; then
     defroute_addr=$(ifconfig "$defroute_if" | grep -o "inet [0-9.]*" | cut -d ' ' -f 2)

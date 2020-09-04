@@ -216,7 +216,6 @@ int parent_add(char *parent, int port) {
  */
 plist_t pac_create_list(plist_t paclist, char *pacp_str) {
 	int paclist_count = 0;
-	proxy_t *aux;
 	char *pacp_tmp = NULL;
 	char *cur_proxy = NULL;
 
@@ -241,6 +240,7 @@ plist_t pac_create_list(plist_t paclist, char *pacp_str) {
 		char *type_str = NULL;
 		char *hostname = NULL;
 		char *port = NULL;
+		proxy_t *aux;
 
 		/* skip whitespace after semicolon */
 		if (*cur_proxy == ' ')

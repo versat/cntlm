@@ -80,15 +80,13 @@ int pac_proxy_connect(proxy_t *proxy, struct auth_s *credentials) {
 rr_data_t pac_forward_request(void *thread_data, rr_data_t request, plist_t proxy_list) {
 	int parent_curr = 0;
 	int parent_count;
-	int w;
-	char *tmp;
-	proxy_t *aux;
 	rr_data_t ret = (void *)-2;
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
 
 	parent_count = plist_count(proxy_list);
 
 	while (parent_curr < parent_count && ret == (void *)-2) {
+		proxy_t *aux;
 		aux = (proxy_t *)plist_get(proxy_list, ++parent_curr);
 
 		if (aux->type == DIRECT) {
@@ -109,10 +107,11 @@ rr_data_t pac_forward_request(void *thread_data, rr_data_t request, plist_t prox
 	}
 
 	if (ret == (void *)-2) {
+		char *tmp;
 		ret = (void *)-1;
 		syslog(LOG_INFO, "Could not establish connection using PAC\n");
 		tmp = gen_502_page(request->http, "Could not establisch connection using PAC");
-		w = write(cd, tmp, strlen(tmp));
+		write(cd, tmp, strlen(tmp));
 		free(tmp);
 	}
 	return ret;
