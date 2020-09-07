@@ -17,7 +17,7 @@ CC		:= gcc
 VER		:= $(shell cat VERSION)
 OS		:= $(shell uname -s)
 OSLDFLAGS	:= $(shell [ $(OS) = "SunOS" ] && echo "-lrt -lsocket -lnsl")
-LDFLAGS		:= -lpthread -lpacparser $(OSLDFLAGS)
+LDFLAGS		:= -lpthread $(OSLDFLAGS)
 CYGWIN_REQS	:= cygwin1.dll cyggcc_s-seh-1.dll cygstdc++-6.dll cygrunsrv.exe 
 GCC_GTEQ_430 := $(shell expr `${CC} -dumpversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 40300)
 GCC_GTEQ_450 := $(shell expr `${CC} -dumpversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 40500)
@@ -66,6 +66,11 @@ ENABLE_KERBEROS=$(shell grep -c ENABLE_KERBEROS config/config.h)
 ifeq ($(ENABLE_KERBEROS),1)
 	OBJS+=kerberos.o
 	LDFLAGS+=-lgssapi_krb5
+endif
+
+ENABLE_PACPARSER=$(shell grep -c ENABLE_PACPARSER config/config.h)
+ifeq ($(ENABLE_PACPARSER),1)
+	LDFLAGS+=-lpacparser
 endif
 
 #CFLAGS+=-g

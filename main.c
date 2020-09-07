@@ -43,7 +43,9 @@
 #include <termios.h>
 #include <fnmatch.h>
 #include <assert.h>
+#ifdef ENABLE_PACPARSER
 #include <pacparser.h>
+#endif
 #ifdef __CYGWIN__
 #include <windows.h>
 #endif
@@ -125,6 +127,7 @@ hlist_t users_list = NULL;			/* socks5_thread() */
 plist_t scanner_agent_list = NULL;		/* scanner_hook() */
 plist_t noproxy_list = NULL;			/* proxy_thread() */
 
+#ifdef ENABLE_PACPARSER
 /* 1 = Pacparser engine is initialized and in use. */
 int pacparser_initialized = 0;
 
@@ -132,6 +135,7 @@ int pacparser_initialized = 0;
  * Pacparser Mutex
  */
 pthread_mutex_t pacparser_mtx = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 /*
  * General signal handler. If in debug mode, quit immediately.
@@ -139,9 +143,11 @@ pthread_mutex_t pacparser_mtx = PTHREAD_MUTEX_INITIALIZER;
 void sighandler(int p) {
 	if (!quit) {
 		syslog(LOG_INFO, "Signal %d received, issuing clean shutdown\n", p);
+#ifdef ENABLE_PACPARSER
 		if (pacparser_initialized) {
 			pacparser_cleanup();
 		}
+#endif
 	} else
 		syslog(LOG_INFO, "Signal %d received, forcing shutdown\n", p);
 
@@ -199,7 +205,9 @@ int parent_add(char *parent, int port) {
 	*/
 
 	aux = (proxy_t *)zmalloc(sizeof(proxy_t));
+#ifdef ENABLE_PACPARSER
 	aux->type = PROXY;
+#endif
 	strlcpy(aux->hostname, proxy, sizeof(aux->hostname));
 	aux->port = port;
 	aux->resolved = 0;
@@ -209,6 +217,7 @@ int parent_add(char *parent, int port) {
 	return 1;
 }
 
+#ifdef ENABLE_PACPARSER
 /*
  * Create list of proxy_t structs parsed from the PAC string returned
  * by Pacparser.
@@ -281,6 +290,7 @@ plist_t pac_create_list(plist_t paclist, char *pacp_str) {
 
 	return paclist;
 }
+#endif
 
 /*
  * Register and bind new proxy service port.
@@ -429,10 +439,12 @@ void *proxy_thread(void *thread_data) {
 	rr_data_t request;
 	rr_data_t ret;
 	int keep_alive;				/* Proxy-Connection */
+#ifdef ENABLE_PACPARSER
 	int pac_found = 0;
 	char *pacp_str;
 
 	plist_t pac_list = NULL;
+#endif
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
 
 	do {
@@ -450,6 +462,7 @@ void *proxy_thread(void *thread_data) {
 			break;
 		}
 
+#ifdef ENABLE_PACPARSER
 		if (!pac_found) {
 			pac_found = 1;
 
@@ -462,6 +475,7 @@ void *proxy_thread(void *thread_data) {
 
 			pac_list = pac_create_list(pac_list, pacp_str);
 		}
+#endif
 
 		do {
 			/*
@@ -471,6 +485,7 @@ void *proxy_thread(void *thread_data) {
 				free_rr_data(&request);
 				request = ret;
 
+#ifdef ENABLE_PACPARSER
 				/*
 				 * Create proxy list for new request from PAC file.
 				 */
@@ -481,6 +496,7 @@ void *proxy_thread(void *thread_data) {
 				plist_free(pac_list);
 				pac_list = NULL;
 				pac_list = pac_create_list(pac_list, pacp_str);
+#endif
 			}
 
 			keep_alive = hlist_subcmp(request->headers, "Proxy-Connection", "keep-alive");
@@ -488,6 +504,7 @@ void *proxy_thread(void *thread_data) {
 			if (noproxy_match(request->hostname)) {
 				/* No-proxy-list has highest precedence */
 				ret = direct_request(thread_data, request);
+#ifdef ENABLE_PACPARSER
 			} else if (pacparser_initialized) {
 				/* If PAC is available, use it to serve request. */
 				ret = pac_forward_request(thread_data, request, pac_list);
@@ -495,17 +512,30 @@ void *proxy_thread(void *thread_data) {
 				/* Else use statically configured proxies. */
 				ret = forward_request(thread_data, request, NULL);
 			}
+#else
+			}
+			else
+				ret = forward_request(thread_data, request);
+#endif
 
 			if (debug)
 				printf("proxy_thread: request rc = %p\n", (void *)ret);
+#ifdef ENABLE_PACPARSER
 		} while (ret != NULL && ret != (void *)-1 && ret != (void *)-2);
+#else
+		} while (ret != NULL && ret != (void *)-1);
+#endif
 
 		free_rr_data(&request);
 	/*
 	 * If client asked for proxy keep-alive, loop unless the last server response
 	 * requested (Proxy-)Connection: close.
 	 */
+#ifdef ENABLE_PACPARSER
 	} while (keep_alive && ret != (void *)-1 && ret != (void *)-2 && !serialize);
+#else
+	} while (keep_alive && ret != (void *)-1 && !serialize);
+#endif
 
 	/*
 	 * Add ourselves to the "threads to join" list.
@@ -517,7 +547,9 @@ void *proxy_thread(void *thread_data) {
 		pthread_mutex_unlock(&threads_mtx);
 	}
 
+#ifdef ENABLE_PACPARSER
 	plist_free(pac_list);
+#endif
 	free(thread_data);
 	close(cd);
 
@@ -888,10 +920,12 @@ int main(int argc, char **argv) {
 	plist_t rules = NULL;
 	config_t cf = NULL;
 	char *magic_detect = NULL;
+#ifdef ENABLE_PACPARSER
 	int pac = 0;
 	char *pac_file;
 
 	pac_file = zmalloc(PATH_MAX);
+#endif
 
 	g_creds = new_auth();
 	cuser = zmalloc(MINIBUF_SIZE);
@@ -933,6 +967,7 @@ int main(int argc, char **argv) {
 				strlcpy(cdomain, optarg, MINIBUF_SIZE);
 				break;
 			case 'x':
+#ifdef ENABLE_PACPARSER
 				pac = 1;
 				/*
 				 * Resolve relative paths if necessary.
@@ -943,6 +978,9 @@ int main(int argc, char **argv) {
 					syslog(LOG_ERR, "Resolving path to PAC file failed: %s\n", strerror(errno));
 					myexit(1);
 				}
+#else
+			fprintf(stderr, "-x specified but CNTLM was compiled without PAC support\n");
+#endif
 				break;
 			case 'F':
 				cflags = swap32(strtoul(optarg, &tmp, 0));
@@ -1178,8 +1216,10 @@ int main(int argc, char **argv) {
 		fprintf(stream, "\t-v  Print debugging information.\n");
 		fprintf(stderr, "\t-w  <workstation>\n"
 				"\t    Some proxies require correct NetBIOS hostname.\n");
+#ifdef ENABLE_PACPARSER
 		fprintf(stderr, "\t-x  <PAC_file>\n"
 				"\t    Specify a PAC file to load.\n");
+#endif
 		fprintf(stream, "\t-X  <sspi_handle_type>\n"
 				"\t    Use SSPI with specified handle type. Works only under Windows.\n"
 				"\t    Default is negotiate.\n");
@@ -1336,6 +1376,7 @@ int main(int argc, char **argv) {
 			free(tmp);
 		}
 
+#ifdef ENABLE_PACPARSER
 		/*
 		 * Check if PAC mode is requested.
 		 */
@@ -1347,6 +1388,7 @@ int main(int argc, char **argv) {
 		free(tmp);
 
 		CFG_DEFAULT(cf, "PacFile", pac_file, MINIBUF_SIZE);
+#endif
 
 		/*
 		 * Add the rest of parent proxies.
@@ -1465,7 +1507,7 @@ int main(int argc, char **argv) {
 	config_close(cf);
 
 
-
+#ifdef ENABLE_PACPARSER
 	/* Start Pacparser engine if pac_file available */
 	/* TODO: pac file option in config file */
 	if (pac) {
@@ -1487,6 +1529,9 @@ int main(int argc, char **argv) {
 	}
 
 	if (!interactivehash && !parent_list && !pac)
+#else
+	if (!interactivehash && !parent_list)
+#endif
 		croak("Parent proxy address missing.\n", interactivepwd || magic_detect);
 
 	if (!interactivehash && !magic_detect && !proxyd_list)
@@ -1990,7 +2035,9 @@ bailout:
 	plist_free(socksd_list);
 	plist_free(rules);
 
+#ifdef ENABLE_PACPARSER
 	free(pac_file);
+#endif
 
 	free(cuid);
 	free(cpidfile);

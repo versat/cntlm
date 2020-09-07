@@ -51,6 +51,7 @@ pthread_mutex_t parent_mtx = PTHREAD_MUTEX_INITIALIZER;
 proxy_t *curr_proxy;
 #endif
 
+#ifdef ENABLE_PACPARSER
 int single_proxy_connect(proxy_t *proxy) {
 	proxy_t *aux = proxy;
 
@@ -116,6 +117,7 @@ rr_data_t pac_forward_request(void *thread_data, rr_data_t request, plist_t prox
 	}
 	return ret;
 }
+#endif
 
 /*
  * Connect to the selected proxy. If the request fails, pick next proxy
@@ -441,7 +443,11 @@ bailout:
  * request is NOT freed
  * pac_aux is NOT freed
  */
+#ifdef ENABLE_PACPARSER
 rr_data_t forward_request(void *thread_data, rr_data_t request, proxy_t *proxy) {
+#else
+rr_data_t forward_request(void *thread_data, rr_data_t request) {
+#endif
 	int i;
 	int loop;
 	int plugin;
@@ -466,7 +472,11 @@ rr_data_t forward_request(void *thread_data, rr_data_t request, proxy_t *proxy) 
 	struct sockaddr_in caddr = ((struct thread_arg_s *)thread_data)->addr;
 
 beginning:
+#ifdef ENABLE_PACPARSER
 	sd = -1;
+#else
+	sd = 0;
+#endif
 	was_cached = noauth = authok = conn_alive = proxy_alive = 0;
 
 	rsocket[0] = wsocket[1] = &cd;
@@ -498,6 +508,7 @@ beginning:
 		was_cached = 1;
 	} else {
 		tcreds = new_auth();
+#ifdef ENABLE_PACPARSER
 		if (proxy) {
 			sd = pac_proxy_connect(proxy, tcreds);
 			if (sd < 0) {
@@ -513,6 +524,15 @@ beginning:
 				rc = (void *)-2;
 				goto bailout;
 			}
+#else
+		sd = proxy_connect(tcreds);
+		if (sd < 0) {
+			tmp = gen_502_page(request->http, "Parent proxy unreachable");
+			(void) write_wrapper(cd, tmp, strlen(tmp));
+			free(tmp);
+			rc = (void *)-1;
+			goto bailout;
+#endif
 		}
 	}
 
