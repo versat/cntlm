@@ -68,6 +68,11 @@ ifeq ($(ENABLE_KERBEROS),1)
 	LDFLAGS+=-lgssapi_krb5
 endif
 
+ENABLE_PACPARSER=$(shell grep -c ENABLE_PACPARSER config/config.h)
+ifeq ($(ENABLE_PACPARSER),1)
+	LDFLAGS+=-lpacparser
+endif
+
 #CFLAGS+=-g
 
 all: $(NAME)

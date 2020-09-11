@@ -50,10 +50,24 @@ extern pthread_mutex_t connection_mtx;
 extern int parent_count;
 extern plist_t parent_list;
 
+#ifdef ENABLE_PACPARSER
+extern int pacparser_initialized;
+extern pthread_mutex_t pacparser_mtx;
+
+/*
+ * Proxy types defined by PAC specification. Used in proxy_t to
+ * specify proxy type.
+ */
+enum proxy_type_t { DIRECT, PROXY };
+#endif
+
 /*
  * just malloc/free sizeof(proxy_t)
  */
 typedef struct {
+#ifdef ENABLE_PACPARSER
+	enum proxy_type_t type;
+#endif
 	char hostname[64];
 	struct auth_s creds;
 	struct in_addr host;

@@ -26,7 +26,12 @@
 extern int proxy_connect(struct auth_s *credentials);
 extern int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct auth_s *creds);
 extern int prepare_http_connect(int sd, struct auth_s *credentials, const char *thost);
+#ifdef ENABLE_PACPARSER
+extern rr_data_t pac_forward_request(void *thread_data, rr_data_t request, plist_t proxy_list);
+extern rr_data_t forward_request(void *cdata, rr_data_t request, proxy_t *proxy);
+#else
 extern rr_data_t forward_request(void *cdata, rr_data_t request);
+#endif
 extern void forward_tunnel(void *thread_data);
 extern void magic_auth_detect(const char *url);
 
