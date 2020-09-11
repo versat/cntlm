@@ -29,6 +29,7 @@
 #include <strings.h>
 #include <assert.h>
 
+#include "direct.h"
 #include "utils.h"
 #include "globals.h"
 #include "auth.h"
@@ -46,6 +47,78 @@
 int parent_curr = 0;
 pthread_mutex_t parent_mtx = PTHREAD_MUTEX_INITIALIZER;
 
+#ifdef ENABLE_KERBEROS
+proxy_t *curr_proxy;
+#endif
+
+#ifdef ENABLE_PACPARSER
+int single_proxy_connect(proxy_t *proxy) {
+	proxy_t *aux = proxy;
+
+	if (aux->resolved == 0) {
+		if (debug)
+			syslog(LOG_INFO, "Resolving proxy %s...\n", aux->hostname);
+		if (so_resolv(&aux->host, aux->hostname)) {
+			aux->resolved = 1;
+		} else {
+			syslog(LOG_ERR, "Cannot resolve proxy %s\n", aux->hostname);
+			return -1;
+		}
+	}
+	return so_connect(aux->host, aux->port);
+}
+
+int pac_proxy_connect(proxy_t *proxy, struct auth_s *credentials) {
+	int i;
+
+	i = single_proxy_connect(proxy);
+	if (i >= 0 && credentials != NULL)
+		copy_auth(credentials, g_creds, /* fullcopy */ !ntlmbasic);
+
+	return i;
+}
+
+rr_data_t pac_forward_request(void *thread_data, rr_data_t request, plist_t proxy_list) {
+	int parent_curr = 0;
+	int parent_count;
+	rr_data_t ret = (void *)-2;
+	int cd = ((struct thread_arg_s *)thread_data)->fd;
+
+	parent_count = plist_count(proxy_list);
+
+	while (parent_curr < parent_count && ret == (void *)-2) {
+		proxy_t *aux;
+		aux = (proxy_t *)plist_get(proxy_list, ++parent_curr);
+
+		if (aux->type == DIRECT) {
+			if (debug)
+				printf("\n~~~~~~~ (%d/%d) PAC DIRECT ~~~~~~~\n", parent_curr, parent_count);
+			ret = direct_request(thread_data, request);
+		} else {
+			if (debug)
+				printf("\n~~~~~~~ (%d/%d) PAC PROXY %s:%d ~~~~~~~\n", parent_curr, parent_count, aux->hostname, aux->port);
+#ifdef ENABLE_KERBEROS
+                        curr_proxy = aux;
+#endif
+			ret = forward_request(thread_data, request, aux);
+		}
+		if (debug && ret == (void *)-2) {
+			printf("pac_forward_request: (%d/%d) PAC type = %d, host = %s, ret = %p\n", parent_curr, parent_count, aux->type, aux->type == PROXY ? aux->hostname : "", (void *)ret);
+		}
+	}
+
+	if (ret == (void *)-2) {
+		char *tmp;
+		ret = (void *)-1;
+		syslog(LOG_INFO, "Could not establish connection using PAC\n");
+		tmp = gen_502_page(request->http, "Could not establisch connection using PAC");
+		write(cd, tmp, strlen(tmp));
+		free(tmp);
+	}
+	return ret;
+}
+#endif
+
 /*
  * Connect to the selected proxy. If the request fails, pick next proxy
  * in the line. Each request scans the whole list until all items are tried
@@ -54,10 +127,6 @@ pthread_mutex_t parent_mtx = PTHREAD_MUTEX_INITIALIZER;
  *
  * Writes required credentials into passed auth_s structure
  */
-
-#ifdef ENABLE_KERBEROS
-proxy_t *curr_proxy;
-#endif
 
 int proxy_connect(struct auth_s *credentials) {
 	proxy_t *aux;
@@ -342,7 +411,9 @@ bailout:
 }
 
 /*
- * Forwarding thread. Connect to the proxy, process auth then request.
+ * Forwarding thread. Connect to the proxy, process auth then
+ * request. If pac_aux is non-null, use this proxy over the static
+ * configured proxies.
  *
  * First read request, then call proxy_authenticate() which will send
  * the request. If proxy returns 407, it will compute NTLM reply and
@@ -370,8 +441,13 @@ bailout:
  *
  * thread_data is NOT freed
  * request is NOT freed
+ * pac_aux is NOT freed
  */
+#ifdef ENABLE_PACPARSER
+rr_data_t forward_request(void *thread_data, rr_data_t request, proxy_t *proxy) {
+#else
 rr_data_t forward_request(void *thread_data, rr_data_t request) {
+#endif
 	int i;
 	int loop;
 	int plugin;
@@ -396,7 +472,12 @@ rr_data_t forward_request(void *thread_data, rr_data_t request) {
 	struct sockaddr_in caddr = ((struct thread_arg_s *)thread_data)->addr;
 
 beginning:
-	sd = was_cached = noauth = authok = conn_alive = proxy_alive = 0;
+#ifdef ENABLE_PACPARSER
+	sd = -1;
+#else
+	sd = 0;
+#endif
+	was_cached = noauth = authok = conn_alive = proxy_alive = 0;
 
 	rsocket[0] = wsocket[1] = &cd;
 	rsocket[1] = wsocket[0] = &sd;
@@ -427,6 +508,23 @@ beginning:
 		was_cached = 1;
 	} else {
 		tcreds = new_auth();
+#ifdef ENABLE_PACPARSER
+		if (proxy) {
+			sd = pac_proxy_connect(proxy, tcreds);
+			if (sd < 0) {
+				rc = (void *)-2;
+				goto bailout;
+			}
+		} else {
+			sd = proxy_connect(tcreds);
+			if (sd <= 0) {
+				tmp = gen_502_page(request->http, "Parent proxy unreachable");
+				(void) write_wrapper(cd, tmp, strlen(tmp));
+				free(tmp);
+				rc = (void *)-2;
+				goto bailout;
+			}
+#else
 		sd = proxy_connect(tcreds);
 		if (sd < 0) {
 			tmp = gen_502_page(request->http, "Parent proxy unreachable");
@@ -434,6 +532,7 @@ beginning:
 			free(tmp);
 			rc = (void *)-1;
 			goto bailout;
+#endif
 		}
 	}
 

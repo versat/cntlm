@@ -103,6 +103,11 @@ do
 	case $1 in
 		--enable-kerberos)
 			printf "#define ENABLE_KERBEROS" >> $CONFIG
+			echo "" >> $CONFIG
+			;;
+		--enable-pacparser)
+			printf "#define ENABLE_PACPARSER" >> $CONFIG
+			echo "" >> $CONFIG
 			;;
 		*)
 			echo "Unknown flag $1"
