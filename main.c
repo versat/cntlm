@@ -43,9 +43,6 @@
 #include <termios.h>
 #include <fnmatch.h>
 #include <assert.h>
-#ifdef ENABLE_PACPARSER
-#include <pacparser.h>
-#endif
 #ifdef __CYGWIN__
 #include <windows.h>
 #endif
@@ -73,6 +70,9 @@
 
 #ifdef ENABLE_KERBEROS
 #include "kerberos.h"
+#endif
+#ifdef ENABLE_PACPARSER
+#include <pacparser.h>
 #endif
 
 #define STACK_SIZE	sizeof(void *)*8*1024
