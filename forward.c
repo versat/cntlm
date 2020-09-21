@@ -58,14 +58,14 @@ int single_proxy_connect(proxy_t *proxy) {
 	if (aux->resolved == 0) {
 		if (debug)
 			syslog(LOG_INFO, "Resolving proxy %s...\n", aux->hostname);
-		if (so_resolv(&aux->host, aux->hostname)) {
+		if (so_resolv(&aux->addresses, aux->hostname, aux->port)) {
 			aux->resolved = 1;
 		} else {
 			syslog(LOG_ERR, "Cannot resolve proxy %s\n", aux->hostname);
 			return -1;
 		}
 	}
-	return so_connect(aux->host, aux->port);
+	return so_connect(aux->addresses);
 }
 
 int pac_proxy_connect(proxy_t *proxy, struct auth_s *credentials) {
