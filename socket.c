@@ -45,9 +45,7 @@ int so_resolv(struct addrinfo **addresses, const char *hostname, const int port)
 	char s[INET6_ADDRSTRLEN], buf[6];
 
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET6;
 	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_V4MAPPED | AI_ALL;
 
 	sprintf(buf, "%d", port);
 	int rc = getaddrinfo(hostname, buf, &hints, addresses);
@@ -97,7 +95,7 @@ int so_connect(struct addrinfo *addresses) {
 	char s[INET6_ADDRSTRLEN];
 
 	for (p = addresses; p != NULL; p = p->ai_next) {
-		if ((fd = socket(PF_INET6, SOCK_STREAM, 0)) < 0) {
+		if ((fd = socket(p->ai_family, SOCK_STREAM, 0)) < 0) {
 			if (debug)
 				printf("so_connect: create: %s\n", strerror(errno));
 			return -1;
@@ -160,7 +158,7 @@ int so_listen(plist_t *list, struct addrinfo *addresses, void *aux) {
 	int retval;
 
 	for (p = addresses; p != NULL; p = p->ai_next) {
-		fd = socket(PF_INET6, SOCK_STREAM, 0);
+		fd = socket(p->ai_family, SOCK_STREAM, 0);
 		if (fd < 0) {
 			if (debug)
 				printf("so_listen: new socket: %s\n", strerror(errno));
