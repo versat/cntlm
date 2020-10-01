@@ -58,8 +58,14 @@ int so_resolv(struct addrinfo **addresses, const char *hostname, const int port)
 	if (debug) {
 		printf("Resolve %s:\n", hostname);
 		for (p = *addresses; p != NULL; p = p->ai_next) {
-			struct sockaddr_in6 *ad = (struct sockaddr_in6*)(p->ai_addr);
-			inet_ntop(p->ai_family, &ad->sin6_addr, s, INET6_ADDRSTRLEN);
+			switch (p->ai_family) {
+				case AF_INET6:
+					inet_ntop(p->ai_family, &((struct sockaddr_in6*)(p->ai_addr))->sin6_addr, s, INET6_ADDRSTRLEN);
+					break;
+				case AF_INET:
+					inet_ntop(p->ai_family, &((struct sockaddr_in*)(p->ai_addr))->sin_addr, s, INET6_ADDRSTRLEN);
+					break;
+			}
 			printf("     %s\n", s);
 		}
 	}
@@ -101,9 +107,18 @@ int so_connect(struct addrinfo *addresses) {
 		}
 
 		if (debug) {
-				struct sockaddr_in6 *ad = (struct sockaddr_in6*)(p->ai_addr);
-				inet_ntop(AF_INET6, &ad->sin6_addr, s, INET6_ADDRSTRLEN);
-				printf("so_connect: %s : %i \n", s, ntohs(ad->sin6_port));
+			u_short port;
+			switch (p->ai_family) {
+				case AF_INET6:
+					port = ((struct sockaddr_in6*)(p->ai_addr))->sin6_port;
+					inet_ntop(p->ai_family, &((struct sockaddr_in6*)(p->ai_addr))->sin6_addr, s, INET6_ADDRSTRLEN);
+					break;
+				case AF_INET:
+					port = ((struct sockaddr_in*)(p->ai_addr))->sin_port;
+					inet_ntop(p->ai_family, &((struct sockaddr_in*)(p->ai_addr))->sin_addr, s, INET6_ADDRSTRLEN);
+					break;
+			}
+			printf("so_connect: %s : %i \n", s, ntohs(port));
 		}
 
 		if ((flags = fcntl(fd, F_GETFL, 0)) < 0) {
@@ -171,15 +186,24 @@ int so_listen(plist_t *list, struct addrinfo *addresses, void *aux) {
 			syslog(LOG_WARNING, "setsockopt() (option: SO_REUSEADDR, value: 1) failed: %s\n", strerror(errno));
 		}
 
-		struct sockaddr_in6 *ad = (struct sockaddr_in6*)(p->ai_addr);
-		inet_ntop(AF_INET6, &ad->sin6_addr, s, INET6_ADDRSTRLEN);
+		u_short port;
+		switch (p->ai_family) {
+			case AF_INET6:
+				port = ((struct sockaddr_in6*)(p->ai_addr))->sin6_port;
+				inet_ntop(p->ai_family, &((struct sockaddr_in6*)(p->ai_addr))->sin6_addr, s, INET6_ADDRSTRLEN);
+				break;
+			case AF_INET:
+				port = ((struct sockaddr_in*)(p->ai_addr))->sin_port;
+				inet_ntop(p->ai_family, &((struct sockaddr_in*)(p->ai_addr))->sin_addr, s, INET6_ADDRSTRLEN);
+				break;
+		}
 
 		if (bind(fd, p->ai_addr, p->ai_addrlen)) {
-			syslog(LOG_ERR, "Cannot bind port %d: %s!\n", ntohs(ad->sin6_port), strerror(errno));
+			syslog(LOG_ERR, "Cannot bind address %s port %d: %s!\n", s, ntohs(port), strerror(errno));
 			close(fd);
 			return -1;
 		} else if (debug) {
-			printf("so_listen: %s : %u \n", s, ntohs(ad->sin6_port));
+			printf("so_listen: %s : %u \n", s, ntohs(port));
 		}
 
 		if (listen(fd, SOMAXCONN)) {
