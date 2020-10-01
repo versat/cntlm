@@ -74,7 +74,6 @@ int so_resolv_wildcard(struct addrinfo **addresses, const int port, int gateway)
 	sprintf(buf, "%d", port);
 
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET6;
 	hints.ai_socktype = SOCK_STREAM;
 	if (gateway) {
 		hints.ai_flags = AI_PASSIVE;
