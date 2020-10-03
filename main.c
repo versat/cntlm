@@ -160,34 +160,32 @@ void sighandler(int p) {
 int parent_add(char *parent, int port) {
 	int len;
 	int i;
-	char *proxy;
+	int p;
+	char *spec;
+	char *tmp;
 	proxy_t *aux;
+	struct addrinfo *addresses;
 
 	/*
 	 * Check format and parse it.
 	 */
-	proxy = strdup(parent);
-	len = strlen(proxy);
-	i = strcspn(proxy, ": ");
-	if (i != len) {
-		proxy[i++] = 0;
-		while (i < len && (proxy[i] == ' ' || proxy[i] == '\t'))
-			i++;
-
-		if (i >= len) {
-			free(proxy);
-			return 0;
+	spec = strdup(parent);
+	char *q = strrchr(spec, ':');
+	if (q != NULL) {
+		p = (int)(q - spec);
+		if(spec[0] == '[' && spec[p-1] == ']') {
+			tmp = substr(spec, 1, p-2);
+	        } else {
+			tmp = substr(spec, 0, p);
 		}
 
-		port = atoi(proxy+i);
-	}
-
-	/*
-	 * No port argument and not parsed from proxy?
-	 */
-	if (!port) {
-		syslog(LOG_ERR, "Invalid proxy specification %s.\n", parent);
-		free(proxy);
+		port = atoi(spec+p+1);
+		if (!port || !so_resolv(&addresses, tmp, port)) {
+			syslog(LOG_ERR, "Cannot resolve listen address %s\n", spec);
+			myexit(1);
+		}
+	} else {
+		syslog(LOG_ERR, "Cannot resolve listen address %s\n", spec);
 		myexit(1);
 	}
 
@@ -195,13 +193,15 @@ int parent_add(char *parent, int port) {
 #ifdef ENABLE_PACPARSER
 	aux->type = PROXY;
 #endif
-	strlcpy(aux->hostname, proxy, sizeof(aux->hostname));
+	fprintf(stderr, "vars q=%s, spec=%s, tmp=%s", q, spec, tmp);
+	strlcpy(aux->hostname, tmp, sizeof(aux->hostname));
 	aux->port = port;
 	aux->resolved = 0;
 	aux->addresses = NULL;
 	parent_list = plist_add(parent_list, ++parent_count, (char *)aux);
 
-	free(proxy);
+	free(spec);
+	free(tmp);
 	return 1;
 }
 
