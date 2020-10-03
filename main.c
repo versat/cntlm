@@ -160,7 +160,6 @@ void sighandler(int p) {
 int parent_add(char *parent, int port) {
 	int len;
 	int i;
-	int p;
 	char *spec;
 	char *tmp;
 	proxy_t *aux;
@@ -172,6 +171,7 @@ int parent_add(char *parent, int port) {
 	spec = strdup(parent);
 	char *q = strrchr(spec, ':');
 	if (q != NULL) {
+		int p;
 		p = (int)(q - spec);
 		if(spec[0] == '[' && spec[p-1] == ']') {
 			tmp = substr(spec, 1, p-2);
@@ -291,7 +291,6 @@ void listen_add(const char *service, plist_t *list, char *spec, int gateway) {
 	int port;
 	char *tmp;
 
-	len = strlen(spec);
 	char *q = strrchr(spec, ':');
 	if (q != NULL) {
 		p = (int)(q - spec);

@@ -42,7 +42,7 @@ extern int debug;
  */
 int so_resolv(struct addrinfo **addresses, const char *hostname, const int port) {
 	struct addrinfo hints, *p;
-	char s[INET6_ADDRSTRLEN], buf[6];
+	char buf[6];
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_socktype = SOCK_STREAM;
@@ -56,6 +56,7 @@ int so_resolv(struct addrinfo **addresses, const char *hostname, const int port)
 	}
 
 	if (debug) {
+		char s[INET6_ADDRSTRLEN];
 		printf("Resolve %s:\n", hostname);
 		for (p = *addresses; p != NULL; p = p->ai_next) {
 			switch (p->ai_family) {
@@ -93,13 +94,13 @@ int so_resolv_wildcard(struct addrinfo **addresses, const int port, int gateway)
  * Returns: socket descriptor
  */
 int so_connect(struct addrinfo *addresses) {
-	int flags;
 	int fd = -1;
 	int rc;
 	struct addrinfo *p;
 	char s[INET6_ADDRSTRLEN];
 
 	for (p = addresses; p != NULL; p = p->ai_next) {
+		int flags;
 		if ((fd = socket(p->ai_family, SOCK_STREAM, 0)) < 0) {
 			if (debug)
 				printf("so_connect: create: %s\n", strerror(errno));
@@ -165,14 +166,12 @@ int so_connect(struct addrinfo *addresses) {
  * Bind the specified port and listen on it.
  */
 int so_listen(plist_t *list, struct addrinfo *addresses, void *aux) {
-	int fd;
 	socklen_t clen;
 	struct addrinfo *p;
 	char s[INET6_ADDRSTRLEN];
-	int retval;
 
 	for (p = addresses; p != NULL; p = p->ai_next) {
-		fd = socket(p->ai_family, SOCK_STREAM, 0);
+		int fd = socket(p->ai_family, SOCK_STREAM, 0);
 		if (fd < 0) {
 			if (debug)
 				printf("so_listen: new socket: %s\n", strerror(errno));
@@ -181,8 +180,7 @@ int so_listen(plist_t *list, struct addrinfo *addresses, void *aux) {
 		}
 
 		clen = 1;
-		retval = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &clen, sizeof(clen));
-		if (retval != 0) {
+		if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &clen, sizeof(clen)) != 0) {
 			syslog(LOG_WARNING, "setsockopt() (option: SO_REUSEADDR, value: 1) failed: %s\n", strerror(errno));
 		}
 
