@@ -257,10 +257,8 @@ plist_t plist_free(plist_t list) {
  * Free parent_list
  */
 plist_t parentlist_free(plist_t list) {
-	plist_t t = list;
-
 	while (list) {
-		t = list->next;
+		plist_t t = list->next;
 
 		proxy_t *proxy = (proxy_t *) list->aux;
 

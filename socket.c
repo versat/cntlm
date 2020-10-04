@@ -39,6 +39,7 @@ extern int debug;
 
 /*
  * gethostbyname() wrapper. Return 1 if OK, otherwise 0.
+ * Important: Caller is responsible for freeing addresses via freeaddrinfo()!
  */
 int so_resolv(struct addrinfo **addresses, const char *hostname, const int port) {
 	struct addrinfo hints, *p;
