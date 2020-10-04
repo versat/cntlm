@@ -193,7 +193,6 @@ int parent_add(char *parent, int port) {
 #ifdef ENABLE_PACPARSER
 	aux->type = PROXY;
 #endif
-	fprintf(stderr, "vars q=%s, spec=%s, tmp=%s", q, spec, tmp);
 	strlcpy(aux->hostname, tmp, sizeof(aux->hostname));
 	aux->port = port;
 	aux->resolved = 0;
