@@ -57,7 +57,6 @@
 #include "ntlm.h"
 #include "swap.h"
 #include "config.h"
-#include "acl.h"
 #include "auth.h"
 #include "http.h"
 #include "globals.h"
@@ -161,59 +160,47 @@ void sighandler(int p) {
 int parent_add(char *parent, int port) {
 	int len;
 	int i;
-	char *proxy;
+	char *spec;
+	char *tmp;
 	proxy_t *aux;
+	struct addrinfo *addresses;
 
 	/*
 	 * Check format and parse it.
 	 */
-	proxy = strdup(parent);
-	len = strlen(proxy);
-	i = strcspn(proxy, ": ");
-	if (i != len) {
-		proxy[i++] = 0;
-		while (i < len && (proxy[i] == ' ' || proxy[i] == '\t'))
-			i++;
-
-		if (i >= len) {
-			free(proxy);
-			return 0;
+	spec = strdup(parent);
+	char *q = strrchr(spec, ':');
+	if (q != NULL) {
+		int p;
+		p = (int)(q - spec);
+		if(spec[0] == '[' && spec[p-1] == ']') {
+			tmp = substr(spec, 1, p-2);
+	        } else {
+			tmp = substr(spec, 0, p);
 		}
 
-		port = atoi(proxy+i);
-	}
-
-	/*
-	 * No port argument and not parsed from proxy?
-	 */
-	if (!port) {
-		syslog(LOG_ERR, "Invalid proxy specification %s.\n", parent);
-		free(proxy);
+		port = atoi(spec+p+1);
+		if (!port || !so_resolv(&addresses, tmp, port)) {
+			syslog(LOG_ERR, "Cannot resolve listen address %s\n", spec);
+			myexit(1);
+		}
+	} else {
+		syslog(LOG_ERR, "Cannot resolve listen address %s\n", spec);
 		myexit(1);
 	}
-
-	/*
-	 * Try to resolve proxy address
-	 *
-	if (debug)
-		syslog(LOG_INFO, "Resolving proxy %s...\n", proxy);
-	if (!so_resolv(&host, proxy)) {
-		syslog(LOG_ERR, "Cannot resolve proxy %s, discarding.\n", parent);
-		free(proxy);
-		return 0;
-	}
-	*/
 
 	aux = (proxy_t *)zmalloc(sizeof(proxy_t));
 #ifdef ENABLE_PACPARSER
 	aux->type = PROXY;
 #endif
-	strlcpy(aux->hostname, proxy, sizeof(aux->hostname));
+	strlcpy(aux->hostname, tmp, sizeof(aux->hostname));
 	aux->port = port;
 	aux->resolved = 0;
+	aux->addresses = NULL;
 	parent_list = plist_add(parent_list, ++parent_count, (char *)aux);
 
-	free(proxy);
+	free(spec);
+	free(tmp);
 	return 1;
 }
 
@@ -296,45 +283,47 @@ plist_t pac_create_list(plist_t paclist, char *pacp_str) {
  * Register and bind new proxy service port.
  */
 void listen_add(const char *service, plist_t *list, char *spec, int gateway) {
-	struct in_addr source;
+	struct addrinfo *addresses;
 	int i;
 	int p;
 	int len;
 	int port;
 	char *tmp;
 
-	len = strlen(spec);
-	p = strcspn(spec, ":");
-	if (p < len-1) {
-		tmp = substr(spec, 0, p);
-		if (!so_resolv(&source, tmp)) {
-			syslog(LOG_ERR, "Cannot resolve listen address %s\n", tmp);
+	char *q = strrchr(spec, ':');
+	if (q != NULL) {
+		p = (int)(q - spec);
+		if(spec[0] == '[' && spec[p-1] == ']') {
+			tmp = substr(spec, 1, p-2);
+	        } else {
+			tmp = substr(spec, 0, p);
+		}
+
+		port = atoi(spec+p+1);
+		if (!port || !so_resolv(&addresses, tmp, port)) {
+			syslog(LOG_ERR, "Cannot resolve listen address %s\n", spec);
 			myexit(1);
 		}
+
 		free(tmp);
-		port = atoi(tmp = spec+p+1);
 	} else {
-		source.s_addr = htonl(gateway ? INADDR_ANY : INADDR_LOOPBACK);
-		port = atoi(tmp = spec);
+		port = atoi(spec);
+		if (!port) {
+			syslog(LOG_ERR, "Cannot resolve listen address %s\n", spec);
+			myexit(1);
+		}
+		so_resolv_wildcard(&addresses, port, gateway);
 	}
 
-	if (!port) {
-		syslog(LOG_ERR, "Invalid listen port %s.\n", tmp);
-		myexit(1);
-	}
-
-	i = so_listen(port, source);
-	if (i >= 0) {
-		*list = plist_add(*list, i, NULL);
-		syslog(LOG_INFO, "%s listening on %s:%d\n", service, inet_ntoa(source), port);
-	}
+	so_listen(list, addresses, NULL);
+	freeaddrinfo(addresses);
 }
 
 /*
  * Register a new tunnel definition, bind service port.
  */
 void tunnel_add(plist_t *list, char *spec, int gateway) {
-	struct in_addr source;
+	struct addrinfo *addresses;
 	int i;
 	int len;
 	int count;
@@ -354,21 +343,22 @@ void tunnel_add(plist_t *list, char *spec, int gateway) {
 
 	pos = 0;
 	if (count == 4) {
-		if (!so_resolv(&source, field[pos])) {
-			syslog(LOG_ERR, "Cannot resolve tunnel bind address: %s\n", field[pos]);
+		port = atoi(field[pos+1]);
+		if (!port || !so_resolv(&addresses, field[pos], port)) {
+			syslog(LOG_ERR, "Cannot resolve tunnel bind address: %s:%s\n", field[pos], field[pos+1]);
 			myexit(1);
 		}
 		pos++;
-	} else
-		source.s_addr = htonl(gateway ? INADDR_ANY : INADDR_LOOPBACK);
-
-	if (count - pos == 3) {
+	} else {
 		port = atoi(field[pos]);
-		if (port == 0) {
+		if(!port) {
 			syslog(LOG_ERR, "Invalid tunnel local port: %s\n", field[pos]);
 			myexit(1);
 		}
+		so_resolv_wildcard(&addresses, port, gateway);
+	}
 
+	if (count-pos == 3) {
 		if (!strlen(field[pos+1]) || !strlen(field[pos+2])) {
 			syslog(LOG_ERR, "Invalid tunnel target: %s:%s\n", field[pos+1], field[pos+2]);
 			myexit(1);
@@ -380,18 +370,20 @@ void tunnel_add(plist_t *list, char *spec, int gateway) {
 		strlcat(tmp, ":", tmp_len);
 		strlcat(tmp, field[pos+2], tmp_len);
 
-		i = so_listen(port, source);
-		if (i >= 0) {
-			*list = plist_add(*list, i, tmp);
-			syslog(LOG_INFO, "New tunnel from %s:%d to %s\n", inet_ntoa(source), port, tmp);
-		} else
+		i = so_listen(list, addresses, tmp);
+		if (i == 0) {
+			syslog(LOG_INFO, "New tunnel to %s\n", tmp);
+		} else {
+			syslog(LOG_ERR, "Unable to bind tunnel");
 			free(tmp);
+		}
 	} else {
 		printf("Tunnel specification incorrect ([laddress:]lport:rserver:rport).\n");
 		myexit(1);
 	}
 
 	free(spec);
+	freeaddrinfo(addresses);
 }
 
 /*
@@ -618,7 +610,6 @@ void *socks5_thread(void *thread_data) {
 	int open = !hlist_count(users_list);
 
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
-	struct sockaddr_in caddr = ((struct thread_arg_s *)thread_data)->addr;
 	free(thread_data);
 
 	/*
@@ -853,7 +844,6 @@ void *socks5_thread(void *thread_data) {
 		}
 	}
 
-	syslog(LOG_DEBUG, "%s SOCKS %s", inet_ntoa(caddr.sin_addr), thost);
 
 	/*
 	 * Let's give them bi-directional connection they asked for
@@ -947,13 +937,8 @@ int main(int argc, char **argv) {
 	syslog(LOG_INFO, "Starting cntlm version " VERSION " for LITTLE endian\n");
 #endif
 
-	while ((i = getopt(argc, argv, ":-:T:a:c:d:fghIl:p:r:su:vw:x:A:BD:F:G:HL:M:N:O:P:R:S:U:X:q:")) != -1) {
+	while ((i = getopt(argc, argv, ":-:T:a:c:d:fghIl:p:r:su:vw:x:B:F:G:HL:M:N:O:P:R:S:U:X:q:")) != -1) {
 		switch (i) {
-			case 'A':
-			case 'D':
-				if (!acl_add(&rules, optarg, (i == 'A' ? ACL_ALLOW : ACL_DENY)))
-					myexit(1);
-				break;
 			case 'a':
 				strlcpy(cauth, optarg, MINIBUF_SIZE);
 				break;
@@ -1154,8 +1139,6 @@ int main(int argc, char **argv) {
 		}
 
 		fprintf(stream, "Usage: %s [-AaBcDdFfgHhILlMPpSsTUuvw] <proxy_host>[:]<proxy_port> ...\n", argv[0]);
-		fprintf(stream, "\t-A  <address>[/<net>]\n"
-				"\t    ACL allow rule. IP or hostname, net must be a number (CIDR notation)\n");
 		fprintf(stream, "\t-a  ntlm | nt | lm\n"
 				"\t    Authentication type - combined NTLM, just LM, or just NT. Default NTLM.\n"
 #ifdef ENABLE_KERBEROS
@@ -1166,8 +1149,6 @@ int main(int argc, char **argv) {
 		fprintf(stream, "\t-c  <config_file>\n"
 				"\t    Configuration file. Other arguments can be used as well, overriding\n"
 				"\t    config file settings.\n");
-		fprintf(stream, "\t-D  <address>[/<net>]\n"
-				"\t    ACL deny rule. Syntax same as -A.\n");
 		fprintf(stream, "\t-d  <domain>\n"
 				"\t    Domain/workgroup can be set separately.\n");
 		fprintf(stream, "\t-f  Run in foreground, do not fork into daemon mode.\n");
@@ -1398,23 +1379,6 @@ int main(int argc, char **argv) {
 			free(tmp);
 		}
 
-		/*
-		 * No ACLs on the command line? Use config file.
-		 */
-		if (rules == NULL) {
-			list = cf->options;
-			while (list) {
-				if (!(i=strcasecmp("Allow", list->key)) || !strcasecmp("Deny", list->key))
-					if (!acl_add(&rules, list->value, i ? ACL_DENY : ACL_ALLOW))
-						myexit(1);
-				list = list->next;
-			}
-
-			while ((tmp = config_pop(cf, "Allow")))
-				free(tmp);
-			while ((tmp = config_pop(cf, "Deny")))
-				free(tmp);
-		}
 
 		/*
 		 * Single options.
@@ -1874,7 +1838,7 @@ int main(int argc, char **argv) {
 	 */
 	while (quit == 0 || (tc != tj && quit < 2)) {
 		struct thread_arg_s *data;
-		struct sockaddr_in caddr;
+		struct sockaddr_in6 caddr;
 		struct timeval tv;
 		socklen_t clen;
 		fd_set set;
@@ -1937,27 +1901,6 @@ int main(int argc, char **argv) {
 					syslog(LOG_ERR, "Serious error during accept: %s\n", strerror(errno));
 					continue;
 				}
-
-				/*
-				 * Check main access control list.
-				 */
-				if (acl_check(rules, caddr.sin_addr) != ACL_ALLOW) {
-					syslog(LOG_WARNING, "Connection denied for %s:%d\n",
-						inet_ntoa(caddr.sin_addr), ntohs(caddr.sin_port));
-					tmp = gen_denied_page(inet_ntoa(caddr.sin_addr));
-					(void) write_wrapper(cd, tmp, strlen(tmp)); // We don't really care about the result
-					free(tmp);
-					close(cd);
-					continue;
-				}
-
-				/*
-				 * Log peer IP if it's not localhost
-				 *
-				 * if (debug || (gateway && caddr.sin_addr.s_addr != htonl(INADDR_LOOPBACK)))
-				 * 	syslog(LOG_INFO, "Connection accepted from %s:%d\n",
-				 * 	inet_ntoa(caddr.sin_addr), ntohs(caddr.sin_port));
-				 */
 
 				pthread_attr_init(&pattr);
 				pthread_attr_setstacksize(&pattr, MAX(STACK_SIZE, PTHREAD_STACK_MIN));
@@ -2044,7 +1987,7 @@ bailout:
 	free(magic_detect);
 	free(g_creds);
 
-	plist_free(parent_list);
+	parentlist_free(parent_list);
 
 	exit(0);
 }

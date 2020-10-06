@@ -39,123 +39,125 @@ extern int debug;
 
 /*
  * gethostbyname() wrapper. Return 1 if OK, otherwise 0.
+ * Important: Caller is responsible for freeing addresses via freeaddrinfo()!
  */
-int so_resolv(struct in_addr *host, const char *name) {
-/*
-	struct hostent *resolv;
-
-	resolv = gethostbyname(name);
-	if (!resolv)
-		return 0;
-
-	memcpy(host, resolv->h_addr_list[0], resolv->h_length);
-	return 1;
-*/
-	struct addrinfo hints;
-	struct addrinfo *res;
-	const struct addrinfo *p;
+int so_resolv(struct addrinfo **addresses, const char *hostname, const int port) {
+	struct addrinfo hints, *p;
+	char buf[6];
 
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-	int rc = getaddrinfo(name, NULL, &hints, &res);
+
+	sprintf(buf, "%d", port);
+	int rc = getaddrinfo(hostname, buf, &hints, addresses);
 	if (rc != 0) {
 		if (debug)
-			printf("so_resolv: %s failed: %s (%d)\n", name, gai_strerror(rc), rc);
+			printf("so_resolv: %s failed: %s (%d)\n", hostname, gai_strerror(rc), rc);
 		return 0;
 	}
 
-	if (debug)
-		printf("Resolve %s:\n", name);
-	int addr_set = 0;
-	for (p = res; p != NULL; p = p->ai_next) {
-		const struct sockaddr_in *ad = (struct sockaddr_in*)(p->ai_addr);
-		if (ad == NULL) {
-			freeaddrinfo(res);
-			return 0;
+	if (debug) {
+		char s[INET6_ADDRSTRLEN];
+		printf("Resolve %s:\n", hostname);
+		for (p = *addresses; p != NULL; p = p->ai_next) {
+			switch (p->ai_family) {
+				case AF_INET6:
+					inet_ntop(p->ai_family, &((struct sockaddr_in6*)(p->ai_addr))->sin6_addr, s, INET6_ADDRSTRLEN);
+					break;
+				case AF_INET:
+					inet_ntop(p->ai_family, &((struct sockaddr_in*)(p->ai_addr))->sin_addr, s, INET6_ADDRSTRLEN);
+					break;
+			}
+			printf("     %s\n", s);
 		}
-		if (!addr_set) {
-			memcpy(host, &ad->sin_addr, sizeof(ad->sin_addr));
-			addr_set = 1;
-			if (debug)
-				printf("  -> %s\n", inet_ntoa(ad->sin_addr));
-		} else
-			if (debug)
-				printf("     %s\n", inet_ntoa(ad->sin_addr));
 	}
-
-	freeaddrinfo(res);
 
 	return 1;
 }
 
+int so_resolv_wildcard(struct addrinfo **addresses, const int port, int gateway) {
+	struct addrinfo hints, *p;
+	char buf[6];
+
+	sprintf(buf, "%d", port);
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_socktype = SOCK_STREAM;
+	if (gateway) {
+		hints.ai_flags = AI_PASSIVE;
+	}
+
+	return getaddrinfo(NULL, buf, &hints, addresses);
+}
+
 /*
- * Connect to a host. Host is required to be resolved
- * in the struct in_addr already.
+ * Connect to a host.
  * Returns: socket descriptor
  */
-int so_connect(struct in_addr host, int port) {
-	int flags;
-	int fd;
+int so_connect(struct addrinfo *addresses) {
+	int fd = -1;
 	int rc;
-	struct sockaddr_in saddr;
-	// struct timeval tv;
-	// fd_set fds;
+	struct addrinfo *p;
+	char s[INET6_ADDRSTRLEN];
 
-	if ((fd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
-		if (debug)
-			printf("so_connect: create: %s\n", strerror(errno));
-		return -1;
-	}
+	for (p = addresses; p != NULL; p = p->ai_next) {
+		int flags;
+		if ((fd = socket(p->ai_family, SOCK_STREAM, 0)) < 0) {
+			if (debug)
+				printf("so_connect: create: %s\n", strerror(errno));
+			return -1;
+		}
 
-	memset(&saddr, 0, sizeof(saddr));
-	saddr.sin_family = AF_INET;
-	saddr.sin_port = htons(port);
-	saddr.sin_addr = host;
+		if (debug) {
+			u_short port;
+			switch (p->ai_family) {
+				case AF_INET6:
+					port = ((struct sockaddr_in6*)(p->ai_addr))->sin6_port;
+					inet_ntop(p->ai_family, &((struct sockaddr_in6*)(p->ai_addr))->sin6_addr, s, INET6_ADDRSTRLEN);
+					break;
+				case AF_INET:
+					port = ((struct sockaddr_in*)(p->ai_addr))->sin_port;
+					inet_ntop(p->ai_family, &((struct sockaddr_in*)(p->ai_addr))->sin_addr, s, INET6_ADDRSTRLEN);
+					break;
+			}
+			printf("so_connect: %s : %i \n", s, ntohs(port));
+		}
 
-	if ((flags = fcntl(fd, F_GETFL, 0)) < 0) {
-		if (debug)
-			printf("so_connect: get flags: %s\n", strerror(errno));
-		close(fd);
-		return -1;
-	}
+		if ((flags = fcntl(fd, F_GETFL, 0)) < 0) {
+			if (debug)
+				printf("so_connect: get flags: %s\n", strerror(errno));
+			close(fd);
+			continue;
+		}
 
-	/* NON-BLOCKING connect with timeout
-	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
-		if (debug)
-			printf("so_connect: set non-blocking: %s\n", strerror(errno));
-		close(fd);
-		return -1;
-	}
-	*/
+		/* NON-BLOCKING connect with timeout
+		if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+			if (debug)
+				printf("so_connect: set non-blocking: %s\n", strerror(errno));
+			close(fd);
+			continue;
+		}
+		*/
 
-	rc = connect(fd, (struct sockaddr *)&saddr, sizeof(saddr));
+		rc = connect(fd, p->ai_addr, p->ai_addrlen);
 
-	/*
-	printf("connect = %d\n", rc);
-	if (rc < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS)) {
-		FD_ZERO(&fds);
-		FD_SET(fd, &fds);
-		tv.tv_sec = 10;
-		tv.tv_usec = 0;
-		printf("select!\n");
-		rc = select(fd+1, NULL, &fds, NULL, &tv) - 1;
-		printf("select = %d\n", rc);
-	}
-	*/
+		if (rc < 0) {
+			if (debug)
+				printf("so_connect: %s\n", strerror(errno));
+			close(fd);
+			fd = -1;
+			continue;
+		}
 
-	if (rc < 0) {
-		if (debug)
-			printf("so_connect: %s\n", strerror(errno));
-		close(fd);
-		return -1;
-	}
+		if (fcntl(fd, F_SETFL, flags & ~O_NONBLOCK) < 0) {
+			if (debug)
+				printf("so_connect: set blocking: %s\n", strerror(errno));
+			close(fd);
+			fd = -1;
+			continue;
+		}
 
-	if (fcntl(fd, F_SETFL, flags & ~O_NONBLOCK) < 0) {
-		if (debug)
-			printf("so_connect: set blocking: %s\n", strerror(errno));
-		close(fd);
-		return -1;
+		break;
 	}
 
 	return fd;
@@ -163,43 +165,55 @@ int so_connect(struct in_addr host, int port) {
 
 /*
  * Bind the specified port and listen on it.
- * Return socket descriptor if OK, otherwise 0.
  */
-int so_listen(int port, struct in_addr source) {
-	struct sockaddr_in saddr;
-	int fd;
+int so_listen(plist_t *list, struct addrinfo *addresses, void *aux) {
 	socklen_t clen;
-	int retval;
+	struct addrinfo *p;
+	char s[INET6_ADDRSTRLEN];
 
-	fd = socket(PF_INET, SOCK_STREAM, 0);
-	if (fd < 0) {
-		if (debug)
-			printf("so_listen: new socket: %s\n", strerror(errno));
-		return -1;
+	for (p = addresses; p != NULL; p = p->ai_next) {
+		int fd = socket(p->ai_family, SOCK_STREAM, 0);
+		if (fd < 0) {
+			if (debug)
+				printf("so_listen: new socket: %s\n", strerror(errno));
+			close(fd);
+			return -1;
+		}
+
+		clen = 1;
+		if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &clen, sizeof(clen)) != 0) {
+			syslog(LOG_WARNING, "setsockopt() (option: SO_REUSEADDR, value: 1) failed: %s\n", strerror(errno));
+		}
+
+		u_short port;
+		switch (p->ai_family) {
+			case AF_INET6:
+				port = ((struct sockaddr_in6*)(p->ai_addr))->sin6_port;
+				inet_ntop(p->ai_family, &((struct sockaddr_in6*)(p->ai_addr))->sin6_addr, s, INET6_ADDRSTRLEN);
+				break;
+			case AF_INET:
+				port = ((struct sockaddr_in*)(p->ai_addr))->sin_port;
+				inet_ntop(p->ai_family, &((struct sockaddr_in*)(p->ai_addr))->sin_addr, s, INET6_ADDRSTRLEN);
+				break;
+		}
+
+		if (bind(fd, p->ai_addr, p->ai_addrlen)) {
+			syslog(LOG_ERR, "Cannot bind address %s port %d: %s!\n", s, ntohs(port), strerror(errno));
+			close(fd);
+			return -1;
+		} else if (debug) {
+			printf("so_listen: %s : %u \n", s, ntohs(port));
+		}
+
+		if (listen(fd, SOMAXCONN)) {
+			close(fd);
+			return -1;
+		}
+
+		*list = plist_add(*list, fd, aux);
 	}
 
-	clen = 1;
-	retval = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &clen, sizeof(clen));
-	if (retval != 0) {
-		syslog(LOG_WARNING, "setsockopt() (option: SO_REUSEADDR, value: 1) failed: %s\n", strerror(errno));
-	}
-	memset((void *)&saddr, 0, sizeof(saddr));
-	saddr.sin_family = AF_INET;
-	saddr.sin_port = htons(port);
-	saddr.sin_addr.s_addr = source.s_addr;
-
-	if (bind(fd, (struct sockaddr *)&saddr, sizeof(saddr))) {
-		syslog(LOG_ERR, "Cannot bind port %d: %s!\n", port, strerror(errno));
-		close(fd);
-		return -1;
-	}
-
-	if (listen(fd, SOMAXCONN)) {
-		close(fd);
-		return -1;
-	}
-
-	return fd;
+	return 0;
 }
 
 /*
