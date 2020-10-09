@@ -157,9 +157,7 @@ void sighandler(int p) {
 /*
  * Parse proxy parameter and add it to the global list.
  */
-int parent_add(char *parent, int port) {
-	int len;
-	int i;
+int parent_add(const char *parent, int port) {
 	char *spec;
 	char *tmp;
 	proxy_t *aux;
@@ -169,7 +167,7 @@ int parent_add(char *parent, int port) {
 	 * Check format and parse it.
 	 */
 	spec = strdup(parent);
-	char *q = strrchr(spec, ':');
+	const char *q = strrchr(spec, ':');
 	if (q != NULL) {
 		int p;
 		p = (int)(q - spec);
@@ -284,9 +282,7 @@ plist_t pac_create_list(plist_t paclist, char *pacp_str) {
  */
 void listen_add(const char *service, plist_t *list, char *spec, int gateway) {
 	struct addrinfo *addresses;
-	int i;
 	int p;
-	int len;
 	int port;
 	char *tmp;
 
