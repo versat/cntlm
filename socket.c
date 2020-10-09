@@ -48,7 +48,7 @@ int so_resolv(struct addrinfo **addresses, const char *hostname, const int port)
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_socktype = SOCK_STREAM;
 
-	sprintf(buf, "%d", port);
+	snprintf(buf, sizeof(buf), "%d", port);
 	int rc = getaddrinfo(hostname, buf, &hints, addresses);
 	if (rc != 0) {
 		if (debug)
@@ -76,10 +76,10 @@ int so_resolv(struct addrinfo **addresses, const char *hostname, const int port)
 }
 
 int so_resolv_wildcard(struct addrinfo **addresses, const int port, int gateway) {
-	struct addrinfo hints, *p;
+	struct addrinfo hints;
 	char buf[6];
 
-	sprintf(buf, "%d", port);
+	snprintf(buf, sizeof(buf), "%d", port);
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_socktype = SOCK_STREAM;
@@ -109,7 +109,7 @@ int so_connect(struct addrinfo *addresses) {
 		}
 
 		if (debug) {
-			u_short port;
+			u_short port = 0;
 			switch (p->ai_family) {
 				case AF_INET6:
 					port = ((struct sockaddr_in6*)(p->ai_addr))->sin6_port;
@@ -118,6 +118,9 @@ int so_connect(struct addrinfo *addresses) {
 				case AF_INET:
 					port = ((struct sockaddr_in*)(p->ai_addr))->sin_port;
 					inet_ntop(p->ai_family, &((struct sockaddr_in*)(p->ai_addr))->sin_addr, s, INET6_ADDRSTRLEN);
+					break;
+				default:
+					syslog(LOG_ERR, "so_connect: Value of ai_family is invalid!");
 					break;
 			}
 			printf("so_connect: %s : %i \n", s, ntohs(port));
@@ -185,7 +188,7 @@ int so_listen(plist_t *list, struct addrinfo *addresses, void *aux) {
 			syslog(LOG_WARNING, "setsockopt() (option: SO_REUSEADDR, value: 1) failed: %s\n", strerror(errno));
 		}
 
-		u_short port;
+		u_short port = 0;
 		switch (p->ai_family) {
 			case AF_INET6:
 				port = ((struct sockaddr_in6*)(p->ai_addr))->sin6_port;
@@ -194,6 +197,9 @@ int so_listen(plist_t *list, struct addrinfo *addresses, void *aux) {
 			case AF_INET:
 				port = ((struct sockaddr_in*)(p->ai_addr))->sin_port;
 				inet_ntop(p->ai_family, &((struct sockaddr_in*)(p->ai_addr))->sin_addr, s, INET6_ADDRSTRLEN);
+				break;
+			default:
+				syslog(LOG_ERR, "so_listen: Value of ai_family is invalid!");
 				break;
 		}
 
