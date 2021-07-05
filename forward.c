@@ -763,7 +763,7 @@ shortcut:
 			 */
 			if (loop == 1) {
 				conn_alive = hlist_subcmp(data[1]->headers, "Connection", "keep-alive");
-				if (!conn_alive)
+				if (!conn_alive && !((CONNECT(data[0]) && data[1]->code == 200)))
 					data[1]->headers = hlist_mod(data[1]->headers, "Connection", "close", 1);
 
 				/*
