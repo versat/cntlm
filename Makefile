@@ -73,7 +73,12 @@ ifeq ($(ENABLE_PACPARSER),1)
 	LDFLAGS+=-lpacparser
 endif
 
-#CFLAGS+=-g
+
+ENABLE_STATIC=$(shell grep -c ENABLE_STATIC config/config.h)
+ifeq ($(ENABLE_STATIC),1)
+        LDFLAGS+=-static
+endif
+
 
 all: $(NAME)
 
