@@ -34,7 +34,7 @@
 #include "sspi.h"
 #endif
 
-
+//TODO: move to header file
 typedef union {
     struct {
         unsigned int negotiate_56:1;
@@ -99,25 +99,19 @@ typedef union{
 
 typedef union {
     struct {
-        uint16_t domain_name_len;
-        uint16_t domain_name_max_len;
-        uint32_t domain_name_buffer_offset;
+        uint16_t len;
+        uint16_t max_len;
+        uint32_t buffer_offset;
     } fields;
     uint64_t bits;
-} domain_name_fields;
+} payload_content_definition;
 
-typedef union {
-    struct {
-        uint64_t workstation_len;
-        uint16_t workstation_max_len;
-        uint32_t workstation_buffer_offset;
-    } fields;
-    uint64_t bits;
-} workstation_fields;
-
-
-
-
+typedef payload_content_definition domain_name_fields;
+typedef payload_content_definition workstation_fields;
+typedef payload_content_definition username_fields;
+typedef payload_content_definition encrypted_random_session_key_fields;
+typedef payload_content_definition lm_challenge_response_fields;
+typedef payload_content_definition nt_challenge_response_fields;
 
 extern int debug;
 
@@ -320,7 +314,7 @@ int ntlm_request(char **dst, struct auth_s *creds) {
 	char *tmp;
 	int dlen;
 	int hlen;
-	uint32_t flags = 0xb206;
+    negotiation_flags flags;
 
 	*dst = NULL;
 	dlen = strlen(creds->domain);
@@ -328,15 +322,15 @@ int ntlm_request(char **dst, struct auth_s *creds) {
 
 	if (!creds->flags) {
 		if (creds->hashntlm2)
-			flags = 0xa208b205;
+			flags.bits = 0xa208b205;
 		else if (creds->hashnt == 2)
-			flags = 0xa208b207;
+			flags.bits = 0xa208b207;
 		else if (creds->hashnt && creds->hashlm)
-			flags = 0xb207;
+			flags.bits = 0xb207;
 		else if (creds->hashnt)
-			flags = 0xb205;
+			flags.bits = 0xb205;
 		else if (creds->hashlm)
-			flags = 0xb206;
+			flags.bits = 0xb206;
 		else {
 			if (debug) {
 				printf("You're requesting with empty auth_s?!\n");
@@ -345,60 +339,79 @@ int ntlm_request(char **dst, struct auth_s *creds) {
 			return 0;
 		}
 	} else
-		flags = creds->flags;
+		flags.bits = creds->flags;
 
 	if (debug) {
 		printf("NTLM Request:\n");
 		printf("\t   Domain: %s\n", creds->domain);
 		printf("\t Hostname: %s\n", creds->workstation);
-		printf("\t    Flags: 0x%X\n", (int)flags);
+		printf("\t    Flags: 0x%X\n", (int)flags.bits);
 	}
 
-    version version1;
-    version1.fields.product_build = 1;
-    version1.fields.product_major_version = 1;
-    version1.fields.product_minor_version = 1;
-    version1.fields.ntlm_revison_current = 0x0F;
 
-	buf = zmalloc(NTLM_BUFSIZE);
+    int payload_pos = 64 + 16;
+    buf = zmalloc(NTLM_BUFSIZE);
+    char* msg_pointer = buf;
+
+    int payload_workstation_name_pos=payload_pos;
+    int payload_domain_pos=payload_workstation_name_pos+dlen;
     // Signature (8 bytes): An 8-byte character array that MUST contain the ASCII string ('N', 'T', 'L', 'M',
     //'S', 'S', 'P', '\0').
-	memcpy(buf, "NTLMSSP\0", 8);
+	memcpy(buf, signature, 8);
+    msg_pointer += sizeof(signature);
     //MessageType (4 bytes): A 32-bit unsigned integer that indicates the message type. This field MUST
     //be set to 0x00000001.
-	VAL(buf, uint32_t, 8) = U32LE(1);
+	VAL(buf, uint32_t, (int)(msg_pointer-buf)) = NEGOTIATE_MESSAGE;
+    msg_pointer += sizeof(NEGOTIATE_MESSAGE);
     //NegotiateFlags (4 bytes): A NEGOTIATE structure that contains a set of flags, as defined in
     //section 2.2.2.5. The client sets flags to indicate options it supports.
-	VAL(buf, uint32_t, 12) = U32LE(flags);
+	VAL(buf, uint32_t, (int)(msg_pointer-buf)) = U32LE(flags.bits);
+    msg_pointer += sizeof(negotiation_flags);
+
     //DomainNameLen (2 bytes): A 16-bit unsigned integer that defines the size, in bytes, of
     //DomainName in the Payload.
-	VAL(buf, uint16_t, 16) = U16LE(dlen);
-    //DomainNameMaxLen (2 bytes): A 16-bit unsigned integer that SHOULD be set to the value
-    //of DomainNameLen, and MUST be ignored on receipt.
-	VAL(buf, uint16_t, 18) = U16LE(dlen);
-    //DomainNameBufferOffset (4 bytes): A 32-bit unsigned integer that defines the offset, in
-    //bytes, from the beginning of the NEGOTIATE_MESSAGE to DomainName in Payload.
-	VAL(buf, uint32_t, 20) = U32LE(40 + hlen);
+    domain_name_fields domainNameFields = {
+            .fields = {
+                    .len = dlen,
+                    .max_len = domainNameFields.fields.len,
+                    .buffer_offset = 40 + hlen
+            }
+    };
+    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U16LE(domainNameFields.bits);
+    msg_pointer += sizeof(domainNameFields);
+
     //WorkstationLen (2 bytes): A 16-bit unsigned integer that defines the size, in bytes, of
     //WorkStationName in the Payload.
-	VAL(buf, uint16_t, 24) = U16LE(hlen);
-    //WorkstationMaxLen (2 bytes): A 16-bit unsigned integer that SHOULD be set to the value
-    //of WorkstationLen and MUST be ignored on receipt.
-	VAL(buf, uint16_t, 26) = U16LE(hlen);
-    //WorkstationBufferOffset (4 bytes): A 32-bit unsigned integer that defines the offset, in
-    //bytes, from the beginning of the NEGOTIATE_MESSAGE to WorkstationName in the
-    //Payload.
-	VAL(buf, uint32_t, 28) = U32LE(40);
-    memcpy(buf+32,&version1.bits,sizeof(version1));
+    workstation_fields workstationFields = {
+            .fields = {
+                    .len = hlen,
+                    .max_len = workstationFields.fields.len,
+                    .buffer_offset = 40
+            }
+    };
+    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U16LE(workstationFields.bits);
+    msg_pointer += sizeof(workstationFields);
+
+    version version1 = {
+            .fields = {
+                    .product_build = 1,
+                    .product_major_version = 1,
+                    .product_minor_version = 1,
+                    .ntlm_revison_current = 0x0F
+            }
+    };
+    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = version1.bits;
+    msg_pointer += sizeof(version1);
+
     //VAL(buf, uint64_t , 36) = U64LE(version1.bits);
 
 
 	tmp = uppercase(strdup(creds->workstation));
-	memcpy(buf+40, tmp, hlen);
+	memcpy(payload_workstation_name_pos, tmp, hlen);
 	free(tmp);
 
 	tmp = uppercase(strdup(creds->domain));
-	memcpy(buf+40+hlen, tmp, dlen);
+	memcpy(payload_domain_pos, tmp, dlen);
 	free(tmp);
 
 	*dst = buf;
@@ -431,6 +444,7 @@ void dump(char *src, int len) {
 	free(tmp);
 }
 */
+
 
 int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds) {
 #ifdef __CYGWIN__
@@ -590,69 +604,114 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 		}
 	}
 
-    int pyload_pos = 64+16;
 
-	buf = zmalloc(NTLM_BUFSIZE);
-	memcpy(buf, signature, 8);
+    int payload_pos = 64 + 16;
+    buf = zmalloc(NTLM_BUFSIZE);
+    char* msg_pointer = buf;
 
-    message_type type;
-    type.type = AUTHENTICATION_MESSAGE;
+    int payload_domain_pos=payload_pos;
+    int payload_username_pos=payload_domain_pos+dlen;
+    int payload_workstation_name_pos=payload_username_pos+ulen;
+    int payload_lm_challenge_response_pos=payload_workstation_name_pos+hlen;
+    int payload_nt_challenge_response_pos=payload_lm_challenge_response_pos+lmlen;
+    int payload_encrypted_random_session_key_fields=payload_nt_challenge_response_pos+0;
+
+    int package_end= payload_encrypted_random_session_key_fields;
+
+
+    /* signature */
+	memcpy(msg_pointer, signature, 8);
+    msg_pointer += sizeof(signature);
 
     /* message type */
+    message_type type;
+    type.type = AUTHENTICATION_MESSAGE;
 	VAL(buf, uint32_t, 8) = U32LE(type.bits);
+    msg_pointer += sizeof(type);
 
 	/* LM */
-	VAL(buf, uint16_t, 12) = U16LE(lmlen);
-	VAL(buf, uint16_t, 14) = U16LE(lmlen);
-	VAL(buf, uint32_t, 16) = U32LE(pyload_pos+dlen+ulen+hlen);
+    lm_challenge_response_fields lmChallengeResponseFields = {
+        .fields = {
+                .len =  lmlen,
+                .max_len = lmChallengeResponseFields.fields.len,
+                .buffer_offset = payload_lm_challenge_response_pos
+        }
+    };
+
+    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = lmChallengeResponseFields.bits;
+    msg_pointer += sizeof(lmChallengeResponseFields);
 
 	/* NT */
-	VAL(buf, uint16_t, 20) = U16LE(ntlen);
-	VAL(buf, uint16_t, 22) = U16LE(ntlen);
-	VAL(buf, uint32_t, 24) = U32LE(pyload_pos+dlen+ulen+hlen+lmlen);
+    nt_challenge_response_fields ntChallengeResponseFields = {
+            .fields = {
+                    .len = ntlen,
+                    .max_len = ntChallengeResponseFields.fields.len,
+                    .buffer_offset = payload_nt_challenge_response_pos
+            }
+    };
+    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = ntChallengeResponseFields.bits;
+    msg_pointer += sizeof(ntChallengeResponseFields);
 
-    domain_name_fields domainNameFields;
-    domainNameFields.fields.domain_name_len = dlen;
-    domainNameFields.fields.domain_name_max_len = dlen;
-    domainNameFields.fields.domain_name_buffer_offset = pyload_pos;
 	/* Domain */
-	VAL(buf, uint64_t, 28) = domainNameFields.bits;
-	//VAL(buf, uint16_t, 30) = U16LE(dlen);
-	//VAL(buf, uint32_t, 32) = U32LE(pyload_pos);
+    domain_name_fields domainNameFields = {
+        .fields= {
+            .len = dlen,
+            .max_len = domainNameFields.fields.len,
+            .buffer_offset = payload_domain_pos
+        }
+    };
+	VAL(buf, uint64_t, (int)(msg_pointer-buf)) = domainNameFields.bits;
+    msg_pointer += sizeof(domainNameFields);
 
 	/* Username */
-	VAL(buf, uint16_t, 36) = U16LE(ulen);
-	VAL(buf, uint16_t, 38) = U16LE(ulen);
-	VAL(buf, uint32_t, 40) = U32LE(pyload_pos+dlen);
+    username_fields usernameFields = {
+            .fields = {
+                    .len = ulen,
+                    .max_len = usernameFields.fields.len,
+                    .buffer_offset = payload_username_pos
+            }
+    };
+    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = usernameFields.bits;
+    msg_pointer += sizeof(usernameFields);
 
 	/* Hostname */
-	VAL(buf, uint16_t, 44) = U16LE(hlen);
-	VAL(buf, uint16_t, 46) = U16LE(hlen);
-	VAL(buf, uint32_t, 48) = U32LE(pyload_pos+dlen+ulen);
+    username_fields workstationFields = {
+            .fields = {
+                    .len = hlen,
+                    .max_len = workstationFields.fields.len,
+                    .buffer_offset = payload_workstation_name_pos
+            }
+    };
+    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = workstationFields.bits;
+    msg_pointer += sizeof(workstationFields);
 
 	/* Session */
-	VAL(buf, uint16_t, 52) = U16LE(0);
-	VAL(buf, uint16_t, 54) = U16LE(0);
-	VAL(buf, uint16_t, 56) = U16LE(pyload_pos+dlen+ulen+hlen+lmlen+ntlen);
+    encrypted_random_session_key_fields encryptedRandomSessionKeyFields = {
+            .fields = {
+                    .len = 0,
+                    .max_len = encryptedRandomSessionKeyFields.fields.len,
+                    .buffer_offset = payload_encrypted_random_session_key_fields
+            }
+    };
+	VAL(buf, uint64_t, (int)(msg_pointer-buf)) = encryptedRandomSessionKeyFields.bits;
+    msg_pointer += sizeof(encryptedRandomSessionKeyFields);
 
 	/* Flags */
-	VAL(buf, uint32_t, 60) = flags.bits;
-
-    /* EncryptedRandomSecret */
-    //TODO: implement
+	VAL(buf, uint32_t, (int)(msg_pointer-buf)) = flags.bits;
+    msg_pointer += sizeof(flags);
 
     /* MIC */
-    VAL(buf, uint32_t, 64) = 0;
+    VAL(buf, uint32_t, (int)(msg_pointer-buf)) = 0;
+    msg_pointer += sizeof(uint64_t);
 
 
-
-	memcpy(MEM(buf, char, pyload_pos), udomain, dlen);
-	memcpy(MEM(buf, char, pyload_pos+dlen), uuser, ulen);
-	memcpy(MEM(buf, char, pyload_pos+dlen+ulen), uhost, hlen);
+	memcpy(MEM(buf, char, payload_domain_pos), udomain, dlen);
+	memcpy(MEM(buf, char, payload_username_pos), uuser, ulen);
+	memcpy(MEM(buf, char, payload_workstation_name_pos), uhost, hlen);
 	if (lmhash)
-		memcpy(MEM(buf, char, pyload_pos+dlen+ulen+hlen), lmhash, lmlen);
+		memcpy(MEM(buf, char, payload_lm_challenge_response_pos), lmhash, lmlen);
 	if (nthash)
-		memcpy(MEM(buf, char, pyload_pos+dlen+ulen+hlen+24), nthash, ntlen);
+		memcpy(MEM(buf, char, payload_nt_challenge_response_pos), nthash, ntlen);
 
 	if (nthash)
 		free(nthash);
@@ -664,5 +723,5 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 	free(udomain);
 
 	*dst = buf;
-	return pyload_pos+dlen+ulen+hlen+lmlen+ntlen;
+	return package_end;
 }
