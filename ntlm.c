@@ -638,7 +638,7 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
         }
     };
 
-    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = lmChallengeResponseFields.bits;
+    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U64LE(lmChallengeResponseFields.bits);
     msg_pointer += sizeof(lmChallengeResponseFields);
 
 	/* NT */
@@ -649,7 +649,7 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
                     .buffer_offset = payload_nt_challenge_response_pos
             }
     };
-    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = ntChallengeResponseFields.bits;
+    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U64LE(ntChallengeResponseFields.bits);
     msg_pointer += sizeof(ntChallengeResponseFields);
 
 	/* Domain */
@@ -660,7 +660,7 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
             .buffer_offset = payload_domain_pos
         }
     };
-	VAL(buf, uint64_t, (int)(msg_pointer-buf)) = domainNameFields.bits;
+	VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U64LE(domainNameFields.bits);
     msg_pointer += sizeof(domainNameFields);
 
 	/* Username */
@@ -671,7 +671,7 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
                     .buffer_offset = payload_username_pos
             }
     };
-    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = usernameFields.bits;
+    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U64LE(usernameFields.bits);
     msg_pointer += sizeof(usernameFields);
 
 	/* Hostname */
@@ -682,7 +682,7 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
                     .buffer_offset = payload_workstation_name_pos
             }
     };
-    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = workstationFields.bits;
+    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U64LE(workstationFields.bits);
     msg_pointer += sizeof(workstationFields);
 
 	/* Session */
@@ -693,11 +693,11 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
                     .buffer_offset = payload_encrypted_random_session_key_fields
             }
     };
-	VAL(buf, uint64_t, (int)(msg_pointer-buf)) = encryptedRandomSessionKeyFields.bits;
+	VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U64LE(encryptedRandomSessionKeyFields.bits);
     msg_pointer += sizeof(encryptedRandomSessionKeyFields);
 
 	/* Flags */
-	VAL(buf, uint32_t, (int)(msg_pointer-buf)) = flags.bits;
+	VAL(buf, uint32_t, (int)(msg_pointer-buf)) = U32LE(flags.bits);
     msg_pointer += sizeof(flags);
 
     /* MIC */
