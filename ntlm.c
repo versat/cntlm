@@ -407,11 +407,11 @@ int ntlm_request(char **dst, struct auth_s *creds) {
 
 
 	tmp = uppercase(strdup(creds->workstation));
-	memcpy(payload_workstation_name_pos, tmp, hlen);
+	memcpy(buf+payload_workstation_name_pos, tmp, hlen);
 	free(tmp);
 
 	tmp = uppercase(strdup(creds->domain));
-	memcpy(payload_domain_pos, tmp, dlen);
+	memcpy(buf+payload_domain_pos, tmp, dlen);
 	free(tmp);
 
 	*dst = buf;
@@ -481,18 +481,11 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 		printf("\t    Flags: 0x%X\n", U32LE(VAL(challenge, uint32_t, 20)));
 	}
 
-	if (challen >= NTLM_CHALLENGE_MIN) {
-        if(creds->hashntlm2){
-            memcpy(&flags.bits,challenge+20,4);
+    udomain = creds->domain;
 
-            if(flags.flags.target_type_domain){
-                udomain = creds->domain;
-                target = &creds->domain;
-                tlen = ulen;
-            }else{
-                printf("unsupported type\n");
-                return 0;
-            }
+	if (challen >= NTLM_CHALLENGE_MIN) {
+        memcpy(&flags.bits,challenge+20,4);
+        if(creds->hashntlm2){
 
         }else{
             tbofs = tpos = U16LE(VAL(challenge, uint16_t, 44));
@@ -541,14 +534,8 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 	}
 
     int udomlen = strlen(creds->domain);
-	if (creds->hashntlm2 && !tblen) {
-        //workaround to default to userDom
-        if(flags.flags.target_type_domain) {
-            //TODO: cleanup
-            target = creds->domain;
-        }else{
+	if (creds->hashntlm2 && !udomlen) {
             return 0;
-        }
 	}
 
 	if (creds->hashntlm2) {
