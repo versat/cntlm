@@ -329,10 +329,7 @@ int ntlm_request(char **dst, struct auth_s *creds) {
             }
     };
     VAL(buf, uint64_t, (int)(msg_pointer-buf)) = version1.bits;
-    msg_pointer += sizeof(version1);
-
-    //VAL(buf, uint64_t , 36) = U64LE(version1.bits);
-
+   // msg_pointer += sizeof(version1);
 
 	tmp = uppercase(strdup(creds->workstation));
 	memcpy(buf+payload_workstation_name_pos, tmp, hlen);
@@ -629,7 +626,7 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
     VAL(buf, uint64_t, (int)(msg_pointer-buf)) = 0;
     msg_pointer += sizeof(uint64_t);
     VAL(buf, uint64_t, (int)(msg_pointer-buf)) = 0;
-    msg_pointer += sizeof(uint64_t);
+    //msg_pointer += sizeof(uint64_t);
 
 	memcpy(MEM(buf, char, payload_domain_pos), udomain, dlen);
 	memcpy(MEM(buf, char, payload_username_pos), uuser, ulen);
