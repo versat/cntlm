@@ -1364,7 +1364,7 @@ int main(int argc, char **argv) {
 		}
 		free(tmp);
 
-		CFG_DEFAULT(cf, "PacFile", pac_file, MINIBUF_SIZE);
+		CFG_DEFAULT(cf, "PacFile", pac_file, PATH_MAX);
 #endif
 
 		/*
