@@ -17,7 +17,14 @@ jobs:
       run: ./configure
     - name: make
       run: make
+    - name: clean
+      run: make clean
 
+    # SonarCloud build and scan
+    #- ./configure
+    #- make clean
+    - name: SonarCloud build wrapper 
+      run: build-wrapper-linux-x86-64 --out-dir bw-output make
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@v1.6
       env:
