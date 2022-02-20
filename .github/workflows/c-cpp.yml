@@ -17,3 +17,6 @@ jobs:
       run: ./configure
     - name: make
       run: make
+
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@v1.6
