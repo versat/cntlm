@@ -451,7 +451,7 @@ void *proxy_thread(void *thread_data) {
 		}
 
 #ifdef ENABLE_PACPARSER
-		if (!pac_found) {
+		if (!pac_found && pacparser_initialized) {
 			pac_found = 1;
 
 			/*
@@ -474,16 +474,18 @@ void *proxy_thread(void *thread_data) {
 				request = ret;
 
 #ifdef ENABLE_PACPARSER
-				/*
-				 * Create proxy list for new request from PAC file.
-				 */
-				pthread_mutex_lock(&pacparser_mtx);
-				pacp_str = pacparser_find_proxy(request->url, request->hostname);
-				pthread_mutex_unlock(&pacparser_mtx);
+				if (pacparser_initialized) {
+					/*
+					* Create proxy list for new request from PAC file.
+					*/
+					pthread_mutex_lock(&pacparser_mtx);
+					pacp_str = pacparser_find_proxy(request->url, request->hostname);
+					pthread_mutex_unlock(&pacparser_mtx);
 
-				plist_free(pac_list);
-				pac_list = NULL;
-				pac_list = pac_create_list(pac_list, pacp_str);
+					plist_free(pac_list);
+					pac_list = NULL;
+					pac_list = pac_create_list(pac_list, pacp_str);
+				}
 #endif
 			}
 
