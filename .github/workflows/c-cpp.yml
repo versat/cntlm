@@ -13,6 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Install necessary packages
+      run: sudo apt install -y libpacparser-dev
     - name: normal_build
       run: |
         ./configure
