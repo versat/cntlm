@@ -25,8 +25,8 @@ jobs:
         ./configure
         CFLAGS=-DUNICODE make
         make distclean
-    - name: pacparser_build
+    - name: Build with pacparser enabled
       run: |
-        ./configure
-        CFLAGS=-DENABLE_PACPARSER make
+        ./configure --enable-pacparser
+        make
         make distclean
