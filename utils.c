@@ -724,6 +724,7 @@ char *strdup(const char *src) {
 }
 #endif
 
+#if config_strlcpy == 0
 /*
  * More intuitive version of strncpy with string termination
  * from OpenBSD
@@ -753,7 +754,9 @@ size_t strlcpy(char *dst, const char *src, size_t siz) {
 
 	return (s - src - 1);	/* count does not include NUL */
 }
+#endif
 
+#if config_strlcat == 0
 /*
  * More intuitive version of strncat with string termination
  * from OpenBSD
@@ -789,6 +792,7 @@ size_t strlcat(char *dst, const char *src, size_t siz) {
 
 	return (dlen + (s - src));	/* count does not include NUL */
 }
+#endif
 
 /*
  * Allocates memory and makes sure it is zero initialized.
