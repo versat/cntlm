@@ -14,13 +14,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install necessary packages
-      run: sudo apt install -y libpacparser-dev
+      run: sudo apt install -y libpacparser-dev libkrb5-dev 
     - name: Normal build
       run: |
         ./configure
         make
         make distclean
-    - name: unicode_build
+    - name: Unicode build
       run: |
         ./configure
         CFLAGS=-DUNICODE make
@@ -28,5 +28,10 @@ jobs:
     - name: Build with pacparser enabled
       run: |
         ./configure --enable-pacparser
+        make
+        make distclean
+    - name: Build with kerberos enabled
+      run: |
+        ./configure --enable-kerberos
         make
         make distclean
