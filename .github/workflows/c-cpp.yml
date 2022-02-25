@@ -13,7 +13,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: configure
-      run: ./configure
-    - name: make
-      run: make
+    - name: normal_build
+      run: |
+        ./configure
+        make
+        make distclean
+    - name: unicode_build
+      run: |
+        ./configure
+        CFLAGS=-DUNICODE make
+        make distclean
+    - name: pacparser_build
+      run: |
+        ./configure
+        CFLAGS=-DENABLE_PACPARSER make
+        make distclean
