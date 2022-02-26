@@ -35,3 +35,21 @@ jobs:
         ./configure --enable-kerberos
         make
         make distclean
+    - name: Verify debug build
+      run: |
+        ./configure
+        make DEBUG=1
+        make distclean
+    - name: Verify package creation and installation
+      run: |
+        ./configure
+        make rpm
+        make deb
+        make clean
+        sudo make install
+        sudo make uninstall
+        make distclean
+    - name: Build via scan-build
+      run: |
+        ./configure
+        scan-build --force-analyze-debug-code make
