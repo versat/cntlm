@@ -37,6 +37,26 @@ else
 	OBJS=utils.o ntlm.o xcrypt.o config.o socket.o auth.o http.o forward.o direct.o scanner.o pages.o main.o
 endif
 
+ENABLE_KERBEROS=$(shell grep -c ENABLE_KERBEROS config/config.h)
+ifeq ($(ENABLE_KERBEROS),1)
+	OBJS+=kerberos.o
+	LDFLAGS+=-lgssapi_krb5
+endif
+
+ENABLE_PACPARSER=$(shell grep -c ENABLE_PACPARSER config/config.h)
+ifeq ($(ENABLE_PACPARSER),1)
+	LDFLAGS+=-lpacparser
+endif
+
+
+ENABLE_STATIC=$(shell grep -c ENABLE_STATIC config/config.h)
+ifeq ($(ENABLE_STATIC),1)
+        LDFLAGS+=-static
+endif
+
+
+all: $(NAME)
+
 $(NAME): configure-stamp $(OBJS)
 	@echo "Linking $@"
 	@$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
