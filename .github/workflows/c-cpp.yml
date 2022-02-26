@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install necessary packages
-      run: sudo apt install -y libpacparser-dev libkrb5-dev 
+      run: sudo apt install -y fakeroot rpm dpkg debhelper libpacparser-dev libkrb5-dev 
     - name: Normal build
       run: |
         ./configure
