@@ -23,7 +23,7 @@ jobs:
           echo "${PWD}/build-wrapper-linux-x86" >> $GITHUB_PATH
       - name: Install dependencies
         shell: bash
-        run: sudo apt-get install -y scons libfftw3-dev libopenmpi-dev openmpi-bin libhdf5-dev python3-numpy python3-dev libtiff5-dev unzip
+        run: sudo apt install -y libpacparser-dev libkrb5-dev  unzip
       - name: Compile Cntlm
         working-directory: ${{github.workspace}}
         shell: bash
