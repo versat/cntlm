@@ -29,7 +29,6 @@ jobs:
         shell: bash
         run: |
           ./configure
-          make
           build-wrapper-linux-x86-64 --out-dir bw-output make
           ls -l
           cd bw-output
