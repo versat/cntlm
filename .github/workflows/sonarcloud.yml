@@ -1,0 +1,44 @@
+name: SonarCloud-Scan
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: dowwload sonar cloud client
+        working-directory: ${{github.workspace}}
+        shell: bash
+        run: |
+          wget -nv https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.6.0.2311-linux.zip
+          unzip -q sonar-scanner-cli-4.6.0.2311-linux.zip
+          echo "${PWD}/sonar-scanner-4.6.0.2311-linux/bin/" >> $GITHUB_PATH
+          wget -nv https://sonarcloud.io/static/cpp/build-wrapper-linux-x86.zip
+          unzip -q build-wrapper-linux-x86.zip
+          echo "${PWD}/build-wrapper-linux-x86" >> $GITHUB_PATH
+      - name: Install dependencies
+        shell: bash
+        run: sudo apt-get install -y scons libfftw3-dev libopenmpi-dev openmpi-bin libhdf5-dev python3-numpy python3-dev libtiff5-dev unzip
+      - name: Compile Xmipp
+        working-directory: ${{github.workspace}}
+        shell: bash      
+        run: |
+          ./configure
+          make
+          build-wrapper-linux-x86-64 --out-dir bw-output cmake --build ./
+          ls -l
+          cd bw-output
+          ls -l
+      - name: SonarCloud Scan
+        working-directory: ${{github.workspace}}
+        run: |
+          sonar-scanner -X -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN
+        env:
+         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+         branch: ${{ github.ref }}
