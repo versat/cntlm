@@ -8,13 +8,20 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+    env:
+      CC: ${{ matrix.compiler }}
     steps:
     - uses: actions/checkout@v2
-    - name: Install necessary packages
-      run: sudo apt install -y fakeroot rpm dpkg debhelper libpacparser-dev libkrb5-dev 
+    - name: Install stuff for creating packages
+      run: sudo apt install -y fakeroot rpm dpkg debhelper
+    - name: Install packages required for optional configurations of cntlm
+      run: sudo apt install -y libpacparser-dev libkrb5-dev
+    - name: Install further tools (clang-tools for scan-build)
+      run: sudo apt install -y clang-tools
     - name: Normal build
       run: |
         ./configure
