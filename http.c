@@ -605,14 +605,14 @@ int http_body_send(int writefd, int readfd, rr_data_const_t request, rr_data_con
 
 			rc = chunked_data_send(writefd, readfd);
 			if (debug)
-				printf(rc ? "Chunked body sent.\n" : "Could not chunk send whole body\n");
+				printf("%s", rc ? "Chunked body sent.\n" : "Could not chunk send whole body\n");
 		} else {
 			if (debug)
 				printf("Body included. Length: %lld\n", bodylen);
 
 			rc = data_send(writefd, readfd, bodylen);
 			if (debug)
-				printf(rc ? "Body sent.\n" : "Could not send whole body\n");
+				printf("%s", rc ? "Body sent.\n" : "Could not send whole body\n");
 		}
 	} else if (debug)
 		printf("No body.\n");
