@@ -57,7 +57,7 @@ int so_resolv(struct addrinfo **addresses, const char *hostname, const int port)
 	}
 
 	if (debug) {
-		char s[INET6_ADDRSTRLEN];
+		char s[INET6_ADDRSTRLEN] = {0};
 		printf("Resolve %s:\n", hostname);
 		for (p = *addresses; p != NULL; p = p->ai_next) {
 			switch (p->ai_family) {
@@ -98,7 +98,7 @@ int so_connect(struct addrinfo *addresses) {
 	int fd = -1;
 	int rc;
 	struct addrinfo *p;
-	char s[INET6_ADDRSTRLEN];
+	char s[INET6_ADDRSTRLEN] = {0};
 
 	for (p = addresses; p != NULL; p = p->ai_next) {
 		int flags;
@@ -172,7 +172,7 @@ int so_connect(struct addrinfo *addresses) {
 int so_listen(plist_t *list, struct addrinfo *addresses, void *aux) {
 	socklen_t clen;
 	struct addrinfo *p;
-	char s[INET6_ADDRSTRLEN];
+	char s[INET6_ADDRSTRLEN] = {0};
 
 	for (p = addresses; p != NULL; p = p->ai_next) {
 		int fd = socket(p->ai_family, SOCK_STREAM, 0);
@@ -307,4 +307,3 @@ int so_recvln(int fd, char **buf, int *size) {
 
 	return r;
 }
-
