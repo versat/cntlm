@@ -1,0 +1,23 @@
+# https://scan.coverity.com/projects/versat-cntlm
+
+name: Coverity Scan
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [master]
+
+jobs:
+  coverity:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: ./configure
+    - uses: vapier/coverity-scan-action@v1
+      with:
+        command: make
+        project: versat%2Fcntlm
+        email: ${{ secrets.COVERITY_SCAN_EMAIL }}
+        token: ${{ secrets.COVERITY_SCAN_TOKEN }}
