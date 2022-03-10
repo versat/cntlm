@@ -109,7 +109,7 @@ int so_connect(struct addrinfo *addresses) {
 		}
 
 		if (debug) {
-			u_short port = 0;
+			unsigned short port = 0;
 			switch (p->ai_family) {
 				case AF_INET6:
 					port = ((struct sockaddr_in6*)(p->ai_addr))->sin6_port;
@@ -188,7 +188,7 @@ int so_listen(plist_t *list, struct addrinfo *addresses, void *aux) {
 			syslog(LOG_WARNING, "setsockopt() (option: SO_REUSEADDR, value: 1) failed: %s\n", strerror(errno));
 		}
 
-		u_short port = 0;
+		unsigned short port = 0;
 		switch (p->ai_family) {
 			case AF_INET6:
 				port = ((struct sockaddr_in6*)(p->ai_addr))->sin6_port;
