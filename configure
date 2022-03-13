@@ -120,5 +120,7 @@ do
 	esac
 	shift
 done
-echo "" >> $CONFIG
-echo "#endif // CONFIGURE_CONFIG_H" >> $CONFIG
+if [ -f $CONFIG ]; then
+	echo "" >> $CONFIG
+	echo "#endif // CONFIGURE_CONFIG_H" >> $CONFIG
+fi
