@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install packages required for optional configurations of cntlm
-      run: brew install pacparser krb5
+      run: brew install pacparser krb5 fakeroot
     - name: Normal build
       run: |
         ./configure
