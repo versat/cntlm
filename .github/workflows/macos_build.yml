@@ -13,7 +13,30 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: configure
-      run: ./configure
-    - name: make
-      run: make
+    - name: Install packages required for optional configurations of cntlm
+      run: brew install pacparser krb5
+    - name: Normal build
+      run: |
+        ./configure
+        make
+        make distclean
+    - name: Unicode build
+      run: |
+        ./configure
+        CFLAGS=-DUNICODE make
+        make distclean
+    - name: Build with pacparser enabled
+      run: |
+        ./configure --enable-pacparser
+        make
+        make distclean
+    - name: Build with kerberos enabled
+      run: |
+        ./configure --enable-kerberos
+        make
+        make distclean
+    - name: Verify debug build
+      run: |
+        ./configure
+        make DEBUG=1
+        make distclean
