@@ -70,7 +70,7 @@ fi
 
 STAMP=configure-stamp
 CONFIG=config/config.h
-TESTS="endian strdup socklen_t gethostname arc4random_buf"
+TESTS="endian strdup socklen_t gethostname arc4random_buf strlcat strlcpy"
 
 #[ -f $STAMP ] && exit 0
 touch $STAMP
@@ -82,7 +82,7 @@ echo "" >> $CONFIG
 for i in $TESTS; do
 	printf "Checking $i... "
 	printf "#define config_$i " >> $CONFIG
-	OUT=`$CC -D_POSIX_C_SOURCE=199506L -D_ISOC99_SOURCE -D_REENTRANT -o config/$i config/$i.c 2>&1`
+	OUT=`$CC -std=c99 -D__BSD_VISIBLE -D_ALL_SOURCE -D_XOPEN_SOURCE=600 -D_POSIX_C_SOURCE=200112 -D_ISOC99_SOURCE -D_REENTRANT -D_BSD_SOURCE -D_DARWIN_C_SOURCE -o config/$i config/$i.c 2>&1`
 	rc=$?
 
 	if [ $rc -ne 0 ]; then # -o -n "$OUT" ]; then

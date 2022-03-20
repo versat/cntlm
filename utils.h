@@ -136,8 +136,12 @@ extern hlist_t hlist_free(hlist_t list);
 extern void hlist_dump(hlist_const_t list);
 
 extern char *substr(const char *src, int pos, int len) __attribute__((warn_unused_result));
+#if config_strlcpy == 0
 extern size_t strlcpy(char *dst, const char *src, size_t siz);
+#endif
+#if config_strlcat == 0
 extern size_t strlcat(char *dst, const char *src, size_t siz);
+#endif
 extern char *trimr(char * const buf);
 extern char *lowercase(char * const str);
 extern char *uppercase(char * const str);

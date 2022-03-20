@@ -11,6 +11,9 @@ cntlm*.tar.gz
 /config/gethostname
 /config/socklen_t
 /config/strdup
+/config/arc4random_buf
+/config/strlcat
+/config/strlcpy
 /config/*.exe
 /win/*.exe
 /win/*.dll
