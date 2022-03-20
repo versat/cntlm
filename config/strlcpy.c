@@ -1,11 +1,12 @@
 #include <string.h>
 
+#define BUFFER_SIZE 16
+
 int main(int argc, char **argv) {
 	int retval;
-	int size = 8;
-	char buffer[size] = {0};
+	char buffer[BUFFER_SIZE] = {0};
 
-	retval = strlcpy(buffer, "hello", size);
+	retval = strlcpy(buffer, "hello", BUFFER_SIZE);
 
 	return !!retval;
 }
