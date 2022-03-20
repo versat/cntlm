@@ -6,7 +6,6 @@ int main(int argc, char **argv) {
 	char buffer[size] = {0};
 
 	retval = strlcat(buffer, "hello", size);
-	retval = strlcat(buffer, " world!", size);
 
 	return !!retval;
 }
