@@ -1137,12 +1137,16 @@ int main(int argc, char **argv) {
 		}
 
 		fprintf(stream, "Usage: %s [-AaBcDdFfgHhILlMPpSsTUuvw] <proxy_host>[:]<proxy_port> ...\n", argv[0]);
-		fprintf(stream, "\t-a  ntlm | nt | lm\n"
-				"\t    Authentication type - combined NTLM, just LM, or just NT. Default NTLM.\n"
+		fprintf(stream, "\t-a  ntlm | nt | lm"
 #ifdef ENABLE_KERBEROS
+				" | gss\n"
+				"\t    Authentication type - combined NTLM, just LM, just NT, or GSS. Default NTLM.\n"
 				"\t    GSS activates kerberos auth: you need a cached credential.\n"
+#else
+				"\n"
+				"\t    Authentication type - combined NTLM, just LM, or just NT. Default NTLM.\n"
 #endif
-				"\t    It is the most versatile setting and likely to work for you.\n");
+				"\t    NTLM is the most versatile setting and likely to work for you.\n");
 		fprintf(stream, "\t-B  Enable NTLM-to-basic authentication.\n");
 		fprintf(stream, "\t-c  <config_file>\n"
 				"\t    Configuration file. Other arguments can be used as well, overriding\n"
