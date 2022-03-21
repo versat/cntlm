@@ -935,7 +935,7 @@ int main(int argc, char **argv) {
 	syslog(LOG_INFO, "Starting cntlm version " VERSION " for LITTLE endian\n");
 #endif
 
-	while ((i = getopt(argc, argv, ":-:T:a:c:d:fghIl:p:r:su:vw:x:B:F:G:HL:M:N:O:P:R:S:U:X:q:")) != -1) {
+	while ((i = getopt(argc, argv, ":-:T:a:c:d:fghIl:p:r:su:vw:x:BF:G:HL:M:N:O:P:R:S:U:X:q:")) != -1) {
 		switch (i) {
 			case 'a':
 				strlcpy(cauth, optarg, MINIBUF_SIZE);
