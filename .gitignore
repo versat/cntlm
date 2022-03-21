@@ -21,3 +21,4 @@ cntlm*.tar.gz
 /win/cntlm_manual.pdf
 /win/cntlm.ini
 /win/LICENSE.txt
+.vscode
