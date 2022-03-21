@@ -1136,7 +1136,7 @@ int main(int argc, char **argv) {
 			exit_code = 1;
 		}
 
-		fprintf(stream, "Usage: %s [-AaBcDdFfgHhILlMPpSsTUuvw] <proxy_host>[:]<proxy_port> ...\n", argv[0]);
+		fprintf(stream, "Usage: %s [-aBcdFfgHhILlMNOPpqRrSsTUuvwXx] <proxy_host>[:]<proxy_port> ...\n", argv[0]);
 		fprintf(stream, "\t-a  ntlm | nt | lm"
 #ifdef ENABLE_KERBEROS
 				" | gss\n"
@@ -1183,6 +1183,9 @@ int main(int argc, char **argv) {
 				"\t    level can be:\n"
 				"\t    0 no requests are logged - default\n"
 				"\t    1 requests are logged (old behavior)\n");
+		fprintf(stream, "\t-R  <username>:<password>\n"
+				"\t    Enable authorization for SOCKS5 proxy, when enabled.\n"
+				"\t    It can be used several times, to create a whole list of accounts.\n");
 		fprintf(stream, "\t-r  \"HeaderName: value\"\n"
 				"\t    Add a header substitution. All such headers will be added/replaced\n"
 				"\t    in the client's requests.\n");
@@ -1197,12 +1200,15 @@ int main(int argc, char **argv) {
 		fprintf(stream, "\t-u  <user>[@<domain]\n"
 				"\t    Domain/workgroup can be set separately.\n");
 		fprintf(stream, "\t-v  Print debugging information.\n");
-		fprintf(stderr, "\t-w  <workstation>\n"
+		fprintf(stream, "\t-w  <workstation>\n"
 				"\t    Some proxies require correct NetBIOS hostname.\n");
+		fprintf(stream, "\t-x  <PAC_file>\n"
 #ifdef ENABLE_PACPARSER
-		fprintf(stderr, "\t-x  <PAC_file>\n"
-				"\t    Specify a PAC file to load.\n");
+				"\t    Specify a PAC file to load."
+#else
+				"\t    PAC file is not supported with this version of CNTLM"
 #endif
+				"\n");
 		fprintf(stream, "\t-X  <sspi_handle_type>\n"
 				"\t    Use SSPI with specified handle type. Works only under Windows.\n"
 				"\t    Default is negotiate.\n");
