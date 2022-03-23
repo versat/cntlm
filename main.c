@@ -1644,12 +1644,6 @@ int main(int argc, char **argv) {
 		memset(cpassword, 0, strlen(cpassword));
 	}
 
-#ifdef ENABLE_KERBEROS
-	g_creds->haskrb |= check_credential();
-	if(g_creds->haskrb & KRB_CREDENTIAL_AVAILABLE)
-		syslog(LOG_INFO, "Using cached credential for GSS auth.\n");
-#endif
-
 	auth_strcpy(g_creds, user, cuser);
 	auth_strcpy(g_creds, domain, cdomain);
 	auth_strcpy(g_creds, workstation, cworkstation);
@@ -1752,6 +1746,12 @@ int main(int argc, char **argv) {
 		openlog("cntlm", LOG_CONS | LOG_PID | LOG_PERROR, LOG_DAEMON);
 		syslog(LOG_INFO, "Cntlm ready, staying in the foreground");
 	}
+
+#ifdef ENABLE_KERBEROS
+	g_creds->haskrb |= check_credential();
+	if(g_creds->haskrb & KRB_CREDENTIAL_AVAILABLE)
+		syslog(LOG_INFO, "Using cached credential for GSS auth.\n");
+#endif
 
 	/*
 	 * Check and change UID.
