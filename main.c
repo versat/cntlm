@@ -1748,9 +1748,11 @@ int main(int argc, char **argv) {
 	}
 
 #ifdef ENABLE_KERBEROS
-	g_creds->haskrb |= check_credential();
-	if(g_creds->haskrb & KRB_CREDENTIAL_AVAILABLE)
-		syslog(LOG_INFO, "Using cached credential for GSS auth.\n");
+	if (g_creds->haskrb & KRB_FORCE_USE_KRB) {
+		g_creds->haskrb |= check_credential();
+		if(g_creds->haskrb & KRB_CREDENTIAL_AVAILABLE)
+			syslog(LOG_INFO, "Using cached credential for GSS auth.\n");
+	}
 #endif
 
 	/*
