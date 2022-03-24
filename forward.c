@@ -469,6 +469,8 @@ rr_data_t forward_request(void *thread_data, rr_data_t request) {
 	int sd;
 	assert(thread_data != NULL);
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
+	char saddr[INET6_ADDRSTRLEN];
+	INET_NTOP(&((struct thread_arg_s *)thread_data)->addr, saddr, INET6_ADDRSTRLEN);
 
 beginning:
 #ifdef ENABLE_PACPARSER
@@ -620,6 +622,11 @@ beginning:
 			if (debug)
 				hlist_dump(data[loop]->headers);
 
+			if (loop == 0 && data[0]->req) {
+				if (request_logging_level == 1) {
+					syslog(LOG_DEBUG, "%s %s %s", saddr, data[0]->method, data[0]->url);
+				}
+			}
 
 shortcut:
 			/*
@@ -973,12 +980,16 @@ void forward_tunnel(void *thread_data) {
 	assert(thread_data != NULL);
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
 	char *thost = ((struct thread_arg_s *)thread_data)->target;
+	char saddr[INET6_ADDRSTRLEN];
+	INET_NTOP(&((struct thread_arg_s *)thread_data)->addr, saddr, INET6_ADDRSTRLEN);
 
 	tcreds = new_auth();
 	sd = proxy_connect(tcreds);
 
 	if (sd < 0)
 		goto bailout;
+
+	syslog(LOG_DEBUG, "%s TUNNEL %s", saddr, thost);
 
 	if (debug)
 		printf("Tunneling to %s for client %d...\n", thost, cd);

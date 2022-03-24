@@ -608,6 +608,8 @@ void *socks5_thread(void *thread_data) {
 	int open = !hlist_count(users_list);
 
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
+	char saddr[INET6_ADDRSTRLEN];
+	INET_NTOP(&((struct thread_arg_s *)thread_data)->addr, saddr, INET6_ADDRSTRLEN);
 	free(thread_data);
 
 	/*
@@ -842,6 +844,7 @@ void *socks5_thread(void *thread_data) {
 		}
 	}
 
+	syslog(LOG_DEBUG, "%s SOCKS %s", saddr, thost);
 
 	/*
 	 * Let's give them bi-directional connection they asked for
