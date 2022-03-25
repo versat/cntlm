@@ -614,7 +614,7 @@ void *socks5_thread(void *thread_data) {
 	 * Check client's version, possibly fuck'em
 	 */
 	bs = (unsigned char *)zmalloc(10);
-	thost = zmalloc(MINIBUF_SIZE);
+	thost = zmalloc(HOST_BUFSIZE);
 	tport = zmalloc(MINIBUF_SIZE);
 	r = read(cd, bs, 2);
 	if (r != 2 || bs[0] != 5)
@@ -786,9 +786,9 @@ void *socks5_thread(void *thread_data) {
 	 * Convert the address to character string
 	 */
 	if (ver == 1) {
-		snprintf(thost, MINIBUF_SIZE, "%d.%d.%d.%d", addr[0], addr[1], addr[2], addr[3]);	/* It's in network byte order */
+		snprintf(thost, HOST_BUFSIZE, "%d.%d.%d.%d", addr[0], addr[1], addr[2], addr[3]);	/* It's in network byte order */
 	} else {
-		strlcpy(thost, (char *)addr, MINIBUF_SIZE);
+		strlcpy(thost, (char *)addr, HOST_BUFSIZE);
 	}
 
 	/*
@@ -804,8 +804,8 @@ void *socks5_thread(void *thread_data) {
 		i = (sd >= 0);
 	} else {
 		snprintf(tport, MINIBUF_SIZE, "%d", ntohs(port));
-		strlcat(thost, ":", MINIBUF_SIZE);
-		strlcat(thost, tport, MINIBUF_SIZE);
+		strlcat(thost, ":", HOST_BUFSIZE);
+		strlcat(thost, tport, HOST_BUFSIZE);
 
 		tcreds = new_auth();
 		sd = proxy_connect(tcreds);

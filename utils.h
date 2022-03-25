@@ -32,6 +32,7 @@
 
 #define BUFSIZE			4096
 #define MINIBUF_SIZE		50
+#define HOST_BUFSIZE	260
 #define VAL(var, type, offset)	*((type *)(var+offset))
 #define MEM(var, type, offset)	(type *)(var+offset)
 
