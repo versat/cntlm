@@ -121,6 +121,13 @@ struct thread_arg_s {
 	(inet_ntop(((struct sockaddr*)(sa))->sa_family, \
 		((struct sockaddr*)(sa))->sa_family == AF_INET ? (void*)&((struct sockaddr_in*)(sa))->sin_addr : (void*)&((struct sockaddr_in6*)(sa))->sin6_addr, (s), (len)))
 
+/*
+ * Returns the port of an inet or inet6 address (determined by the family).
+ * (sa) must be a pointer to sockaddr_in or sockaddr_in6.
+ */
+#define INET_PORT(sa) \
+	(((struct sockaddr*)(sa))->sa_family == AF_INET ? ((struct sockaddr_in*)(sa))->sin_port : ((struct sockaddr_in6*)(sa))->sin6_port)
+
 extern void myexit(int rc) __attribute__((noreturn));
 extern void croak(const char *msg, const int console) __attribute__((noreturn));
 

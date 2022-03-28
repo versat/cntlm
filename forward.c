@@ -57,7 +57,7 @@ int single_proxy_connect(proxy_t *proxy) {
 
 	if (aux->resolved == 0) {
 		if (debug)
-			syslog(LOG_INFO, "Resolving proxy %s...\n", aux->hostname);
+			printf("Resolving proxy %s...\n", aux->hostname);
 		if (so_resolv(&aux->addresses, aux->hostname, aux->port)) {
 			aux->resolved = 1;
 		} else {
@@ -98,7 +98,7 @@ rr_data_t pac_forward_request(void *thread_data, rr_data_t request, plist_t prox
 			if (debug)
 				printf("\n~~~~~~~ (%d/%d) PAC PROXY %s:%d ~~~~~~~\n", parent_curr, parent_count, aux->hostname, aux->port);
 #ifdef ENABLE_KERBEROS
-                        curr_proxy = aux;
+            curr_proxy = aux;
 #endif
 			ret = forward_request(thread_data, request, aux);
 		}
@@ -148,7 +148,7 @@ int proxy_connect(struct auth_s *credentials) {
 		pthread_mutex_unlock(&parent_mtx);
 		if (aux->resolved == 0) {
 			if (debug)
-				syslog(LOG_INFO, "Resolving proxy %s...\n", aux->hostname);
+				printf("Resolving proxy %s...\n", aux->hostname);
 			if (so_resolv(&aux->addresses, aux->hostname, aux->port)) {
 				aux->resolved = 1;
 			} else {
@@ -469,7 +469,7 @@ rr_data_t forward_request(void *thread_data, rr_data_t request) {
 	int sd;
 	assert(thread_data != NULL);
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
-	char saddr[INET6_ADDRSTRLEN];
+	char saddr[INET6_ADDRSTRLEN] = {0};
 	INET_NTOP(&((struct thread_arg_s *)thread_data)->addr, saddr, INET6_ADDRSTRLEN);
 
 beginning:
@@ -623,9 +623,7 @@ beginning:
 				hlist_dump(data[loop]->headers);
 
 			if (loop == 0 && data[0]->req) {
-				if (request_logging_level == 1) {
-					syslog(LOG_DEBUG, "%s %s %s", saddr, data[0]->method, data[0]->url);
-				}
+				syslog(LOG_DEBUG, "%s %s %s", saddr, data[0]->method, data[0]->url);
 			}
 
 shortcut:
@@ -980,7 +978,7 @@ void forward_tunnel(void *thread_data) {
 	assert(thread_data != NULL);
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
 	char *thost = ((struct thread_arg_s *)thread_data)->target;
-	char saddr[INET6_ADDRSTRLEN];
+	char saddr[INET6_ADDRSTRLEN] = {0};
 	INET_NTOP(&((struct thread_arg_s *)thread_data)->addr, saddr, INET6_ADDRSTRLEN);
 
 	tcreds = new_auth();

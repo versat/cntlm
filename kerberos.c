@@ -68,17 +68,17 @@
 
 void display_ctx_flags(OM_uint32 flags) {
 	if (flags & GSS_C_DELEG_FLAG)
-		syslog(LOG_INFO, "context flag: GSS_C_DELEG_FLAG\n");
+		printf("context flag: GSS_C_DELEG_FLAG\n");
 	if (flags & GSS_C_MUTUAL_FLAG)
-		syslog(LOG_INFO, "context flag: GSS_C_MUTUAL_FLAG\n");
+		printf("context flag: GSS_C_MUTUAL_FLAG\n");
 	if (flags & GSS_C_REPLAY_FLAG)
-		syslog(LOG_INFO, "context flag: GSS_C_REPLAY_FLAG\n");
+		printf("context flag: GSS_C_REPLAY_FLAG\n");
 	if (flags & GSS_C_SEQUENCE_FLAG)
-		syslog(LOG_INFO, "context flag: GSS_C_SEQUENCE_FLAG\n");
+		printf("context flag: GSS_C_SEQUENCE_FLAG\n");
 	if (flags & GSS_C_CONF_FLAG)
-		syslog(LOG_INFO, "context flag: GSS_C_CONF_FLAG\n");
+		printf("context flag: GSS_C_CONF_FLAG\n");
 	if (flags & GSS_C_INTEG_FLAG)
-		syslog(LOG_INFO, "context flag: GSS_C_INTEG_FLAG\n");
+		printf("context flag: GSS_C_INTEG_FLAG\n");
 }
 
 static void display_status_1(char *m, OM_uint32 code, int type) {
@@ -142,7 +142,7 @@ void display_name(char* txt, gss_name_t *name) {
 		display_status("Display name", maj_stat, min_stat);
 	}
 
-	syslog(LOG_INFO, txt, (char *) out_name.value);
+	printf(txt, (char *) out_name.value);
 
 	(void) gss_release_buffer(&min_stat, &out_name);
 
@@ -161,7 +161,7 @@ int acquire_name(gss_name_t *target_name, char *service_name, gss_OID oid) {
 
 	if (maj_stat != GSS_S_COMPLETE) {
 		display_status("Parsing name", maj_stat, min_stat);
-	} else if (debug){
+	} else if (debug) {
 		display_name("Acquired kerberos name %s\n", target_name);
 	}
 	return maj_stat;
@@ -232,7 +232,7 @@ int client_establish_context(char *service_name,
 	}
 
 	if (debug)
-		syslog(LOG_INFO, "Got token (size=%d)\n", (int) send_tok->length);
+		printf("Got token (size=%d)\n", (int) send_tok->length);
 
 	maj_stat = gss_delete_sec_context(&min_stat, &gss_context, GSS_C_NO_BUFFER);
 	if (maj_stat != GSS_S_COMPLETE) {
@@ -253,8 +253,7 @@ int acquire_kerberos_token(proxy_t* proxy, struct auth_s *credentials,
 
 	if (credentials->haskrb == KRB_KO) {
 		if (debug)
-			syslog(LOG_INFO, "Skipping already failed gss auth for %s\n",
-					proxy->hostname);
+			printf("Skipping already failed gss auth for %s\n", proxy->hostname);
 		return 0;
 	}
 
@@ -263,7 +262,7 @@ int acquire_kerberos_token(proxy_t* proxy, struct auth_s *credentials,
 		if (!(credentials->haskrb & KRB_CREDENTIAL_AVAILABLE)){
 			//no credential -> no token
 			if (debug)
-				syslog(LOG_INFO, "No valid credential available\n");
+				printf("No valid credential available\n");
 			return 0;
 		}
 	}
@@ -283,7 +282,7 @@ int acquire_kerberos_token(proxy_t* proxy, struct auth_s *credentials,
 				BUFSIZE);
 
 		if (debug) {
-			syslog(LOG_INFO, "Token B64 (size=%d)... %s\n",
+			printf("Token B64 (size=%d)... %s\n",
 					(int) strlen(token), token);
 			display_ctx_flags(ret_flags);
 		}
@@ -296,7 +295,7 @@ int acquire_kerberos_token(proxy_t* proxy, struct auth_s *credentials,
 		credentials->haskrb = KRB_KO;
 
 		if (debug)
-			syslog(LOG_INFO, "No valid token acquired for %s\n", service_name);
+			printf("No valid token acquired for %s\n", service_name);
 
 		rc=0;
 	}
@@ -326,7 +325,8 @@ int check_credential() {
 	(void) gss_release_oid_set(&min_stat, &mechanisms);
 
 	if (name != NULL) {
-		display_name("Available cached credential %s\n", &name);
+		if (debug)
+			display_name("Available cached credential %s\n", &name);
 		(void) gss_release_name(&min_stat, &name);
 		return KRB_CREDENTIAL_AVAILABLE;
 	}

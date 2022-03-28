@@ -83,13 +83,6 @@
  */
 int debug = 0;					/* all debug printf's and possibly external modules */
 
-/**
- * Values and their meaning:
- * 0 - no requests are logged - default
- * 1 - requests are logged (old behavior)
- */
-int request_logging_level = 0;
-
 struct auth_s *g_creds = NULL;			/* throughout the whole module */
 
 int quit = 0;					/* sighandler() */
@@ -282,6 +275,7 @@ plist_t pac_create_list(plist_t paclist, char *pacp_str) {
  */
 void listen_add(const char *service, plist_t *list, char *spec, int gateway) {
 	struct addrinfo *addresses;
+	int i;
 	int p;
 	int port;
 	char *tmp;
@@ -311,7 +305,10 @@ void listen_add(const char *service, plist_t *list, char *spec, int gateway) {
 		so_resolv_wildcard(&addresses, port, gateway);
 	}
 
-	so_listen(list, addresses, NULL);
+	i = so_listen(list, addresses, NULL);
+	if (i == 0) {
+		syslog(LOG_INFO, "New %s service on %s\n", service, spec);
+	}
 	freeaddrinfo(addresses);
 }
 
@@ -608,7 +605,7 @@ void *socks5_thread(void *thread_data) {
 	int open = !hlist_count(users_list);
 
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
-	char saddr[INET6_ADDRSTRLEN];
+	char saddr[INET6_ADDRSTRLEN] = {0};
 	INET_NTOP(&((struct thread_arg_s *)thread_data)->addr, saddr, INET6_ADDRSTRLEN);
 	free(thread_data);
 
@@ -930,7 +927,8 @@ int main(int argc, char **argv) {
 	cuid = zmalloc(MINIBUF_SIZE);
 	cauth = zmalloc(MINIBUF_SIZE);
 
-	openlog("cntlm", LOG_CONS, LOG_DAEMON);
+	int syslog_debug = 0;
+	openlog("cntlm", LOG_CONS | LOG_PERROR, LOG_DAEMON);
 
 #if config_endian == 0
 	syslog(LOG_INFO, "Starting cntlm version " VERSION " for BIG endian\n");
@@ -938,7 +936,7 @@ int main(int argc, char **argv) {
 	syslog(LOG_INFO, "Starting cntlm version " VERSION " for LITTLE endian\n");
 #endif
 
-	while ((i = getopt(argc, argv, ":-:T:a:c:d:fghIl:p:r:su:vw:x:BF:G:HL:M:N:O:P:R:S:U:X:q:")) != -1) {
+	while ((i = getopt(argc, argv, ":-:T:a:c:d:fghIl:p:r:su:vw:x:BF:G:HL:M:N:O:P:R:S:U:X:q")) != -1) {
 		switch (i) {
 			case 'a':
 				strlcpy(cauth, optarg, MINIBUF_SIZE);
@@ -1059,9 +1057,9 @@ int main(int argc, char **argv) {
 				break;
 			case 'T':
 				debug = 1;
+				syslog_debug = 1;
 				asdaemon = 0;
 				tracefile = open(optarg, O_CREAT | O_TRUNC | O_WRONLY, 0600);
-				openlog("cntlm", LOG_CONS | LOG_PERROR, LOG_DAEMON);
 				if (tracefile < 0) {
 					fprintf(stderr, "Cannot create trace file.\n");
 					myexit(1);
@@ -1085,8 +1083,8 @@ int main(int argc, char **argv) {
 				break;
 			case 'v':
 				debug = 1;
+				syslog_debug = 1;
 				asdaemon = 0;
-				openlog("cntlm", LOG_CONS | LOG_PERROR, LOG_DAEMON);
 				break;
 			case 'w':
 				strlcpy(cworkstation, optarg, MINIBUF_SIZE);
@@ -1103,15 +1101,7 @@ int main(int argc, char **argv) {
 #endif
 				break;
 			case 'q':
-				if (*optarg == '0') {
-					request_logging_level = 0;
-				}
-				else if (*optarg == '1') {
-					request_logging_level = 1;
-				}
-				else {
-					fprintf(stderr, "Invalid argument for option -q, using default value of %d.\n", request_logging_level);
-				}
+				syslog_debug = 1;
 				break;
 			case 'h':
 				help = 1;
@@ -1181,11 +1171,7 @@ int main(int argc, char **argv) {
 				"\t    Create a PID file upon successful start.\n");
 		fprintf(stream, "\t-p  <password>\n"
 				"\t    Account password. Will not be visible in \"ps\", /proc, etc.\n");
-		fprintf(stream, "\t-q  <level>\n"
-				"\t    Controls logging of requests like CONNECT/GET with URL.\n"
-				"\t    level can be:\n"
-				"\t    0 no requests are logged - default\n"
-				"\t    1 requests are logged (old behavior)\n");
+		fprintf(stream, "\t-q  Sets the Syslog logging level to DEBUG (default level is INFO).\n");
 		fprintf(stream, "\t-R  <username>:<password>\n"
 				"\t    Enable authorization for SOCKS5 proxy, when enabled.\n"
 				"\t    It can be used several times, to create a whole list of accounts.\n");
@@ -1271,7 +1257,7 @@ int main(int argc, char **argv) {
 			if (cf)
 				printf("Default config file opened successfully\n");
 			else
-				syslog(LOG_ERR, "Could not open default config file\n");
+				printf("Could not open default config file\n");
 		}
 	}
 #endif
@@ -1748,6 +1734,12 @@ int main(int argc, char **argv) {
 	} else {
 		openlog("cntlm", LOG_CONS | LOG_PID | LOG_PERROR, LOG_DAEMON);
 		syslog(LOG_INFO, "Cntlm ready, staying in the foreground");
+	}
+
+	if (syslog_debug) {
+		setlogmask(LOG_UPTO(LOG_DEBUG));
+	} else {
+		setlogmask(LOG_UPTO(LOG_INFO));
 	}
 
 #ifdef ENABLE_KERBEROS

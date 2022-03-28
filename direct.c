@@ -195,7 +195,7 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 	int conn_alive = 0;
 
 	int cd = ((struct thread_arg_s *)cdata)->fd;
-	char saddr[INET6_ADDRSTRLEN];
+	char saddr[INET6_ADDRSTRLEN] = {0};
 	INET_NTOP(&((struct thread_arg_s *)cdata)->addr, saddr, INET6_ADDRSTRLEN);
 
 	if (debug)
@@ -283,9 +283,7 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 				hlist_dump(data[loop]->headers);
 
 			if (loop == 0 && data[0]->req) {
-				if (request_logging_level == 1) {
-					syslog(LOG_DEBUG, "%s %s %s", saddr, data[0]->method, data[0]->url);
-				}
+				syslog(LOG_DEBUG, "%s %s %s", saddr, data[0]->method, data[0]->url);
 
 				/*
 				 * Convert full proxy request URL into a relative URL
@@ -463,7 +461,7 @@ void direct_tunnel(void *thread_data) {
 
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
 	char *thost = ((struct thread_arg_s *)thread_data)->target;
-	char saddr[INET6_ADDRSTRLEN];
+	char saddr[INET6_ADDRSTRLEN] = {0};
 	INET_NTOP(&((struct thread_arg_s *)thread_data)->addr, saddr, INET6_ADDRSTRLEN);
 
 	hostname = strdup(thost);

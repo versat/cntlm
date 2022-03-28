@@ -60,14 +60,7 @@ int so_resolv(struct addrinfo **addresses, const char *hostname, const int port)
 		char s[INET6_ADDRSTRLEN] = {0};
 		printf("Resolve %s:\n", hostname);
 		for (p = *addresses; p != NULL; p = p->ai_next) {
-			switch (p->ai_family) {
-				case AF_INET6:
-					inet_ntop(p->ai_family, &((struct sockaddr_in6*)(p->ai_addr))->sin6_addr, s, INET6_ADDRSTRLEN);
-					break;
-				case AF_INET:
-					inet_ntop(p->ai_family, &((struct sockaddr_in*)(p->ai_addr))->sin_addr, s, INET6_ADDRSTRLEN);
-					break;
-			}
+			INET_NTOP(p->ai_addr, s, INET6_ADDRSTRLEN);
 			printf("     %s\n", s);
 		}
 	}
@@ -109,20 +102,9 @@ int so_connect(struct addrinfo *addresses) {
 		}
 
 		if (debug) {
-			unsigned short port = 0;
-			switch (p->ai_family) {
-				case AF_INET6:
-					port = ((struct sockaddr_in6*)(p->ai_addr))->sin6_port;
-					inet_ntop(p->ai_family, &((struct sockaddr_in6*)(p->ai_addr))->sin6_addr, s, INET6_ADDRSTRLEN);
-					break;
-				case AF_INET:
-					port = ((struct sockaddr_in*)(p->ai_addr))->sin_port;
-					inet_ntop(p->ai_family, &((struct sockaddr_in*)(p->ai_addr))->sin_addr, s, INET6_ADDRSTRLEN);
-					break;
-				default:
-					syslog(LOG_ERR, "so_connect: Value of ai_family is invalid!");
-					break;
-			}
+			INET_NTOP(p->ai_addr, s, INET6_ADDRSTRLEN);
+			unsigned short port = INET_PORT(p->ai_addr);
+
 			printf("so_connect: %s : %i \n", s, ntohs(port));
 		}
 
@@ -188,27 +170,13 @@ int so_listen(plist_t *list, struct addrinfo *addresses, void *aux) {
 			syslog(LOG_WARNING, "setsockopt() (option: SO_REUSEADDR, value: 1) failed: %s\n", strerror(errno));
 		}
 
-		unsigned short port = 0;
-		switch (p->ai_family) {
-			case AF_INET6:
-				port = ((struct sockaddr_in6*)(p->ai_addr))->sin6_port;
-				inet_ntop(p->ai_family, &((struct sockaddr_in6*)(p->ai_addr))->sin6_addr, s, INET6_ADDRSTRLEN);
-				break;
-			case AF_INET:
-				port = ((struct sockaddr_in*)(p->ai_addr))->sin_port;
-				inet_ntop(p->ai_family, &((struct sockaddr_in*)(p->ai_addr))->sin_addr, s, INET6_ADDRSTRLEN);
-				break;
-			default:
-				syslog(LOG_ERR, "so_listen: Value of ai_family is invalid!");
-				break;
-		}
+		INET_NTOP(p->ai_addr, s, INET6_ADDRSTRLEN);
+		unsigned short port = INET_PORT(p->ai_addr);
 
 		if (bind(fd, p->ai_addr, p->ai_addrlen)) {
 			syslog(LOG_ERR, "Cannot bind address %s port %d: %s!\n", s, ntohs(port), strerror(errno));
 			close(fd);
 			return -1;
-		} else if (debug) {
-			printf("so_listen: %s : %u \n", s, ntohs(port));
 		}
 
 		if (listen(fd, SOMAXCONN)) {
@@ -217,6 +185,7 @@ int so_listen(plist_t *list, struct addrinfo *addresses, void *aux) {
 		}
 
 		*list = plist_add(*list, fd, aux);
+		syslog(LOG_INFO, "so_listen: listening on %s:%d\n", s, ntohs(port));
 	}
 
 	return 0;
