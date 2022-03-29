@@ -34,7 +34,7 @@ jobs:
       run: |
         ./configure --enable-kerberos
         make
-        make distclean
+        make clean
     - name: Verify debug build
       run: |
         ./configure
