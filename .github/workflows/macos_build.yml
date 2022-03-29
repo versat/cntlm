@@ -14,22 +14,22 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install packages required for optional configurations of cntlm
-      run: brew install pacparser krb5 fakeroot
+      run: brew install pacparser krb5
     - name: Normal build
       run: |
         ./configure
         make
-        make distclean
+        make clean
     - name: Unicode build
       run: |
         ./configure
         CFLAGS=-DUNICODE make
-        make distclean
+        make clean
     - name: Build with pacparser enabled
       run: |
         ./configure --enable-pacparser
         make
-        make distclean
+        make clean
     - name: Build with kerberos enabled
       run: |
         ./configure --enable-kerberos
@@ -39,4 +39,4 @@ jobs:
       run: |
         ./configure
         make DEBUG=1
-        make distclean
+        make clean
