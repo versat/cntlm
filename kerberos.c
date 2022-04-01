@@ -91,15 +91,15 @@ static void display_status_1(char *m, OM_uint32 code, int type) {
 		maj_stat = gss_display_status(&min_stat, code, type, GSS_C_NULL_OID,
 				&msg_ctx, &msg);
 		if (maj_stat == GSS_S_COMPLETE)
-			syslog(LOG_ERR, "GSS-API error %s: %s\n", m, (char *) msg.value);
+			syslog(LOG_DEBUG, "GSS-API error %s: %s\n", m, (char *) msg.value);
 		else if (maj_stat == GSS_S_BAD_MECH)
-			syslog(LOG_ERR, "GSS-API error that could not be translated due to a bad mechanism (GSS_S_BAD_MECH)\n");
+			syslog(LOG_DEBUG, "GSS-API error that could not be translated due to a bad mechanism (GSS_S_BAD_MECH)\n");
 		else if (maj_stat == GSS_S_BAD_STATUS)
-			syslog(LOG_ERR, "GSS-API error that is unknown (or this function was called with a wrong status type) (GSS_S_BAD_STATUS)\n");
+			syslog(LOG_DEBUG, "GSS-API error that is unknown (or this function was called with a wrong status type) (GSS_S_BAD_STATUS)\n");
 		else if (maj_stat == GSS_S_FAILURE)
-			syslog(LOG_ERR, "GSS-API error and gss_display_status failed with minor status code %lo (GSS_S_FAILURE)\n", (long unsigned int)min_stat);
+			syslog(LOG_DEBUG, "GSS-API error and gss_display_status failed with minor status code %lo (GSS_S_FAILURE)\n", (long unsigned int)min_stat);
 		else
-			syslog(LOG_ERR, "GSS-API error unrecognized return value from gss_display_status\n");
+			syslog(LOG_DEBUG, "GSS-API error unrecognized return value from gss_display_status\n");
 		(void) gss_release_buffer(&min_stat, &msg);
 
 		if (!msg_ctx)

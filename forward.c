@@ -98,7 +98,7 @@ rr_data_t pac_forward_request(void *thread_data, rr_data_t request, plist_t prox
 			if (debug)
 				printf("\n~~~~~~~ (%d/%d) PAC PROXY %s:%d ~~~~~~~\n", parent_curr, parent_count, aux->hostname, aux->port);
 #ifdef ENABLE_KERBEROS
-            curr_proxy = aux;
+			curr_proxy = aux;
 #endif
 			ret = forward_request(thread_data, request, aux);
 		}
