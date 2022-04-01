@@ -130,12 +130,11 @@ void display_status(char *msg, OM_uint32 maj_stat, OM_uint32 min_stat) {
 		display_status_1(msg, min_stat, GSS_C_MECH_CODE);
 }
 
-char* display_name(gss_name_t *name) {
+void display_name(char* txt, gss_name_t *name) {
 	gss_OID mechOid = GSS_C_NO_OID;
 	OM_uint32 maj_stat;
 	OM_uint32 min_stat;
 	gss_buffer_desc out_name;
-	char *out;
 
 //	maj_stat = gss_display_name(&min_stat, *name, &out_name, &mechOid);
 	maj_stat = gss_display_name(&min_stat, *name, &out_name, NULL);
@@ -143,14 +142,12 @@ char* display_name(gss_name_t *name) {
 		display_status("Display name", maj_stat, min_stat);
 	}
 
-	out = strdup(out_name.value);
+	printf("%s %s\n", txt, out_name.value);
 
 	(void) gss_release_buffer(&min_stat, &out_name);
 
 	if (mechOid != GSS_C_NO_OID)
 		(void) gss_release_oid(&min_stat, &mechOid);
-
-	return out;
 }
 
 int acquire_name(gss_name_t *target_name, char *service_name, gss_OID oid) {
@@ -165,9 +162,7 @@ int acquire_name(gss_name_t *target_name, char *service_name, gss_OID oid) {
 	if (maj_stat != GSS_S_COMPLETE) {
 		display_status("Parsing name", maj_stat, min_stat);
 	} else if (debug) {
-		char* txt = display_name(target_name);
-		printf("Acquired kerberos name %s\n", txt);
-		free(txt);
+		display_name("Acquired kerberos name", target_name);
 	}
 	return maj_stat;
 }
@@ -209,9 +204,7 @@ int client_establish_context(char *service_name,
 		return maj_stat;
 
 	if (debug) {
-		char* txt = display_name(&target_name);
-		printf("SPN name %s\n", txt);
-		free(txt);
+		display_name("SPN name", &target_name);
 	}
 
 	maj_stat = gss_init_sec_context(&init_min_stat, GSS_C_NO_CREDENTIAL,
@@ -334,9 +327,7 @@ int check_credential() {
 
 	if (name != NULL) {
 		if (debug) {
-			char* txt = display_name(&name);
-			printf("Available cached credential %s\n", txt);
-			free(txt);
+			display_name("Available cached credential", &name);
 		}
 		(void) gss_release_name(&min_stat, &name);
 		return KRB_CREDENTIAL_AVAILABLE;
