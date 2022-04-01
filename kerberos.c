@@ -130,11 +130,12 @@ void display_status(char *msg, OM_uint32 maj_stat, OM_uint32 min_stat) {
 		display_status_1(msg, min_stat, GSS_C_MECH_CODE);
 }
 
-void display_name(char* txt, gss_name_t *name) {
+char* display_name(gss_name_t *name) {
 	gss_OID mechOid = GSS_C_NO_OID;
 	OM_uint32 maj_stat;
 	OM_uint32 min_stat;
 	gss_buffer_desc out_name;
+	char *out;
 
 //	maj_stat = gss_display_name(&min_stat, *name, &out_name, &mechOid);
 	maj_stat = gss_display_name(&min_stat, *name, &out_name, NULL);
@@ -142,12 +143,14 @@ void display_name(char* txt, gss_name_t *name) {
 		display_status("Display name", maj_stat, min_stat);
 	}
 
-	printf(txt, (char *) out_name.value);
+	out = strdup(out_name.value);
 
 	(void) gss_release_buffer(&min_stat, &out_name);
 
 	if (mechOid != GSS_C_NO_OID)
 		(void) gss_release_oid(&min_stat, &mechOid);
+
+	return out;
 }
 
 int acquire_name(gss_name_t *target_name, char *service_name, gss_OID oid) {
@@ -162,7 +165,9 @@ int acquire_name(gss_name_t *target_name, char *service_name, gss_OID oid) {
 	if (maj_stat != GSS_S_COMPLETE) {
 		display_status("Parsing name", maj_stat, min_stat);
 	} else if (debug) {
-		display_name("Acquired kerberos name %s\n", target_name);
+		char* txt = display_name(target_name);
+		printf("Acquired kerberos name %s\n", txt);
+		free(txt);
 	}
 	return maj_stat;
 }
@@ -203,8 +208,11 @@ int client_establish_context(char *service_name,
 			GSS_C_NT_HOSTBASED_SERVICE)) != GSS_S_COMPLETE)
 		return maj_stat;
 
-	if (debug)
-		display_name("SPN name %s\n", &target_name);
+	if (debug) {
+		char* txt = display_name(&target_name);
+		printf("SPN name %s\n", txt);
+		free(txt);
+	}
 
 	maj_stat = gss_init_sec_context(&init_min_stat, GSS_C_NO_CREDENTIAL,
 			&gss_context,
@@ -247,7 +255,7 @@ int client_establish_context(char *service_name,
  * acquires a kerberos token for default credential using SPN HTTP@<thost>
  */
 int acquire_kerberos_token(proxy_t* proxy, struct auth_s *credentials,
-		char* buf) {
+		char* buf, size_t bufsize) {
 	char service_name[BUFSIZE];
 	OM_uint32 ret_flags, min_stat;
 
@@ -269,8 +277,8 @@ int acquire_kerberos_token(proxy_t* proxy, struct auth_s *credentials,
 
 	gss_buffer_desc send_tok;
 
-	strcpy(service_name, "HTTP@");
-	strcat(service_name, proxy->hostname);
+	strlcpy(service_name, "HTTP@", BUFSIZE);
+	strlcat(service_name, proxy->hostname, BUFSIZE);
 
 	int rc = client_establish_context(service_name, &ret_flags, &send_tok);
 
@@ -287,8 +295,8 @@ int acquire_kerberos_token(proxy_t* proxy, struct auth_s *credentials,
 			display_ctx_flags(ret_flags);
 		}
 
-		strcpy(buf, "NEGOTIATE ");
-		strcat(buf, token);
+		strlcpy(buf, "NEGOTIATE ", bufsize);
+		strlcat(buf, token, bufsize);
 
 		rc=1;
 	} else {
@@ -325,8 +333,11 @@ int check_credential() {
 	(void) gss_release_oid_set(&min_stat, &mechanisms);
 
 	if (name != NULL) {
-		if (debug)
-			display_name("Available cached credential %s\n", &name);
+		if (debug) {
+			char* txt = display_name(&name);
+			printf("Available cached credential %s\n", txt);
+			free(txt);
+		}
 		(void) gss_release_name(&min_stat, &name);
 		return KRB_CREDENTIAL_AVAILABLE;
 	}

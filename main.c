@@ -214,8 +214,7 @@ plist_t pac_create_list(plist_t paclist, char *pacp_str) {
 	/* Make a copy of shared PAC string pacp_str (coming
 	 * from pacparser) to avoid manipulation by strsep.
 	 */
-	pacp_tmp = zmalloc(sizeof(char) * strlen(pacp_str) + 1);
-	strcpy(pacp_tmp, pacp_str);
+	pacp_tmp = strdup(pacp_str);
 
 	cur_proxy = strsep(&pacp_tmp, ";");
 
