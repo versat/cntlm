@@ -68,17 +68,17 @@
 
 void display_ctx_flags(OM_uint32 flags) {
 	if (flags & GSS_C_DELEG_FLAG)
-		syslog(LOG_INFO, "context flag: GSS_C_DELEG_FLAG\n");
+		printf("context flag: GSS_C_DELEG_FLAG\n");
 	if (flags & GSS_C_MUTUAL_FLAG)
-		syslog(LOG_INFO, "context flag: GSS_C_MUTUAL_FLAG\n");
+		printf("context flag: GSS_C_MUTUAL_FLAG\n");
 	if (flags & GSS_C_REPLAY_FLAG)
-		syslog(LOG_INFO, "context flag: GSS_C_REPLAY_FLAG\n");
+		printf("context flag: GSS_C_REPLAY_FLAG\n");
 	if (flags & GSS_C_SEQUENCE_FLAG)
-		syslog(LOG_INFO, "context flag: GSS_C_SEQUENCE_FLAG\n");
+		printf("context flag: GSS_C_SEQUENCE_FLAG\n");
 	if (flags & GSS_C_CONF_FLAG)
-		syslog(LOG_INFO, "context flag: GSS_C_CONF_FLAG\n");
+		printf("context flag: GSS_C_CONF_FLAG\n");
 	if (flags & GSS_C_INTEG_FLAG)
-		syslog(LOG_INFO, "context flag: GSS_C_INTEG_FLAG\n");
+		printf("context flag: GSS_C_INTEG_FLAG\n");
 }
 
 static void display_status_1(char *m, OM_uint32 code, int type) {
@@ -91,15 +91,15 @@ static void display_status_1(char *m, OM_uint32 code, int type) {
 		maj_stat = gss_display_status(&min_stat, code, type, GSS_C_NULL_OID,
 				&msg_ctx, &msg);
 		if (maj_stat == GSS_S_COMPLETE)
-			syslog(LOG_ERR, "GSS-API error %s: %s\n", m, (char *) msg.value);
+			syslog(LOG_DEBUG, "GSS-API error %s: %s\n", m, (char *) msg.value);
 		else if (maj_stat == GSS_S_BAD_MECH)
-			syslog(LOG_ERR, "GSS-API error that could not be translated due to a bad mechanism (GSS_S_BAD_MECH)\n");
+			syslog(LOG_DEBUG, "GSS-API error that could not be translated due to a bad mechanism (GSS_S_BAD_MECH)\n");
 		else if (maj_stat == GSS_S_BAD_STATUS)
-			syslog(LOG_ERR, "GSS-API error that is unknown (or this function was called with a wrong status type) (GSS_S_BAD_STATUS)\n");
+			syslog(LOG_DEBUG, "GSS-API error that is unknown (or this function was called with a wrong status type) (GSS_S_BAD_STATUS)\n");
 		else if (maj_stat == GSS_S_FAILURE)
-			syslog(LOG_ERR, "GSS-API error and gss_display_status failed with minor status code %lo (GSS_S_FAILURE)\n", (long unsigned int)min_stat);
+			syslog(LOG_DEBUG, "GSS-API error and gss_display_status failed with minor status code %lo (GSS_S_FAILURE)\n", (long unsigned int)min_stat);
 		else
-			syslog(LOG_ERR, "GSS-API error unrecognized return value from gss_display_status\n");
+			syslog(LOG_DEBUG, "GSS-API error unrecognized return value from gss_display_status\n");
 		(void) gss_release_buffer(&min_stat, &msg);
 
 		if (!msg_ctx)
@@ -130,11 +130,12 @@ void display_status(char *msg, OM_uint32 maj_stat, OM_uint32 min_stat) {
 		display_status_1(msg, min_stat, GSS_C_MECH_CODE);
 }
 
-void display_name(char* txt, gss_name_t *name) {
+char* display_name(gss_name_t *name) {
 	gss_OID mechOid = GSS_C_NO_OID;
 	OM_uint32 maj_stat;
 	OM_uint32 min_stat;
 	gss_buffer_desc out_name;
+	char *out;
 
 //	maj_stat = gss_display_name(&min_stat, *name, &out_name, &mechOid);
 	maj_stat = gss_display_name(&min_stat, *name, &out_name, NULL);
@@ -142,12 +143,14 @@ void display_name(char* txt, gss_name_t *name) {
 		display_status("Display name", maj_stat, min_stat);
 	}
 
-	syslog(LOG_INFO, txt, (char *) out_name.value);
+	out = strdup(out_name.value);
 
 	(void) gss_release_buffer(&min_stat, &out_name);
 
 	if (mechOid != GSS_C_NO_OID)
 		(void) gss_release_oid(&min_stat, &mechOid);
+
+	return out;
 }
 
 int acquire_name(gss_name_t *target_name, char *service_name, gss_OID oid) {
@@ -161,8 +164,10 @@ int acquire_name(gss_name_t *target_name, char *service_name, gss_OID oid) {
 
 	if (maj_stat != GSS_S_COMPLETE) {
 		display_status("Parsing name", maj_stat, min_stat);
-	} else if (debug){
-		display_name("Acquired kerberos name %s\n", target_name);
+	} else if (debug) {
+		char* txt = display_name(target_name);
+		printf("Acquired kerberos name %s\n", txt);
+		free(txt);
 	}
 	return maj_stat;
 }
@@ -203,8 +208,11 @@ int client_establish_context(char *service_name,
 			GSS_C_NT_HOSTBASED_SERVICE)) != GSS_S_COMPLETE)
 		return maj_stat;
 
-	if (debug)
-		display_name("SPN name %s\n", &target_name);
+	if (debug) {
+		char* txt = display_name(&target_name);
+		printf("SPN name %s\n", txt);
+		free(txt);
+	}
 
 	maj_stat = gss_init_sec_context(&init_min_stat, GSS_C_NO_CREDENTIAL,
 			&gss_context,
@@ -232,7 +240,7 @@ int client_establish_context(char *service_name,
 	}
 
 	if (debug)
-		syslog(LOG_INFO, "Got token (size=%d)\n", (int) send_tok->length);
+		printf("Got token (size=%d)\n", (int) send_tok->length);
 
 	maj_stat = gss_delete_sec_context(&min_stat, &gss_context, GSS_C_NO_BUFFER);
 	if (maj_stat != GSS_S_COMPLETE) {
@@ -247,14 +255,13 @@ int client_establish_context(char *service_name,
  * acquires a kerberos token for default credential using SPN HTTP@<thost>
  */
 int acquire_kerberos_token(proxy_t* proxy, struct auth_s *credentials,
-		char* buf) {
+		char* buf, size_t bufsize) {
 	char service_name[BUFSIZE];
 	OM_uint32 ret_flags, min_stat;
 
 	if (credentials->haskrb == KRB_KO) {
 		if (debug)
-			syslog(LOG_INFO, "Skipping already failed gss auth for %s\n",
-					proxy->hostname);
+			printf("Skipping already failed gss auth for %s\n", proxy->hostname);
 		return 0;
 	}
 
@@ -263,15 +270,15 @@ int acquire_kerberos_token(proxy_t* proxy, struct auth_s *credentials,
 		if (!(credentials->haskrb & KRB_CREDENTIAL_AVAILABLE)){
 			//no credential -> no token
 			if (debug)
-				syslog(LOG_INFO, "No valid credential available\n");
+				printf("No valid credential available\n");
 			return 0;
 		}
 	}
 
 	gss_buffer_desc send_tok;
 
-	strcpy(service_name, "HTTP@");
-	strcat(service_name, proxy->hostname);
+	strlcpy(service_name, "HTTP@", BUFSIZE);
+	strlcat(service_name, proxy->hostname, BUFSIZE);
 
 	int rc = client_establish_context(service_name, &ret_flags, &send_tok);
 
@@ -283,20 +290,20 @@ int acquire_kerberos_token(proxy_t* proxy, struct auth_s *credentials,
 				BUFSIZE);
 
 		if (debug) {
-			syslog(LOG_INFO, "Token B64 (size=%d)... %s\n",
+			printf("Token B64 (size=%d)... %s\n",
 					(int) strlen(token), token);
 			display_ctx_flags(ret_flags);
 		}
 
-		strcpy(buf, "NEGOTIATE ");
-		strcat(buf, token);
+		strlcpy(buf, "NEGOTIATE ", bufsize);
+		strlcat(buf, token, bufsize);
 
 		rc=1;
 	} else {
 		credentials->haskrb = KRB_KO;
 
 		if (debug)
-			syslog(LOG_INFO, "No valid token acquired for %s\n", service_name);
+			printf("No valid token acquired for %s\n", service_name);
 
 		rc=0;
 	}
@@ -326,7 +333,11 @@ int check_credential() {
 	(void) gss_release_oid_set(&min_stat, &mechanisms);
 
 	if (name != NULL) {
-		display_name("Available cached credential %s\n", &name);
+		if (debug) {
+			char* txt = display_name(&name);
+			printf("Available cached credential %s\n", txt);
+			free(txt);
+		}
 		(void) gss_release_name(&min_stat, &name);
 		return KRB_CREDENTIAL_AVAILABLE;
 	}

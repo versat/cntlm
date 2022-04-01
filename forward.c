@@ -57,7 +57,7 @@ int single_proxy_connect(proxy_t *proxy) {
 
 	if (aux->resolved == 0) {
 		if (debug)
-			syslog(LOG_INFO, "Resolving proxy %s...\n", aux->hostname);
+			printf("Resolving proxy %s...\n", aux->hostname);
 		if (so_resolv(&aux->addresses, aux->hostname, aux->port)) {
 			aux->resolved = 1;
 		} else {
@@ -98,7 +98,7 @@ rr_data_t pac_forward_request(void *thread_data, rr_data_t request, plist_t prox
 			if (debug)
 				printf("\n~~~~~~~ (%d/%d) PAC PROXY %s:%d ~~~~~~~\n", parent_curr, parent_count, aux->hostname, aux->port);
 #ifdef ENABLE_KERBEROS
-                        curr_proxy = aux;
+			curr_proxy = aux;
 #endif
 			ret = forward_request(thread_data, request, aux);
 		}
@@ -148,7 +148,7 @@ int proxy_connect(struct auth_s *credentials) {
 		pthread_mutex_unlock(&parent_mtx);
 		if (aux->resolved == 0) {
 			if (debug)
-				syslog(LOG_INFO, "Resolving proxy %s...\n", aux->hostname);
+				printf("Resolving proxy %s...\n", aux->hostname);
 			if (so_resolv(&aux->addresses, aux->hostname, aux->port)) {
 				aux->resolved = 1;
 			} else {
@@ -230,7 +230,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 	buf = zmalloc(BUFSIZE);
 
 #ifdef ENABLE_KERBEROS
-	if(g_creds->haskrb && acquire_kerberos_token(curr_proxy, credentials, buf)) {
+	if(g_creds->haskrb && acquire_kerberos_token(curr_proxy, credentials, buf, BUFSIZE)) {
 		//pre auth, we try to authenticate directly with kerberos, without to ask if auth is needed
 		//we assume that if kdc releases a ticket for the proxy, then the proxy is configured for kerberos auth
 		//drawback is that later in the code cntlm logs that no auth is required because we have already authenticated
@@ -335,7 +335,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 
 		if (tmp) {
 #ifdef ENABLE_KERBEROS
-			if(g_creds->haskrb && strncasecmp(tmp, "NEGOTIATE", 9) == 0 && acquire_kerberos_token(curr_proxy, credentials, buf)) {
+			if(g_creds->haskrb && strncasecmp(tmp, "NEGOTIATE", 9) == 0 && acquire_kerberos_token(curr_proxy, credentials, buf, BUFSIZE)) {
 				if (debug)
 					printf("Using Negotiation ...\n");
 
@@ -469,6 +469,8 @@ rr_data_t forward_request(void *thread_data, rr_data_t request) {
 	int sd;
 	assert(thread_data != NULL);
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
+	char saddr[INET6_ADDRSTRLEN] = {0};
+	INET_NTOP(&((struct thread_arg_s *)thread_data)->addr, saddr, INET6_ADDRSTRLEN);
 
 beginning:
 #ifdef ENABLE_PACPARSER
@@ -620,6 +622,9 @@ beginning:
 			if (debug)
 				hlist_dump(data[loop]->headers);
 
+			if (loop == 0 && data[0]->req) {
+				syslog(LOG_DEBUG, "%s %s %s", saddr, data[0]->method, data[0]->url);
+			}
 
 shortcut:
 			/*
@@ -973,12 +978,16 @@ void forward_tunnel(void *thread_data) {
 	assert(thread_data != NULL);
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
 	char *thost = ((struct thread_arg_s *)thread_data)->target;
+	char saddr[INET6_ADDRSTRLEN] = {0};
+	INET_NTOP(&((struct thread_arg_s *)thread_data)->addr, saddr, INET6_ADDRSTRLEN);
 
 	tcreds = new_auth();
 	sd = proxy_connect(tcreds);
 
 	if (sd < 0)
 		goto bailout;
+
+	syslog(LOG_DEBUG, "%s TUNNEL %s", saddr, thost);
 
 	if (debug)
 		printf("Tunneling to %s for client %d...\n", thost, cd);

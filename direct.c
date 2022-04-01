@@ -195,6 +195,8 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 	int conn_alive = 0;
 
 	int cd = ((struct thread_arg_s *)cdata)->fd;
+	char saddr[INET6_ADDRSTRLEN] = {0};
+	INET_NTOP(&((struct thread_arg_s *)cdata)->addr, saddr, INET6_ADDRSTRLEN);
 
 	if (debug)
 		printf("Direct thread processing...\n");
@@ -281,6 +283,7 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 				hlist_dump(data[loop]->headers);
 
 			if (loop == 0 && data[0]->req) {
+				syslog(LOG_DEBUG, "%s %s %s", saddr, data[0]->method, data[0]->url);
 
 				/*
 				 * Convert full proxy request URL into a relative URL
@@ -458,6 +461,8 @@ void direct_tunnel(void *thread_data) {
 
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
 	char *thost = ((struct thread_arg_s *)thread_data)->target;
+	char saddr[INET6_ADDRSTRLEN] = {0};
+	INET_NTOP(&((struct thread_arg_s *)thread_data)->addr, saddr, INET6_ADDRSTRLEN);
 
 	hostname = strdup(thost);
 	if ((pos = strchr(hostname, ':')) != NULL) {
@@ -468,6 +473,8 @@ void direct_tunnel(void *thread_data) {
 	sd = host_connect(hostname, port);
 	if (sd <= 0)
 		goto bailout;
+
+	syslog(LOG_DEBUG, "%s FORWARD %s", saddr, thost);
 
 	if (debug)
 		printf("Portforwarding to %s for client %d...\n", thost, cd);
