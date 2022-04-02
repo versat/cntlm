@@ -523,8 +523,14 @@ void *proxy_thread(void *thread_data) {
 	} while (keep_alive && ret != (void *)-1 && !serialize);
 #endif
 
+#ifdef ENABLE_PACPARSER
+	plist_free(pac_list);
+#endif
+	free(thread_data);
+	close(cd);
+
 	/*
-	 * Add ourselves to the "threads to join" list.
+	 * Add ourself to the "threads to join" list.
 	 */
 	if (!serialize) {
 		pthread_mutex_lock(&threads_mtx);
@@ -532,12 +538,6 @@ void *proxy_thread(void *thread_data) {
 		threads_list = plist_add(threads_list, (unsigned long)thread_id, NULL);
 		pthread_mutex_unlock(&threads_mtx);
 	}
-
-#ifdef ENABLE_PACPARSER
-	plist_free(pac_list);
-#endif
-	free(thread_data);
-	close(cd);
 
 	return NULL;
 }
@@ -569,10 +569,12 @@ void *tunnel_thread(void *thread_data) {
 	/*
 	 * Add ourself to the "threads to join" list.
 	 */
-	pthread_mutex_lock(&threads_mtx);
-	pthread_t thread_id = pthread_self();
-	threads_list = plist_add(threads_list, (unsigned long)thread_id, NULL);
-	pthread_mutex_unlock(&threads_mtx);
+	if (!serialize) {
+		pthread_mutex_lock(&threads_mtx);
+		pthread_t thread_id = pthread_self();
+		threads_list = plist_add(threads_list, (unsigned long)thread_id, NULL);
+		pthread_mutex_unlock(&threads_mtx);
+	}
 
 	return NULL;
 }
@@ -864,6 +866,16 @@ bailout:
 		close(sd);
 	close(cd);
 
+	/*
+	 * Add ourself to the "threads to join" list.
+	 */
+	if (!serialize) {
+		pthread_mutex_lock(&threads_mtx);
+		pthread_t thread_id = pthread_self();
+		threads_list = plist_add(threads_list, (unsigned long)thread_id, NULL);
+		pthread_mutex_unlock(&threads_mtx);
+	}
+
 	return NULL;
 }
 
@@ -894,7 +906,7 @@ int main(int argc, char **argv) {
 	int ngid = 0;
 	int gateway = 0;
 	unsigned int tc = 0; ///< Total number of created threads
-	unsigned int tj = 0; ///< Total number of joined threads
+	unsigned int tj = 0; ///< Total number of terminated threads
 	int interactivepwd = 0;
 	int interactivehash = 0;
 	int tracefile = 0;
@@ -1908,6 +1920,7 @@ int main(int argc, char **argv) {
 
 				pthread_attr_init(&pattr);
 				pthread_attr_setstacksize(&pattr, MAX(STACK_SIZE, PTHREAD_STACK_MIN));
+				pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_DETACHED);
 #ifndef __CYGWIN__
 				pthread_attr_setguardsize(&pattr, 256);
 #endif
@@ -1924,13 +1937,19 @@ int main(int argc, char **argv) {
 					data = (struct thread_arg_s *)zmalloc(sizeof(struct thread_arg_s));
 					data->fd = cd;
 					data->addr = caddr;
-					tid = pthread_create(&pthr, &pattr, socks5_thread, (void *)data);
+					if (!serialize)
+						tid = pthread_create(&pthr, &pattr, socks5_thread, (void *)data);
+					else
+						socks5_thread((void *)data);
 				} else {
 					data = (struct thread_arg_s *)zmalloc(sizeof(struct thread_arg_s));
 					data->fd = cd;
 					data->addr = caddr;
 					data->target = plist_get(tunneld_list, i);
-					tid = pthread_create(&pthr, &pattr, tunnel_thread, (void *)data);
+					if (!serialize)
+						tid = pthread_create(&pthr, &pattr, tunnel_thread, (void *)data);
+					else
+						tunnel_thread((void *)data);
 				}
 
 				pthread_attr_destroy(&pattr);
@@ -1938,7 +1957,7 @@ int main(int argc, char **argv) {
 				if (tid)
 					syslog(LOG_ERR, "Serious error during pthread_create: %d\n", tid);
 				else
-					tc++;
+					tc++; // update count of active threads
 			}
 		} else if (cd < 0 && !quit)
 			syslog(LOG_ERR, "Serious error during select: %s\n", strerror(errno));
@@ -1948,14 +1967,10 @@ int main(int argc, char **argv) {
 			t = threads_list;
 			while (t) {
 				plist_t tmp_next = t->next;
-				tid = pthread_join((pthread_t)t->key, (void *)&i);
 
-				if (!tid) {
-					tj++;
-					if (debug)
-						printf("Joined thread %lu; rc: %d\n", t->key, i);
-				} else
-					syslog(LOG_ERR, "Serious error during pthread_join: %d\n", tid);
+				tj++; // update count of terminated threads
+				if (debug)
+					printf("Terminated thread %lu; rc: %d\n", t->key, i);
 
 				free(t);
 				t = tmp_next;
