@@ -166,7 +166,7 @@ int parent_add(const char *parent, int port) {
 		p = (int)(q - spec);
 		if(spec[0] == '[' && spec[p-1] == ']') {
 			tmp = substr(spec, 1, p-2);
-	        } else {
+		} else {
 			tmp = substr(spec, 0, p);
 		}
 
@@ -284,7 +284,7 @@ void listen_add(const char *service, plist_t *list, char *spec, int gateway) {
 		p = (int)(q - spec);
 		if(spec[0] == '[' && spec[p-1] == ']') {
 			tmp = substr(spec, 1, p-2);
-	        } else {
+		} else {
 			tmp = substr(spec, 0, p);
 		}
 
@@ -1090,9 +1090,11 @@ int main(int argc, char **argv) {
 				break;
 			case 'X':
 #ifdef __CYGWIN__
-				if (!sspi_set(strdup(optarg)))
+				if (!sspi_set(optarg))
 				{
-					fprintf(stderr, "SSPI initialize failed! Proceeding with SSPI disabled.\n");
+					fprintf(stderr, "SSPI initialize failed (%s)! Proceeding with SSPI disabled.\n", optarg);
+				} else {
+					syslog(LOG_INFO, "SSPI %s mode enabled!", optarg);
 				}
 #else
 				fprintf(stderr, "This feature is available under Windows only!\n");
@@ -1395,11 +1397,11 @@ int main(int argc, char **argv) {
 		tmp = zmalloc(MINIBUF_SIZE);
 		CFG_DEFAULT(cf, "SSPI", tmp, MINIBUF_SIZE);
 
-		if (!sspi_enabled() && strlen(tmp))
-		{
-			if (!strcasecmp("NTLM", tmp) && !sspi_set(tmp)) // Only NTLM supported for now
-			{
-				fprintf(stderr, "SSPI initialize failed! Proceeding with SSPI disabled.\n");
+		if (!sspi_enabled() && strlen(tmp)) {
+			if (!sspi_set(tmp)) { // Only NTLM supported for now
+				fprintf(stderr, "SSPI initialize failed (%s)! Proceeding with SSPI disabled.\n", tmp);
+			} else {
+				syslog(LOG_INFO, "SSPI %s mode enabled!", tmp);
 			}
 		}
 		free(tmp);
@@ -1682,6 +1684,9 @@ int main(int argc, char **argv) {
 	if (!ntlmbasic &&
 #ifdef ENABLE_KERBEROS
 			!g_creds->haskrb &&
+#endif
+#ifdef __CYGWIN__
+			!sspi_enabled() &&
 #endif
 			    ((g_creds->hashnt && is_memory_all_zero(g_creds->passnt, ARRAY_SIZE(g_creds->passnt)))
 			 || (g_creds->hashlm && is_memory_all_zero(g_creds->passlm, ARRAY_SIZE(g_creds->passlm)))
