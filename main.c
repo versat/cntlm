@@ -154,29 +154,31 @@ int parent_add(const char *parent, int port) {
 	char *spec;
 	char *tmp;
 	proxy_t *aux;
-	struct addrinfo *addresses;
 
 	/*
 	 * Check format and parse it.
 	 */
 	spec = strdup(parent);
 	const char *q = strrchr(spec, ':');
-	if (q != NULL) {
+	if (q != NULL || !port) {
 		int p;
-		p = (int)(q - spec);
+		p = (q != NULL) ? (int)(q - spec) : strlen(spec);
+
 		if(spec[0] == '[' && spec[p-1] == ']') {
 			tmp = substr(spec, 1, p-2);
 	        } else {
 			tmp = substr(spec, 0, p);
 		}
 
-		port = atoi(spec+p+1);
-		if (!port || !so_resolv(&addresses, tmp, port)) {
-			syslog(LOG_ERR, "Cannot resolve listen address %s\n", spec);
+		if (q != NULL)
+			port = atoi(spec+p+1);
+
+		if (!port) {
+			syslog(LOG_ERR, "Invalid port in proxy address %s\n", spec);
 			myexit(1);
 		}
 	} else {
-		syslog(LOG_ERR, "Cannot resolve listen address %s\n", spec);
+		syslog(LOG_ERR, "Port not found in proxy address %s\n", spec);
 		myexit(1);
 	}
 
@@ -1085,7 +1087,7 @@ int main(int argc, char **argv) {
 				break;
 			case 'u':
 				i = strcspn(optarg, "@");
-				if (i != strlen(optarg)) {
+				if (i != (int)strlen(optarg)) {
 					strlcpy(cuser, optarg, MIN(MINIBUF_SIZE, i+1));
 					strlcpy(cdomain, optarg+i+1, MINIBUF_SIZE);
 				} else {
