@@ -181,7 +181,7 @@ int sspi_enabled(void)
 int sspi_set(char* mode)
 {
 	sspi_dll = LoadSecurityDll();
-	if (sspi_dll)
+	if (!strcasecmp("NTLM", mode) && sspi_dll)  // Only NTLM supported for now
 	{
 #ifdef UNICODE
 		sspi_mode = zmalloc(sizeof(wchar_t) * strlen(mode));
@@ -214,7 +214,6 @@ int sspi_request(char **dst, struct sspi_handle *sspi)
 	if (status != SEC_E_OK)
 		return 0;
 
-	char *tokenBuf = zmalloc(TOKEN_BUFSIZE);
 	SecBufferDesc   tokenDesc;
 	SecBuffer       token;
 	unsigned long attrs;
@@ -224,7 +223,7 @@ int sspi_request(char **dst, struct sspi_handle *sspi)
 	tokenDesc.pBuffers  = &token;
 	token.cbBuffer   = TOKEN_BUFSIZE;
 	token.BufferType = SECBUFFER_TOKEN;
-	token.pvBuffer   = tokenBuf;
+	token.pvBuffer   = zmalloc(TOKEN_BUFSIZE);
 
 	status = _InitializeSecurityContext(
 		&sspi->credentials,
@@ -262,8 +261,6 @@ int sspi_response(char **dst, char *challengeBuf, int challen, struct sspi_handl
 	unsigned long attrs;
 	TimeStamp expiry;
 
-	char *answerBuf = zmalloc(TOKEN_BUFSIZE);
-
 	challengeDesc.ulVersion = answerDesc.ulVersion  = SECBUFFER_VERSION;
 	challengeDesc.cBuffers  = answerDesc.cBuffers   = 1;
 
@@ -274,7 +271,7 @@ int sspi_response(char **dst, char *challengeBuf, int challen, struct sspi_handl
 
 	challenge.pvBuffer   = challengeBuf;
 	challenge.cbBuffer   = challen;
-	answer.pvBuffer   = answerBuf;
+	answer.pvBuffer   = zmalloc(TOKEN_BUFSIZE);
 	answer.cbBuffer   = TOKEN_BUFSIZE;
 
 	status = _InitializeSecurityContext(
