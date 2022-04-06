@@ -160,16 +160,19 @@ int parent_add(const char *parent, int port) {
 	 */
 	spec = strdup(parent);
 	const char *q = strrchr(spec, ':');
-	if (q != NULL) {
+	if (q != NULL || !port) {
 		int p;
-		p = (int)(q - spec);
+		p = (q != NULL) ? (int)(q - spec) : strlen(spec);
+
 		if(spec[0] == '[' && spec[p-1] == ']') {
 			tmp = substr(spec, 1, p-2);
 	        } else {
 			tmp = substr(spec, 0, p);
 		}
 
-		port = atoi(spec+p+1);
+		if (q != NULL)
+			port = atoi(spec+p+1);
+
 		if (!port) {
 			syslog(LOG_ERR, "Invalid port in proxy address %s\n", spec);
 			myexit(1);
