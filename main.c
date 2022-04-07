@@ -480,7 +480,7 @@ void *proxy_thread(void *thread_data) {
 					pacp_str = pacparser_find_proxy(request->url, request->hostname);
 					pthread_mutex_unlock(&pacparser_mtx);
 
-					plist_free(pac_list);
+					proxylist_free(pac_list);
 					pac_list = NULL;
 					pac_list = pac_create_list(pac_list, pacp_str);
 				}
@@ -526,7 +526,7 @@ void *proxy_thread(void *thread_data) {
 #endif
 
 #ifdef ENABLE_PACPARSER
-	plist_free(pac_list);
+	proxylist_free(pac_list);
 #endif
 	free(thread_data);
 	close(cd);
@@ -2013,7 +2013,7 @@ bailout:
 	free(magic_detect);
 	free(g_creds);
 
-	parentlist_free(parent_list);
+	proxylist_free(parent_list);
 
 	exit(0);
 }

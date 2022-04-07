@@ -254,9 +254,9 @@ plist_t plist_free(plist_t list) {
 }
 
 /*
- * Free parent_list
+ * Free the list of proxy_t data.
  */
-plist_t parentlist_free(plist_t list) {
+plist_t proxylist_free(plist_t list) {
 	while (list) {
 		plist_t t = list->next;
 
