@@ -46,7 +46,6 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <syslog.h>
 #include <gssapi/gssapi.h>
 #include <stdlib.h>
 
@@ -91,15 +90,15 @@ static void display_status_1(char *m, OM_uint32 code, int type) {
 		maj_stat = gss_display_status(&min_stat, code, type, GSS_C_NULL_OID,
 				&msg_ctx, &msg);
 		if (maj_stat == GSS_S_COMPLETE)
-			syslog(LOG_DEBUG, "GSS-API error %s: %s\n", m, (char *) msg.value);
+			printf("GSS-API error %s: %s\n", m, (char *) msg.value);
 		else if (maj_stat == GSS_S_BAD_MECH)
-			syslog(LOG_DEBUG, "GSS-API error that could not be translated due to a bad mechanism (GSS_S_BAD_MECH)\n");
+			printf("GSS-API error that could not be translated due to a bad mechanism (GSS_S_BAD_MECH)\n");
 		else if (maj_stat == GSS_S_BAD_STATUS)
-			syslog(LOG_DEBUG, "GSS-API error that is unknown (or this function was called with a wrong status type) (GSS_S_BAD_STATUS)\n");
+			printf("GSS-API error that is unknown (or this function was called with a wrong status type) (GSS_S_BAD_STATUS)\n");
 		else if (maj_stat == GSS_S_FAILURE)
-			syslog(LOG_DEBUG, "GSS-API error and gss_display_status failed with minor status code %lo (GSS_S_FAILURE)\n", (long unsigned int)min_stat);
+			printf("GSS-API error and gss_display_status failed with minor status code %lo (GSS_S_FAILURE)\n", (long unsigned int)min_stat);
 		else
-			syslog(LOG_DEBUG, "GSS-API error unrecognized return value from gss_display_status\n");
+			printf("GSS-API error unrecognized return value from gss_display_status\n");
 		(void) gss_release_buffer(&min_stat, &msg);
 
 		if (!msg_ctx)
@@ -138,7 +137,7 @@ void display_name(char* txt, gss_name_t *name) {
 
 //	maj_stat = gss_display_name(&min_stat, *name, &out_name, &mechOid);
 	maj_stat = gss_display_name(&min_stat, *name, &out_name, NULL);
-	if (maj_stat != GSS_S_COMPLETE) {
+	if (maj_stat != GSS_S_COMPLETE && debug) {
 		display_status("Display name", maj_stat, min_stat);
 	}
 
@@ -159,10 +158,12 @@ int acquire_name(gss_name_t *target_name, char *service_name, gss_OID oid) {
 
 	maj_stat = gss_import_name(&min_stat, &tmp_tok, oid, target_name);
 
-	if (maj_stat != GSS_S_COMPLETE) {
-		display_status("Parsing name", maj_stat, min_stat);
-	} else if (debug) {
-		display_name("Acquired kerberos name", target_name);
+	if (debug) {
+		if (maj_stat != GSS_S_COMPLETE) {
+			display_status("Parsing name", maj_stat, min_stat);
+		} else {
+			display_name("Acquired kerberos name", target_name);
+		}
 	}
 	return maj_stat;
 }
@@ -225,18 +226,19 @@ int client_establish_context(char *service_name,
 		if(maj_stat == GSS_S_CONTINUE_NEEDED){
 			//TODO
 		}
-		display_status("Initializing context", maj_stat, init_min_stat);
-
+		if (debug) {
+			display_status("Initializing context", maj_stat, init_min_stat);
+		}
 		if (gss_context == GSS_C_NO_CONTEXT)
 			gss_delete_sec_context(&min_stat, &gss_context, GSS_C_NO_BUFFER);
 		return maj_stat;
 	}
 
-	if (debug)
+	if (debug) {
 		printf("Got token (size=%d)\n", (int) send_tok->length);
-
+	}
 	maj_stat = gss_delete_sec_context(&min_stat, &gss_context, GSS_C_NO_BUFFER);
-	if (maj_stat != GSS_S_COMPLETE) {
+	if (maj_stat != GSS_S_COMPLETE && debug) {
 		display_status("Deleting context", maj_stat, min_stat);
 	}
 	return GSS_S_COMPLETE;//maj_stat;
@@ -320,7 +322,9 @@ int check_credential() {
 	maj_stat = gss_inquire_cred(&min_stat, GSS_C_NO_CREDENTIAL, &name,
 			&lifetime, &cred_usage, &mechanisms);
 	if (maj_stat != GSS_S_COMPLETE) {
-		display_status("Inquire credential", maj_stat, min_stat);
+		if (debug) {
+			display_status("Inquire credential", maj_stat, min_stat);
+		}
 		return 0;
 	}
 	(void) gss_release_oid_set(&min_stat, &mechanisms);
