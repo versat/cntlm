@@ -79,40 +79,40 @@ int pac_proxy_connect(proxy_t *proxy, struct auth_s *credentials) {
 }
 
 rr_data_t pac_forward_request(void *thread_data, rr_data_t request, plist_t proxy_list) {
-	int parent_curr = 0;
-	int parent_count;
+	int pac_parent_curr = 0;
+	int pac_parent_count;
 	rr_data_t ret = (void *)-2;
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
 
-	parent_count = plist_count(proxy_list);
+	pac_parent_count = plist_count(proxy_list);
 
-	while (parent_curr < parent_count && ret == (void *)-2) {
+	while (pac_parent_curr < pac_parent_count && ret == (void *)-2) {
 		proxy_t *aux;
-		aux = (proxy_t *)plist_get(proxy_list, ++parent_curr);
+		aux = (proxy_t *)plist_get(proxy_list, ++pac_parent_curr);
 
 		if (aux->type == DIRECT) {
 			if (debug)
-				printf("\n~~~~~~~ (%d/%d) PAC DIRECT ~~~~~~~\n", parent_curr, parent_count);
+				printf("\n~~~~~~~ (%d/%d) PAC DIRECT ~~~~~~~\n", pac_parent_curr, pac_parent_count);
 			ret = direct_request(thread_data, request);
 		} else {
 			if (debug)
-				printf("\n~~~~~~~ (%d/%d) PAC PROXY %s:%d ~~~~~~~\n", parent_curr, parent_count, aux->hostname, aux->port);
+				printf("\n~~~~~~~ (%d/%d) PAC PROXY %s:%d ~~~~~~~\n", pac_parent_curr, pac_parent_count, aux->hostname, aux->port);
 #ifdef ENABLE_KERBEROS
 			curr_proxy = aux;
 #endif
 			ret = forward_request(thread_data, request, aux);
 		}
 		if (debug && ret == (void *)-2) {
-			printf("pac_forward_request: (%d/%d) PAC type = %d, host = %s, ret = %p\n", parent_curr, parent_count, aux->type, aux->type == PROXY ? aux->hostname : "", (void *)ret);
+			printf("pac_forward_request: (%d/%d) PAC type = %d, host = %s, ret = %p\n", pac_parent_curr, pac_parent_count, aux->type, aux->type == PROXY ? aux->hostname : "", (void *)ret);
 		}
 	}
 
 	if (ret == (void *)-2) {
 		char *tmp;
 		ret = (void *)-1;
-		syslog(LOG_INFO, "Could not establish connection using PAC\n");
+		syslog(LOG_ERR, "Could not establish connection using PAC\n");
 		tmp = gen_502_page(request->http, "Could not establisch connection using PAC");
-		write(cd, tmp, strlen(tmp));
+		write_wrapper(cd, tmp, strlen(tmp));
 		free(tmp);
 	}
 	return ret;

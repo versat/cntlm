@@ -156,7 +156,7 @@ void plist_dump(plist_const_t list) {
 /*
  * Return the pointer associated with the key.
  */
-char *plist_get(plist_const_t list, const int key) {
+char *plist_get(plist_const_t list, const unsigned long key) {
 	plist_const_t t = list;
 
 	while (t) {
@@ -525,7 +525,7 @@ char *substr(const char *src, int pos, int len) {
 	if (len == 0)
 		len = strlen(src);
 
-	min_len = MIN(len, strlen(src)-pos);
+	min_len = MIN(len, (int)strlen(src)-pos);
 	if (min_len <= 0)
 		return zmalloc(1);
 

@@ -141,7 +141,7 @@ void display_name(char* txt, gss_name_t *name) {
 		display_status("Display name", maj_stat, min_stat);
 	}
 
-	printf("%s %s\n", txt, out_name.value);
+	printf("%s %s\n", txt, (char *)out_name.value);
 
 	(void) gss_release_buffer(&min_stat, &out_name);
 

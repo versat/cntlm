@@ -162,7 +162,7 @@ int parent_add(const char *parent, int port) {
 	const char *q = strrchr(spec, ':');
 	if (q != NULL || !port) {
 		int p;
-		p = (q != NULL) ? (int)(q - spec) : strlen(spec);
+		p = (q != NULL) ? (int)(q - spec) : (int)strlen(spec);
 
 		if(spec[0] == '[' && spec[p-1] == ']') {
 			tmp = substr(spec, 1, p-2);
