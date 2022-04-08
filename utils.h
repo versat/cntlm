@@ -135,7 +135,7 @@ extern plist_t plist_add(plist_t list, unsigned long key, void *aux);
 extern plist_t plist_del(plist_t list, const unsigned long key);
 extern int plist_in(plist_const_t list, const unsigned long key) __attribute__((warn_unused_result));
 extern void plist_dump(plist_const_t list);
-extern char *plist_get(plist_const_t list, const int key) __attribute__((warn_unused_result));
+extern char *plist_get(plist_const_t list, const unsigned long key) __attribute__((warn_unused_result));
 extern int plist_pop(plist_t *list, void **aux);
 extern int plist_count(plist_const_t list) __attribute__((warn_unused_result));
 extern plist_t plist_free(plist_t list);

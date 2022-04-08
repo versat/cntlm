@@ -57,7 +57,7 @@ char *get_http_header_name(const char *src) {
 	int i;
 
 	i = strcspn(src, ":");
-	if (i != strlen(src))
+	if (i != (int)strlen(src))
 		return substr(src, 0, i);
 	else
 		return NULL;
@@ -236,7 +236,7 @@ int headers_recv(int fd, rr_data_t data) {
 			if (*(tok+1) == ':') {
 				data->port = atoi(tok+2);
 			}
-		} else if (tok = strchr(host, ':')) {
+		} else if ((tok = strchr(host, ':'))) {
 			*tok = 0;
 			data->hostname = strdup(host);
 			data->port = atoi(tok+1);
@@ -530,7 +530,7 @@ length_t http_has_body(rr_data_const_t request, rr_data_const_t response) {
 
 	if (current == NULL) {
 		syslog(LOG_ERR, "Internal error in function http_has_body(): Both arguments to function seem to be invalid/NULL: request: %p response: %p\n",
-				request, response);
+				(const void *)request, (const void *)response);
 		return 0;
 	}
 

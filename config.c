@@ -123,7 +123,7 @@ config_t config_open(const char *fname) {
 		char * value = substr(buf, j, i-j);
 		if (!quote) {
 			i = strcspn(value, "#");
-			if (i != strlen(value))
+			if (i != (int)strlen(value))
 				value[i] = 0;
 			trimr(value);
 		}
