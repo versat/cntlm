@@ -206,6 +206,7 @@ int parent_add(const char *parent, int port) {
 plist_t pac_create_list(plist_t paclist, char *pacp_str) {
 	int paclist_count = 0;
 	char *pacp_tmp = NULL;
+	char *pacp_start = NULL;
 	char *cur_proxy = NULL;
 
 	if (pacp_str == NULL) {
@@ -216,7 +217,8 @@ plist_t pac_create_list(plist_t paclist, char *pacp_str) {
 	/* Make a copy of shared PAC string pacp_str (coming
 	 * from pacparser) to avoid manipulation by strsep.
 	 */
-	pacp_tmp = strdup(pacp_str);
+	pacp_start = strdup(pacp_str);
+	pacp_tmp = pacp_start; // save the pointer to this buffer so we can free it
 
 	cur_proxy = strsep(&pacp_tmp, ";");
 
@@ -265,7 +267,7 @@ plist_t pac_create_list(plist_t paclist, char *pacp_str) {
 		plist_dump(paclist);
 	}
 
-	free(pacp_tmp);
+	free(pacp_start);
 
 	return paclist;
 }
