@@ -145,7 +145,6 @@ int proxy_connect(struct auth_s *credentials) {
 	do {
 		pthread_mutex_lock(&parent_mtx);
 		aux = (proxy_t *)plist_get(parent_list, parent_curr);
-		pthread_mutex_unlock(&parent_mtx);
 		if (aux->resolved == 0) {
 			if (debug)
 				printf("Resolving proxy %s...\n", aux->hostname);
@@ -155,6 +154,7 @@ int proxy_connect(struct auth_s *credentials) {
 				syslog(LOG_ERR, "Cannot resolve proxy %s\n", aux->hostname);
 			}
 		}
+		pthread_mutex_unlock(&parent_mtx);
 
 		i = -1;
 		if (aux->resolved != 0)

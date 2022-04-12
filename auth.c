@@ -46,6 +46,9 @@ struct auth_s *new_auth(void) {
 	tmp->hashnt = 0;
 	tmp->hashlm = 0;
 	tmp->flags = 0;
+#ifdef ENABLE_KERBEROS
+	tmp->haskrb = 0;
+#endif
 
 	return tmp;
 }
