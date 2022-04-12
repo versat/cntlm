@@ -57,6 +57,7 @@
 #include "ntlm.h"
 #include "swap.h"
 #include "config.h"
+#include "acl.h"
 #include "auth.h"
 #include "http.h"
 #include "globals.h"
@@ -951,8 +952,13 @@ int main(int argc, char **argv) {
 	syslog(LOG_INFO, "Starting cntlm version " VERSION " for LITTLE endian\n");
 #endif
 
-	while ((i = getopt(argc, argv, ":-:T:a:c:d:fghIl:p:r:su:vw:x:BF:G:HL:M:N:O:P:R:S:U:X:q")) != -1) {
+	while ((i = getopt(argc, argv, ":-:T:a:c:d:fghIl:p:r:su:vw:x:A:BD:F:G:HL:M:N:O:P:R:S:U:X:q")) != -1) {
 		switch (i) {
+			case 'A':
+			case 'D':
+				if (!acl_add(&rules, optarg, (i == 'A' ? ACL_ALLOW : ACL_DENY)))
+					myexit(1);
+				break;
 			case 'a':
 				strlcpy(cauth, optarg, MINIBUF_SIZE);
 				break;
@@ -1146,7 +1152,9 @@ int main(int argc, char **argv) {
 			exit_code = 1;
 		}
 
-		fprintf(stream, "Usage: %s [-aBcdFfgHhILlMNOPpqRrSsTUuvwXx] <proxy_host>[:]<proxy_port> ...\n", argv[0]);
+		fprintf(stream, "Usage: %s [-AaBcDdFfgHhILlMNOPpqRrSsTUuvwXx] <proxy_host>[:]<proxy_port> ...\n", argv[0]);
+		fprintf(stream, "\t-A  <address>[/<net>]\n"
+				"\t    ACL allow rule. IP or hostname, net must be a number (CIDR notation)\n");
 		fprintf(stream, "\t-a  ntlm | nt | lm"
 #ifdef ENABLE_KERBEROS
 				" | gss\n"
@@ -1161,6 +1169,8 @@ int main(int argc, char **argv) {
 		fprintf(stream, "\t-c  <config_file>\n"
 				"\t    Configuration file. Other arguments can be used as well, overriding\n"
 				"\t    config file settings.\n");
+		fprintf(stream, "\t-D  <address>[/<net>]\n"
+				"\t    ACL deny rule. Syntax same as -A.\n");
 		fprintf(stream, "\t-d  <domain>\n"
 				"\t    Domain/workgroup can be set separately.\n");
 		fprintf(stream, "\t-f  Run in foreground, do not fork into daemon mode.\n");
@@ -1393,6 +1403,23 @@ int main(int argc, char **argv) {
 			free(tmp);
 		}
 
+		/*
+		 * No ACLs on the command line? Use config file.
+		 */
+		if (rules == NULL) {
+			list = cf->options;
+			while (list) {
+				if (!(i=strcasecmp("Allow", list->key)) || !strcasecmp("Deny", list->key))
+					if (!acl_add(&rules, list->value, i ? ACL_DENY : ACL_ALLOW))
+						myexit(1);
+				list = list->next;
+			}
+
+			while ((tmp = config_pop(cf, "Allow")))
+				free(tmp);
+			while ((tmp = config_pop(cf, "Deny")))
+				free(tmp);
+		}
 
 		/*
 		 * Single options.
@@ -1924,6 +1951,21 @@ int main(int argc, char **argv) {
 
 				if (cd < 0) {
 					syslog(LOG_ERR, "Serious error during accept: %s\n", strerror(errno));
+					continue;
+				}
+
+				/*
+				 * Check main access control list.
+				 */
+				if (acl_check(rules, (struct sockaddr *)&caddr) != ACL_ALLOW) {
+					char s[INET6_ADDRSTRLEN] = {0};
+					INET_NTOP(&caddr, s, INET6_ADDRSTRLEN);
+					unsigned short port = INET_PORT(&caddr);
+					syslog(LOG_WARNING, "Connection denied for %s:%d\n", s, ntohs(port));
+					tmp = gen_denied_page(s);
+					(void) write_wrapper(cd, tmp, strlen(tmp)); // We don't really care about the result
+					free(tmp);
+					close(cd);
 					continue;
 				}
 
