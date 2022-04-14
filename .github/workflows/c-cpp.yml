@@ -27,26 +27,31 @@ jobs:
       run: |
         ./configure
         make
+        ./cntlm -h
         make distclean
     - name: Unicode build
       run: |
         ./configure
         CFLAGS=-DUNICODE make
+        ./cntlm -h
         make distclean
     - name: Build with pacparser enabled
       run: |
         ./configure --enable-pacparser
         make
+        ./cntlm -h
         make distclean
     - name: Build with kerberos enabled
       run: |
         ./configure --enable-kerberos
         make
+        ./cntlm -h
         make distclean
     - name: Verify debug build
       run: |
         ./configure
         make DEBUG=1
+        ./cntlm -h
         make distclean
     - name: Verify package creation and installation
       run: |
