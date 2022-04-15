@@ -18,7 +18,7 @@ VER		:= $(shell cat VERSION)
 OS		:= $(shell uname -s)
 OSLDFLAGS	:= $(shell [ $(OS) = "SunOS" ] && echo "-lrt -lsocket -lnsl")
 LDFLAGS		:= -lpthread $(OSLDFLAGS)
-CYGWIN_REQS	:= cygwin1.dll cyggcc_s-seh-1.dll cygstdc++-6.dll cygrunsrv.exe 
+CYGWIN_REQS	:= cygwin1.dll cygrunsrv.exe
 
 CFLAGS	+= -std=c99 -D__BSD_VISIBLE -D_ALL_SOURCE -D_XOPEN_SOURCE=600 -D_POSIX_C_SOURCE=200112 -D_ISOC99_SOURCE -D_REENTRANT -D_BSD_SOURCE -D_DARWIN_C_SOURCE -DVERSION=\"'$(VER)'\"
 CFLAGS	+= -Wall -Wextra -pedantic -Wshadow -Wcast-qual -Wbad-function-cast -Wstrict-prototypes
