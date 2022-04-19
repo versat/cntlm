@@ -38,9 +38,6 @@
 
 
 
-
-
-
 extern int debug;
 
 static void ntlm_set_key(const unsigned char *src, gl_des_ctx *context) {
@@ -242,7 +239,7 @@ int ntlm_request(char **dst, struct auth_s *creds) {
 	char *tmp;
 	int dlen;
 	int hlen;
-    negotiation_flags flags;
+	negotiation_flags flags;
 
 	*dst = NULL;
 	dlen = strlen(creds->domain);
@@ -277,58 +274,58 @@ int ntlm_request(char **dst, struct auth_s *creds) {
 	}
 
 
-    int payload_pos = 64 + 16;
-    buf = zmalloc(NTLM_BUFSIZE);
-    char* msg_pointer = buf;
+	int payload_pos = 64 + 16;
+	buf = zmalloc(NTLM_BUFSIZE);
+	char* msg_pointer = buf;
 
-    int payload_workstation_name_pos=payload_pos;
-    int payload_domain_pos=payload_workstation_name_pos+dlen;
-    // Signature (8 bytes): An 8-byte character array that MUST contain the ASCII string ('N', 'T', 'L', 'M',
-    //'S', 'S', 'P', '\0').
+	int payload_workstation_name_pos=payload_pos;
+	int payload_domain_pos=payload_workstation_name_pos+dlen;
+	// Signature (8 bytes): An 8-byte character array that MUST contain the ASCII string ('N', 'T', 'L', 'M',
+	//'S', 'S', 'P', '\0').
 	memcpy(buf, signature, 8);
-    msg_pointer += sizeof(signature);
-    //MessageType (4 bytes): A 32-bit unsigned integer that indicates the message type. This field MUST
-    //be set to 0x00000001.
+	msg_pointer += sizeof(signature);
+	//MessageType (4 bytes): A 32-bit unsigned integer that indicates the message type. This field MUST
+	//be set to 0x00000001.
 	VAL(buf, uint32_t, (int)(msg_pointer-buf)) = NEGOTIATE_MESSAGE;
-    msg_pointer += sizeof(NEGOTIATE_MESSAGE);
-    //NegotiateFlags (4 bytes): A NEGOTIATE structure that contains a set of flags, as defined in
-    //section 2.2.2.5. The client sets flags to indicate options it supports.
+	msg_pointer += sizeof(NEGOTIATE_MESSAGE);
+	//NegotiateFlags (4 bytes): A NEGOTIATE structure that contains a set of flags, as defined in
+	//section 2.2.2.5. The client sets flags to indicate options it supports.
 	VAL(buf, uint32_t, (int)(msg_pointer-buf)) = U32LE(flags.bits);
-    msg_pointer += sizeof(negotiation_flags);
+	msg_pointer += sizeof(negotiation_flags);
 
-    //DomainNameLen (2 bytes): A 16-bit unsigned integer that defines the size, in bytes, of
-    //DomainName in the Payload.
-    domain_name_fields domainNameFields = {
-            .fields = {
-                    .len = dlen,
-                    .max_len = domainNameFields.fields.len,
-                    .buffer_offset = 40 + hlen
-            }
-    };
-    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U16LE(domainNameFields.bits);
-    msg_pointer += sizeof(domainNameFields);
+	//DomainNameLen (2 bytes): A 16-bit unsigned integer that defines the size, in bytes, of
+	//DomainName in the Payload.
+	domain_name_fields domainNameFields = {
+			.fields = {
+					.len = dlen,
+					.max_len = domainNameFields.fields.len,
+					.buffer_offset = 40 + hlen
+			}
+	};
+	VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U16LE(domainNameFields.bits);
+	msg_pointer += sizeof(domainNameFields);
 
-    //WorkstationLen (2 bytes): A 16-bit unsigned integer that defines the size, in bytes, of
-    //WorkStationName in the Payload.
-    workstation_fields workstationFields = {
-            .fields = {
-                    .len = hlen,
-                    .max_len = workstationFields.fields.len,
-                    .buffer_offset = 40
-            }
-    };
-    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U16LE(workstationFields.bits);
-    msg_pointer += sizeof(workstationFields);
+	//WorkstationLen (2 bytes): A 16-bit unsigned integer that defines the size, in bytes, of
+	//WorkStationName in the Payload.
+	workstation_fields workstationFields = {
+			.fields = {
+					.len = hlen,
+					.max_len = workstationFields.fields.len,
+					.buffer_offset = 40
+			}
+	};
+	VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U16LE(workstationFields.bits);
+	msg_pointer += sizeof(workstationFields);
 
-    version version1 = {
-            .fields = {
-                    .product_build = 1,
-                    .product_major_version = 1,
-                    .product_minor_version = 1,
-                    .ntlm_revison_current = 0x0F
-            }
-    };
-    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = version1.bits;
+	version version1 = {
+			.fields = {
+					.product_build = 1,
+					.product_major_version = 1,
+					.product_minor_version = 1,
+					.ntlm_revison_current = 0x0F
+			}
+	};
+	VAL(buf, uint64_t, (int)(msg_pointer-buf)) = version1.bits;
    // msg_pointer += sizeof(version1);
 
 	tmp = uppercase(strdup(creds->workstation));
@@ -380,7 +377,7 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 #endif
 	char *buf;
 	char *udomain;
-    char *target;
+	char *target;
 	char *uuser;
 	char *uhost;
 	char *tmp;
@@ -396,7 +393,7 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 	char *nthash = NULL;
 	int lmlen = 0;
 	int ntlen = 0;
-    negotiation_flags flags;
+	negotiation_flags flags;
 
 	if (debug) {
 		printf("NTLM Challenge:\n");
@@ -406,49 +403,49 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 		printf("\t    Flags: 0x%X\n", U32LE(VAL(challenge, uint32_t, 20)));
 	}
 
-    udomain = creds->domain;
+	udomain = creds->domain;
 
 	if (challen >= NTLM_CHALLENGE_MIN) {
-        memcpy(&flags.bits,challenge+20,4);
-        if(creds->hashntlm2){
+		memcpy(&flags.bits,challenge+20,4);
+		if(creds->hashntlm2){
 
-        }else{
-            tbofs = tpos = U16LE(VAL(challenge, uint16_t, 44));
-            while (tpos+4 <= challen && (ttype = U16LE(VAL(challenge, uint16_t, tpos)))) {
-                tlen = U16LE(VAL(challenge, uint16_t, tpos+2));
-                if (tpos+4+tlen > challen)
-                    break;
+		}else{
+			tbofs = tpos = U16LE(VAL(challenge, uint16_t, 44));
+			while (tpos+4 <= challen && (ttype = U16LE(VAL(challenge, uint16_t, tpos)))) {
+				tlen = U16LE(VAL(challenge, uint16_t, tpos+2));
+				if (tpos+4+tlen > challen)
+					break;
 
-                if (debug) {
-                    switch (ttype) {
-                        case 0x1:
-                            printf("\t   Server: ");
-                            break;
-                        case 0x2:
-                            printf("\tNT domain: ");
-                            break;
-                        case 0x3:
-                            printf("\t     FQDN: ");
-                            break;
-                        case 0x4:
-                            printf("\t   Domain: ");
-                            break;
-                        case 0x5:
-                            printf("\t      TLD: ");
-                            break;
-                        default:
-                            printf("\t      %3d: ", ttype);
-                            break;
-                    }
-                    tmp = printuc(MEM(challenge, char, tpos+4), tlen);
-                    printf("%s\n", tmp);
-                    free(tmp);
-                }
+				if (debug) {
+					switch (ttype) {
+						case 0x1:
+							printf("\t   Server: ");
+							break;
+						case 0x2:
+							printf("\tNT domain: ");
+							break;
+						case 0x3:
+							printf("\t     FQDN: ");
+							break;
+						case 0x4:
+							printf("\t   Domain: ");
+							break;
+						case 0x5:
+							printf("\t      TLD: ");
+							break;
+						default:
+							printf("\t      %3d: ", ttype);
+							break;
+					}
+					tmp = printuc(MEM(challenge, char, tpos+4), tlen);
+					printf("%s\n", tmp);
+					free(tmp);
+				}
 
-                tpos += 4+tlen;
-                tblen += 4+tlen;
-            }
-        }
+				tpos += 4+tlen;
+				tblen += 4+tlen;
+			}
+		}
 
 		if (tblen && ttype == 0)
 			tblen += 4;
@@ -458,9 +455,9 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 		}
 	}
 
-    int udomlen = strlen(creds->domain);
+	int udomlen = strlen(creds->domain);
 	if (creds->hashntlm2 && !udomlen) {
-            return 0;
+		return 0;
 	}
 
 	if (creds->hashntlm2) {
@@ -515,118 +512,118 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 	}
 
 
-    int payload_pos = 64 + 16 + 8;
-    buf = zmalloc(NTLM_BUFSIZE);
-    char* msg_pointer = buf;
+	int payload_pos = 64 + 16 + 8;
+	buf = zmalloc(NTLM_BUFSIZE);
+	char* msg_pointer = buf;
 
-    int payload_domain_pos=payload_pos;
-    int payload_username_pos=payload_domain_pos+dlen;
-    int payload_workstation_name_pos=payload_username_pos+ulen;
-    int payload_lm_challenge_response_pos=payload_workstation_name_pos+hlen;
-    int payload_nt_challenge_response_pos=payload_lm_challenge_response_pos+lmlen;
-    int payload_encrypted_random_session_key_fields=payload_nt_challenge_response_pos+ntlen;
+	int payload_domain_pos=payload_pos;
+	int payload_username_pos=payload_domain_pos+dlen;
+	int payload_workstation_name_pos=payload_username_pos+ulen;
+	int payload_lm_challenge_response_pos=payload_workstation_name_pos+hlen;
+	int payload_nt_challenge_response_pos=payload_lm_challenge_response_pos+lmlen;
+	int payload_encrypted_random_session_key_fields=payload_nt_challenge_response_pos+ntlen;
 
-    int package_end= payload_encrypted_random_session_key_fields;
+	int package_end= payload_encrypted_random_session_key_fields;
 
 
-    /* signature */
+	/* signature */
 	memcpy(msg_pointer, signature, 8);
-    msg_pointer += sizeof(signature);
+	msg_pointer += sizeof(signature);
 
-    /* message type */
-    message_type type;
-    type.type = AUTHENTICATION_MESSAGE;
+	/* message type */
+	message_type type;
+	type.type = AUTHENTICATION_MESSAGE;
 	VAL(buf, uint32_t, 8) = U32LE(type.bits);
-    msg_pointer += sizeof(type);
+	msg_pointer += sizeof(type);
 
 	/* LM */
-    lm_challenge_response_fields lmChallengeResponseFields = {
-        .fields = {
-                .len =  lmlen,
-                .max_len = lmChallengeResponseFields.fields.len,
-                .buffer_offset = payload_lm_challenge_response_pos
-        }
-    };
+	lm_challenge_response_fields lmChallengeResponseFields = {
+		.fields = {
+				.len =  lmlen,
+				.max_len = lmChallengeResponseFields.fields.len,
+				.buffer_offset = payload_lm_challenge_response_pos
+		}
+	};
 
-    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U64LE(lmChallengeResponseFields.bits);
-    msg_pointer += sizeof(lmChallengeResponseFields);
+	VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U64LE(lmChallengeResponseFields.bits);
+	msg_pointer += sizeof(lmChallengeResponseFields);
 
 	/* NT */
-    nt_challenge_response_fields ntChallengeResponseFields = {
-            .fields = {
-                    .len = ntlen,
-                    .max_len = ntChallengeResponseFields.fields.len,
-                    .buffer_offset = payload_nt_challenge_response_pos
-            }
-    };
-    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U64LE(ntChallengeResponseFields.bits);
-    msg_pointer += sizeof(ntChallengeResponseFields);
+	nt_challenge_response_fields ntChallengeResponseFields = {
+			.fields = {
+					.len = ntlen,
+					.max_len = ntChallengeResponseFields.fields.len,
+					.buffer_offset = payload_nt_challenge_response_pos
+			}
+	};
+	VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U64LE(ntChallengeResponseFields.bits);
+	msg_pointer += sizeof(ntChallengeResponseFields);
 
 	/* Domain */
-    domain_name_fields domainNameFields = {
-        .fields= {
-            .len = dlen,
-            .max_len = domainNameFields.fields.len,
-            .buffer_offset = payload_domain_pos
-        }
-    };
+	domain_name_fields domainNameFields = {
+		.fields= {
+			.len = dlen,
+			.max_len = domainNameFields.fields.len,
+			.buffer_offset = payload_domain_pos
+		}
+	};
 	VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U64LE(domainNameFields.bits);
-    msg_pointer += sizeof(domainNameFields);
+	msg_pointer += sizeof(domainNameFields);
 
 	/* Username */
-    username_fields usernameFields = {
-            .fields = {
-                    .len = ulen,
-                    .max_len = usernameFields.fields.len,
-                    .buffer_offset = payload_username_pos
-            }
-    };
-    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U64LE(usernameFields.bits);
-    msg_pointer += sizeof(usernameFields);
+	username_fields usernameFields = {
+			.fields = {
+					.len = ulen,
+					.max_len = usernameFields.fields.len,
+					.buffer_offset = payload_username_pos
+			}
+	};
+	VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U64LE(usernameFields.bits);
+	msg_pointer += sizeof(usernameFields);
 
 	/* Hostname */
-    username_fields workstationFields = {
-            .fields = {
-                    .len = hlen,
-                    .max_len = workstationFields.fields.len,
-                    .buffer_offset = payload_workstation_name_pos
-            }
-    };
-    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U64LE(workstationFields.bits);
-    msg_pointer += sizeof(workstationFields);
+	username_fields workstationFields = {
+			.fields = {
+					.len = hlen,
+					.max_len = workstationFields.fields.len,
+					.buffer_offset = payload_workstation_name_pos
+			}
+	};
+	VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U64LE(workstationFields.bits);
+	msg_pointer += sizeof(workstationFields);
 
 	/* Session */
-    encrypted_random_session_key_fields encryptedRandomSessionKeyFields = {
-            .fields = {
-                    .len = 0,
-                    .max_len = encryptedRandomSessionKeyFields.fields.len,
-                    .buffer_offset = payload_encrypted_random_session_key_fields
-            }
-    };
+	encrypted_random_session_key_fields encryptedRandomSessionKeyFields = {
+			.fields = {
+					.len = 0,
+					.max_len = encryptedRandomSessionKeyFields.fields.len,
+					.buffer_offset = payload_encrypted_random_session_key_fields
+			}
+	};
 	VAL(buf, uint64_t, (int)(msg_pointer-buf)) = U64LE(encryptedRandomSessionKeyFields.bits);
-    msg_pointer += sizeof(encryptedRandomSessionKeyFields);
+	msg_pointer += sizeof(encryptedRandomSessionKeyFields);
 
 	/* Flags */
 	VAL(buf, uint32_t, (int)(msg_pointer-buf)) = U32LE(flags.bits);
-    msg_pointer += sizeof(flags);
+	msg_pointer += sizeof(flags);
 
-    /* Version */
-    version version1 = {
-            .fields = {
-                    .product_build = 1,
-                    .product_major_version = 1,
-                    .product_minor_version = 1,
-                    .ntlm_revison_current = 0x0F
-            }
-    };
-    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = version1.bits;
-    msg_pointer += sizeof(version1);
+	/* Version */
+	version version1 = {
+			.fields = {
+					.product_build = 1,
+					.product_major_version = 1,
+					.product_minor_version = 1,
+					.ntlm_revison_current = 0x0F
+			}
+	};
+	VAL(buf, uint64_t, (int)(msg_pointer-buf)) = version1.bits;
+	msg_pointer += sizeof(version1);
 
-    /* MIC */
-    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = 0;
-    msg_pointer += sizeof(uint64_t);
-    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = 0;
-    //msg_pointer += sizeof(uint64_t);
+	/* MIC */
+	VAL(buf, uint64_t, (int)(msg_pointer-buf)) = 0;
+	msg_pointer += sizeof(uint64_t);
+	VAL(buf, uint64_t, (int)(msg_pointer-buf)) = 0;
+	//msg_pointer += sizeof(uint64_t);
 
 	memcpy(MEM(buf, char, payload_domain_pos), udomain, dlen);
 	memcpy(MEM(buf, char, payload_username_pos), uuser, ulen);
