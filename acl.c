@@ -39,7 +39,7 @@
  * Add the rule spec to the ACL list.
  */
 int acl_add(plist_t *rules, char *spec, enum acl_t acl) {
-	struct addrinfo *addresses = NULL, *p;
+	struct addrinfo *addresses = NULL;
 	struct sockaddr_in *naddr = NULL;
 	network_t *aux;
 	int mask = 32;
@@ -54,7 +54,7 @@ int acl_add(plist_t *rules, char *spec, enum acl_t acl) {
 	i = strcspn(spec, "/");
 	if (i < strlen(spec)) {
 		spec[i] = 0;
-		mask = strtol(spec+i+1, &tmp, 10);
+		mask = (int)strtol(spec+i+1, &tmp, 10);
 		if (mask < 0 || mask > 32 || spec[i+1] == 0 || *tmp != 0) {
 			syslog(LOG_ERR, "ACL netmask for %s is invalid\n", spec);
 			free(aux);
@@ -77,7 +77,7 @@ int acl_add(plist_t *rules, char *spec, enum acl_t acl) {
 
 	if (addresses != NULL) {
 		// TODO only ipv4 client addresses are supported for now
-		for (p = addresses; p != NULL; p = p->ai_next) {
+		for (struct addrinfo *p = addresses; p != NULL; p = p->ai_next) {
 			if (p->ai_family == AF_INET) {
 				naddr = (struct sockaddr_in*)p->ai_addr;
 				break;
@@ -121,13 +121,13 @@ int acl_add(plist_t *rules, char *spec, enum acl_t acl) {
 enum acl_t acl_check(plist_const_t rules, struct sockaddr *caddr) {
 	// TODO only ipv4 client addresses are supported for now
 	if (rules && caddr->sa_family == AF_INET) {
-		struct sockaddr_in* naddr = (struct sockaddr_in*)caddr;
+		const struct sockaddr_in* naddr = (struct sockaddr_in*)caddr;
 		while (rules) {
 			const network_t * const aux = (network_t *)rules->aux;
 			const unsigned int mask = swap32(~(((uint64_t)1 << (32-aux->mask)) - 1));
 
 			if ((naddr->sin_addr.s_addr & mask) == (aux->ip & mask))
-				return rules->key;
+				return (enum acl_t)rules->key;
 
 			rules = rules->next;
 		}

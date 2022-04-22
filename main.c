@@ -1409,8 +1409,8 @@ int main(int argc, char **argv) {
 		if (rules == NULL) {
 			list = cf->options;
 			while (list) {
-				if (!(i=strcasecmp("Allow", list->key)) || !strcasecmp("Deny", list->key))
-					if (!acl_add(&rules, list->value, i ? ACL_DENY : ACL_ALLOW))
+				if ((!(i=strcasecmp("Allow", list->key)) || !strcasecmp("Deny", list->key))
+					&& !acl_add(&rules, list->value, i ? ACL_DENY : ACL_ALLOW))
 						myexit(1);
 				list = list->next;
 			}
