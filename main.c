@@ -310,7 +310,7 @@ void listen_add(const char *service, plist_t *list, char *spec, int gateway) {
 	}
 
 	i = so_listen(list, addresses, NULL);
-	if (i == 0) {
+	if (i > 0) {
 		syslog(LOG_INFO, "New %s service on %s\n", service, spec);
 	}
 	freeaddrinfo(addresses);
@@ -368,7 +368,7 @@ void tunnel_add(plist_t *list, char *spec, int gateway) {
 		strlcat(tmp, field[pos+2], tmp_len);
 
 		i = so_listen(list, addresses, tmp);
-		if (i == 0) {
+		if (i > 0) {
 			syslog(LOG_INFO, "New tunnel to %s\n", tmp);
 		} else {
 			syslog(LOG_ERR, "Unable to bind tunnel");

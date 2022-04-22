@@ -38,7 +38,7 @@
 extern int debug;
 
 /*
- * gethostbyname() wrapper. Return 1 if OK, otherwise 0.
+ * getaddrinfo() wrapper. Return 1 if OK, otherwise 0.
  * Important: Caller is responsible for freeing addresses via freeaddrinfo()!
  */
 int so_resolv(struct addrinfo **addresses, const char *hostname, const int port) {
@@ -68,6 +68,12 @@ int so_resolv(struct addrinfo **addresses, const char *hostname, const int port)
 	return 1;
 }
 
+/*
+ * getaddrinfo() wrapper, wildcard mode. If "gateway" is 0 the network address
+ * will be set to the loopback interface address, otherwise it will contain
+ * the "wildcard address" (gateway mode).
+ * Important: Caller is responsible for freeing addresses via freeaddrinfo()!
+ */
 int so_resolv_wildcard(struct addrinfo **addresses, const int port, int gateway) {
 	struct addrinfo hints;
 	char buf[6];
@@ -150,11 +156,13 @@ int so_connect(struct addrinfo *addresses) {
 
 /*
  * Bind the specified port and listen on it.
+ * Retruns: number of successful binds
  */
 int so_listen(plist_t *list, struct addrinfo *addresses, void *aux) {
 	socklen_t clen;
 	struct addrinfo *p;
 	char s[INET6_ADDRSTRLEN] = {0};
+	int count = 0;
 
 	for (p = addresses; p != NULL; p = p->ai_next) {
 		int fd = socket(p->ai_family, SOCK_STREAM, 0);
@@ -162,12 +170,19 @@ int so_listen(plist_t *list, struct addrinfo *addresses, void *aux) {
 			if (debug)
 				printf("so_listen: new socket: %s\n", strerror(errno));
 			close(fd);
-			return -1;
+			continue;
 		}
 
 		clen = 1;
 		if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &clen, sizeof(clen)) != 0) {
 			syslog(LOG_WARNING, "setsockopt() (option: SO_REUSEADDR, value: 1) failed: %s\n", strerror(errno));
+		}
+
+		if (p->ai_family == AF_INET6) {
+			clen = 1;
+			if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &clen, sizeof(clen)) != 0) {
+				syslog(LOG_WARNING, "setsockopt() (option: IPV6_V6ONLY, value: 1) failed: %s\n", strerror(errno));
+			}
 		}
 
 		INET_NTOP(p->ai_addr, s, INET6_ADDRSTRLEN);
@@ -176,19 +191,20 @@ int so_listen(plist_t *list, struct addrinfo *addresses, void *aux) {
 		if (bind(fd, p->ai_addr, p->ai_addrlen)) {
 			syslog(LOG_ERR, "Cannot bind address %s port %d: %s!\n", s, ntohs(port), strerror(errno));
 			close(fd);
-			return -1;
+			continue;
 		}
 
 		if (listen(fd, SOMAXCONN)) {
 			close(fd);
-			return -1;
+			continue;
 		}
 
 		*list = plist_add(*list, fd, aux);
 		syslog(LOG_INFO, "so_listen: listening on %s:%d\n", s, ntohs(port));
+		++count;
 	}
 
-	return 0;
+	return count;
 }
 
 /*
