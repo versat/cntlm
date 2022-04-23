@@ -1890,7 +1890,7 @@ int main(int argc, char **argv) {
 	 */
 	while (quit == 0 || (tc != tj && quit < 2)) {
 		struct thread_arg_s *data;
-		struct sockaddr_in6 caddr;
+		union sock_addr caddr;
 		struct timeval tv;
 		socklen_t clen;
 		fd_set set;
@@ -1947,7 +1947,7 @@ int main(int argc, char **argv) {
 					continue;
 
 				clen = sizeof(caddr);
-				cd = accept(i, (struct sockaddr *)&caddr, (socklen_t *)&clen);
+				cd = accept(i, &caddr.addr, &clen);
 
 				if (cd < 0) {
 					syslog(LOG_ERR, "Serious error during accept: %s\n", strerror(errno));
@@ -1957,7 +1957,7 @@ int main(int argc, char **argv) {
 				/*
 				 * Check main access control list.
 				 */
-				if (acl_check(rules, (struct sockaddr *)&caddr) != ACL_ALLOW) {
+				if (acl_check(rules, &caddr.addr) != ACL_ALLOW) {
 					char s[INET6_ADDRSTRLEN] = {0};
 					INET_NTOP(&caddr, s, INET6_ADDRSTRLEN);
 					unsigned short port = INET_PORT(&caddr);

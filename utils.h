@@ -103,12 +103,22 @@ struct rr_data_s {
 };
 
 /*
+ * This structure can represent a sockaddr or
+ * an AF_INET (ipv4) sockaddr or an AF_INET6 (ipv6) sockaddr
+ */
+union sock_addr {
+	struct sockaddr addr;
+	struct sockaddr_in addr_in;
+	struct sockaddr_in6 addr_in6;
+};
+
+/*
  * This is used in main() for passing arguments to the thread.
  */
 struct thread_arg_s {
 	int fd;
 	char *target;
-	struct sockaddr_in6 addr;
+	union sock_addr addr;
 };
 
 /*
