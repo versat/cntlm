@@ -590,7 +590,7 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 	}
 
 
-    int payload_pos = 64 + 16 + 8;
+    int payload_pos = 64 + 16;
     buf = zmalloc(NTLM_BUFSIZE);
     char* msg_pointer = buf;
 
@@ -599,7 +599,7 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
     int payload_workstation_name_pos=payload_username_pos+ulen;
     int payload_lm_challenge_response_pos=payload_workstation_name_pos+hlen;
     int payload_nt_challenge_response_pos=payload_lm_challenge_response_pos+lmlen;
-    int payload_encrypted_random_session_key_fields=payload_nt_challenge_response_pos+ntlen;
+    int payload_encrypted_random_session_key_fields=payload_nt_challenge_response_pos+0;
 
     int package_end= payload_encrypted_random_session_key_fields;
 
@@ -685,23 +685,10 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 	VAL(buf, uint32_t, (int)(msg_pointer-buf)) = U32LE(flags.bits);
     msg_pointer += sizeof(flags);
 
-    /* Version */
-    version version1 = {
-            .fields = {
-                    .product_build = 1,
-                    .product_major_version = 1,
-                    .product_minor_version = 1,
-                    .ntlm_revison_current = 0x0F
-            }
-    };
-    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = version1.bits;
-    msg_pointer += sizeof(version1);
-
     /* MIC */
-    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = 0;
+    VAL(buf, uint32_t, (int)(msg_pointer-buf)) = 0;
     msg_pointer += sizeof(uint64_t);
-    VAL(buf, uint64_t, (int)(msg_pointer-buf)) = 0;
-    msg_pointer += sizeof(uint64_t);
+
 
 	memcpy(MEM(buf, char, payload_domain_pos), udomain, dlen);
 	memcpy(MEM(buf, char, payload_username_pos), uuser, ulen);
