@@ -19,13 +19,14 @@ OS		:= $(shell uname -s)
 OSLDFLAGS	:= $(shell [ $(OS) = "SunOS" ] && echo "-lrt -lsocket -lnsl")
 LDFLAGS		:= -lpthread $(OSLDFLAGS)
 CYGWIN_REQS	:= cygwin1.dll cygrunsrv.exe
-GCC_GTEQ_430 := $(shell expr `${CC} -dumpversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 40300)
-GCC_GTEQ_450 := $(shell expr `${CC} -dumpversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 40500)
-GCC_GTEQ_600 := $(shell expr `${CC} -dumpversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 60000)
-GCC_GTEQ_700 := $(shell expr `${CC} -dumpversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 70000)
+GCC_GTEQ_430 := $(shell expr `${CC} -dumpfullversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 40300)
+GCC_GTEQ_450 := $(shell expr `${CC} -dumpfullversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 40500)
+GCC_GTEQ_600 := $(shell expr `${CC} -dumpfullversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 60000)
+GCC_GTEQ_700 := $(shell expr `${CC} -dumpfullversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 70000)
 
-CFLAGS	+= -std=c99 -D__BSD_VISIBLE -D_ALL_SOURCE -D_XOPEN_SOURCE=600 -D_POSIX_C_SOURCE=200112 -D_ISOC99_SOURCE -D_REENTRANT -D_BSD_SOURCE -D_DARWIN_C_SOURCE -DVERSION=\"'$(VER)'\"
+CFLAGS	+= -std=c99 -D__BSD_VISIBLE -D_ALL_SOURCE -D_XOPEN_SOURCE=600 -D_POSIX_C_SOURCE=200112 -D_ISOC99_SOURCE -D_REENTRANT -D_BSD_SOURCE -D_DEFAULT_SOURCE -D_DARWIN_C_SOURCE -DVERSION=\"'$(VER)'\"
 CFLAGS	+= -Wall -Wextra -pedantic -Wshadow -Wcast-qual -Wbad-function-cast -Wstrict-prototypes
+CFLAGS	+= -D_FORTIFY_SOURCE=1
 #CFLAGS  += -ftrapv
 #CFLAGS  += -fsanitize=undefined -fsanitize-undefined-trap-on-error
 ifeq "$(GCC_GTEQ_430)" "1"
@@ -37,6 +38,11 @@ endif
 ifeq "$(GCC_GTEQ_600)" "1"
 	CFLAGS += -Wduplicated-cond
 	CFLAGS += -Wnull-dereference
+	CFLAGS += -Werror=uninitialized
+	CFLAGS += -Wformat=2
+	CFLAGS += -Wformat-overflow=2
+	CFLAGS += -Wformat-truncation=2
+	CFLAGS += -Wformat-security
 endif
 ifeq "$(GCC_GTEQ_700)" "1"
 	CFLAGS += -Wduplicated-branches
@@ -49,7 +55,7 @@ ifeq ($(COVERAGE),1)
 else
 	ifeq ($(DEBUG),1)
 		# DEBUG
-		CFLAGS	+= -g -O1
+		CFLAGS	+= -g -O0
 	else
 		# RELEASE
 		CFLAGS	+= -O3
@@ -176,19 +182,19 @@ endif
 	@echo Win64: generating GUI installer
 	@win/Inno5/ISCC.exe /Q win/setup.iss #/Q win/setup.iss
 
-$(NAME)-$(VER)-win64.zip: 
+$(NAME)-$(VER)-win64.zip:
 	@echo Win64: creating ZIP release for manual installs
 	@ln -s win $(NAME)-$(VER)
-	zip -9 $@ $(patsubst %, $(NAME)-$(VER)/%, cntlm.exe $(CYGWIN_REQS) cntlm.ini LICENSE.txt cntlm_manual.pdf) 
+	zip -9 $@ $(patsubst %, $(NAME)-$(VER)/%, cntlm.exe $(CYGWIN_REQS) cntlm.ini LICENSE.txt cntlm_manual.pdf)
 	@rm -f $(NAME)-$(VER)
 
-win/cntlm.ini: doc/cntlm.conf 
+win/cntlm.ini: doc/cntlm.conf
 	@cat doc/cntlm.conf | unix2dos > $@
 
 win/LICENSE.txt: COPYRIGHT LICENSE
 	@cat COPYRIGHT LICENSE | unix2dos > $@
 
-win/cntlm_manual.pdf: doc/cntlm.1 
+win/cntlm_manual.pdf: doc/cntlm.1
 	@echo Win64: generating PDF manual
 	@rm -f $@
 	@groff -t -e -mandoc -Tps doc/cntlm.1 | ps2pdf - $@
