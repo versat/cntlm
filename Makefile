@@ -43,7 +43,6 @@ ifeq "$(GCC_GTEQ_600)" "1"
 	CFLAGS += -Wformat-overflow=2
 	CFLAGS += -Wformat-truncation=2
 	CFLAGS += -Wformat-security
-	CFLAGS += -Wzero-length-bounds
 endif
 ifeq "$(GCC_GTEQ_700)" "1"
 	CFLAGS += -Wduplicated-branches
