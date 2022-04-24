@@ -148,7 +148,7 @@ static int ntlm_calc_resp(char **dst, char *keys, const char *challenge) {
 }
 
 static void ntlm2_calc_resp(char **nthash, int *ntlen, char **lmhash, int *lmlen,
-		const char *passnt2, char *challenge, char* userDom, int userDomLen) {
+		const char *passnt2, char *challenge, int tbofs, int tblen) {
 	char *tmp;
 	char *blob;
 	char *nonce;
@@ -170,15 +170,15 @@ static void ntlm2_calc_resp(char **nthash, int *ntlen, char **lmhash, int *lmlen
 		free(tmp);
 	}
 
-	blob = zmalloc(4+4+8+8+4+userDomLen+4 + 1);
+	blob = zmalloc(4+4+8+8+4+tblen+4 + 1);
 	VAL(blob, uint32_t, 0) = U32LE(0x00000101);
 	VAL(blob, uint32_t, 4) = U32LE(0);
 	VAL(blob, uint64_t, 8) = U64LE(tw);
 	VAL(blob, uint64_t, 16) = U64LE(VAL(nonce, uint64_t, 0));
 	VAL(blob, uint32_t, 24) = U32LE(0);
-	memcpy(blob+28, userDom, userDomLen);
-	memset(blob+28+userDomLen, 0, 4);
-	blen = 28+userDomLen+4;
+	memcpy(blob+28, MEM(challenge, char, tbofs), tblen);
+	memset(blob+28+tblen, 0, 4);
+	blen = 28+tblen+4;
 
 	if (0 && debug) {
 		tmp = printmem(blob, blen, 7);
@@ -455,7 +455,6 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 #endif
 	char *buf;
 	char *udomain;
-    char *target;
 	char *uuser;
 	char *uhost;
 	char *tmp;
@@ -481,19 +480,19 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 		printf("\t    Flags: 0x%X\n", U32LE(VAL(challenge, uint32_t, 20)));
 	}
 
+    uint32_t test;
 	if (challen >= NTLM_CHALLENGE_MIN) {
         if(creds->hashntlm2){
             memcpy(&flags.bits,challenge+20,4);
 
             if(flags.flags.target_type_domain){
                 udomain = creds->domain;
-                target = &creds->domain;
-                tlen = ulen;
             }else{
                 printf("unsupported type\n");
                 return 0;
             }
 
+            memcpy(&test,challenge+20,4);
         }else{
             tbofs = tpos = U16LE(VAL(challenge, uint16_t, 44));
             while (tpos+4 <= challen && (ttype = U16LE(VAL(challenge, uint16_t, tpos)))) {
@@ -540,19 +539,22 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 		}
 	}
 
-    int udomlen = strlen(creds->domain);
 	if (creds->hashntlm2 && !tblen) {
         //workaround to default to userDom
         if(flags.flags.target_type_domain) {
             //TODO: cleanup
-            target = creds->domain;
+            int udomlen = strlen(udomain);
+            challenge = realloc(challenge, challen + udomlen);
+            memcpy(challenge + challen, udomain, udomlen);
+            tbofs = challen;
+            tblen = udomlen;
         }else{
             return 0;
         }
 	}
 
 	if (creds->hashntlm2) {
-		ntlm2_calc_resp(&nthash, &ntlen, &lmhash, &lmlen, creds->passntlm2, challenge, creds->domain, udomlen);
+		ntlm2_calc_resp(&nthash, &ntlen, &lmhash, &lmlen, creds->passntlm2, challenge, tbofs, tblen);
 	}
 
 	if (creds->hashnt == 2) {
