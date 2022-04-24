@@ -49,7 +49,7 @@ ifeq ($(COVERAGE),1)
 else
 	ifeq ($(DEBUG),1)
 		# DEBUG
-		CFLAGS	+= -g -O0
+		CFLAGS	+= -g -O1
 	else
 		# RELEASE
 		CFLAGS	+= -O3
