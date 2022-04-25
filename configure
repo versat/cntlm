@@ -27,7 +27,7 @@ if [ -z "$CC" ]; then
 	# Look for supported compilers
 	#
 	for c in $CCS; do
-		if CCPATH=$(which $c 2>&1) && [ -z "${CCPATH%%/*}" ]; then
+		if CCPATH=$(which $c 2>&1) && [ -z "${CCPATH%%/*}" ] && $(echo "#include <sys/socket.h>" | $c); then
 			CC="$c"
 			break
 		fi
