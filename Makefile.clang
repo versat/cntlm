@@ -20,21 +20,21 @@ OSLDFLAGS	:= $(shell [ $(OS) = "SunOS" ] && echo "-lrt -lsocket -lnsl")
 LDFLAGS		:= -lpthread $(OSLDFLAGS)
 CYGWIN_REQS	:= cygwin1.dll cygrunsrv.exe
 
-CFLAGS	+= -std=c99 -D__BSD_VISIBLE -D_ALL_SOURCE -D_XOPEN_SOURCE=600 -D_POSIX_C_SOURCE=200112 -D_ISOC99_SOURCE -D_REENTRANT -D_BSD_SOURCE -D_DARWIN_C_SOURCE -DVERSION=\"'$(VER)'\"
+CFLAGS	+= -std=c99 -D__BSD_VISIBLE -D_ALL_SOURCE -D_XOPEN_SOURCE=600 -D_POSIX_C_SOURCE=200112 -D_ISOC99_SOURCE -D_REENTRANT -D_BSD_SOURCE -D_DEFAULT_SOURCE -D_DARWIN_C_SOURCE -DVERSION=\"'$(VER)'\"
 CFLAGS	+= -Wall -Wextra -pedantic -Wshadow -Wcast-qual -Wbad-function-cast -Wstrict-prototypes
-#CFLAGS	+= -v
+CFLAGS	+= -v
 ifeq ($(DEBUG),1)
 	# DEBUG
-	CFLAGS	+= -g -O3
+	CFLAGS	+= -g -O0
 else
 	# RELEASE
 	CFLAGS	+= -O3
 endif
 
 ifneq ($(findstring CYGWIN,$(OS)),)
-	OBJS=utils.o ntlm.o xcrypt.o config.o socket.o auth.o http.o forward.o direct.o scanner.o pages.o main.o sspi.o win/resources.o
+	OBJS=utils.o ntlm.o xcrypt.o config.o socket.o acl.o auth.o http.o forward.o direct.o scanner.o pages.o main.o sspi.o win/resources.o
 else
-	OBJS=utils.o ntlm.o xcrypt.o config.o socket.o auth.o http.o forward.o direct.o scanner.o pages.o main.o
+	OBJS=utils.o ntlm.o xcrypt.o config.o socket.o acl.o auth.o http.o forward.o direct.o scanner.o pages.o main.o
 endif
 
 ENABLE_KERBEROS=$(shell grep -c ENABLE_KERBEROS config/config.h)
@@ -48,12 +48,10 @@ ifeq ($(ENABLE_PACPARSER),1)
 	LDFLAGS+=-lpacparser
 endif
 
-
 ENABLE_STATIC=$(shell grep -c ENABLE_STATIC config/config.h)
 ifeq ($(ENABLE_STATIC),1)
         LDFLAGS+=-static
 endif
-
 
 all: $(NAME)
 
@@ -151,19 +149,19 @@ endif
 	@echo Win64: generating GUI installer
 	@win/Inno5/ISCC.exe /Q win/setup.iss #/Q win/setup.iss
 
-$(NAME)-$(VER)-win64.zip: 
+$(NAME)-$(VER)-win64.zip:
 	@echo Win64: creating ZIP release for manual installs
 	@ln -s win $(NAME)-$(VER)
-	zip -9 $@ $(patsubst %, $(NAME)-$(VER)/%, cntlm.exe $(CYGWIN_REQS) cntlm.ini LICENSE.txt cntlm_manual.pdf) 
+	zip -9 $@ $(patsubst %, $(NAME)-$(VER)/%, cntlm.exe $(CYGWIN_REQS) cntlm.ini LICENSE.txt cntlm_manual.pdf)
 	@rm -f $(NAME)-$(VER)
 
-win/cntlm.ini: doc/cntlm.conf 
+win/cntlm.ini: doc/cntlm.conf
 	@cat doc/cntlm.conf | unix2dos > $@
 
 win/LICENSE.txt: COPYRIGHT LICENSE
 	@cat COPYRIGHT LICENSE | unix2dos > $@
 
-win/cntlm_manual.pdf: doc/cntlm.1 
+win/cntlm_manual.pdf: doc/cntlm.1
 	@echo Win64: generating PDF manual
 	@rm -f $@
 	@groff -t -e -mandoc -Tps doc/cntlm.1 | ps2pdf - $@

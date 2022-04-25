@@ -22,3 +22,6 @@ cntlm*.tar.gz
 /win/cntlm.ini
 /win/LICENSE.txt
 .vscode
+.cproject
+.project
+.settings/

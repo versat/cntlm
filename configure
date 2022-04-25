@@ -21,13 +21,13 @@ if [ -n "$CC" ]; then
 fi
 
 if [ -z "$CC" ]; then
-	CCS="xlc_r gcc clang"
+	CCS="xlc_r clang gcc"
 
 	#
 	# Look for supported compilers
 	#
 	for c in $CCS; do
-		if CCPATH=`which $c 2>&1` && [ -z "${CCPATH%%/*}" ]; then
+		if CCPATH=$(which $c 2>&1) && [ -z "${CCPATH%%/*}" ] && $(echo "#include <sys/socket.h>" | $c -fsyntax-only -x c -); then
 			CC="$c"
 			break
 		fi
@@ -52,7 +52,7 @@ else
 			fi
 			;;
 		*)
-			EXT=`echo "$CC" | sed 's/_.*//'`
+			EXT=$(echo "$CC" | sed 's/_.*//')
 			if [ ! -f "Makefile.$EXT" ]; then
 				echo "There must be a file 'Makefile.$EXT' to compile it with $CC"
 				exit 1
@@ -82,14 +82,14 @@ echo "" >> $CONFIG
 for i in $TESTS; do
 	printf "Checking $i... "
 	printf "#define config_$i " >> $CONFIG
-	OUT=`$CC -std=c99 -D__BSD_VISIBLE -D_ALL_SOURCE -D_XOPEN_SOURCE=600 -D_POSIX_C_SOURCE=200112 -D_ISOC99_SOURCE -D_REENTRANT -D_BSD_SOURCE -D_DARWIN_C_SOURCE -o config/$i config/$i.c 2>&1`
+	$CC -std=c99 -D__BSD_VISIBLE -D_ALL_SOURCE -D_XOPEN_SOURCE=600 -D_POSIX_C_SOURCE=200112 -D_ISOC99_SOURCE -D_REENTRANT -D_BSD_SOURCE -D_DEFAULT_SOURCE -D_DARWIN_C_SOURCE -o config/$i config/$i.c 2> /dev/null
 	rc=$?
 
 	if [ $rc -ne 0 ]; then # -o -n "$OUT" ]; then
 		rc=0
 		RET=no
 	else
-		RET=`./config/$i`
+		RET=$(./config/$i)
 		rc=$?
 		[ -z "$RET" ] && if [ $rc -eq 0 ]; then RET="no"; else RET=yes; fi
 	fi

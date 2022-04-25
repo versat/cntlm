@@ -73,7 +73,20 @@ all of its settings.
 
 Use \fB-h\fP to see available options with short description.
 
-.TP 
+.TP
+.B -A IP/mask\ \ \ \ (Allow)
+Allow ACL rule. Together with \fB-D\fP (Deny) they are the two rules allowed in ACL policy. It is more usual
+to have this in a configuration file, but \fBCntlm\fP follows the premise that you can do the same on the
+command-line as you can using the config file. When \fBCntlm\fP receives a connection request, it decides
+whether to allow or deny it. All ACL rules are stored in a list in the same order as specified. \fBCntlm\fP
+then walks the list and the first \fIIP/mask\fP rule that matches the request source address is applied. The
+\fImask\fP can be any number from 0 to 32, where 32 is the default (that is exact IP match). This notation is
+also known as CIDR. If you want to match everything, use \fB0/0\fP or an asterix. ACLs on the command-line
+take precedence over those in the config file. In such case, you will see info about that in the log (among
+the list of unused options). There you can also see warnings about possibly incorrect subnet spec, that's when
+the \fIIP\fP part has more bits than you declare by \fImask\fP (e.g. 10.20.30.40/24 should be 10.20.30.0/24).
+
+.TP
 .B -a NTLMv2 | NTLM2SR | NT | NTLM | LM | GSS\ \ \ \ (Auth)
 Authentication type. NTLM(v2) comprises of one or two hashed responses, NT and LM or NTLM2SR or NTv2 and LMv2,
 which are computed from the password hash. Each response uses a different hashing algorithm; as new response
@@ -119,8 +132,12 @@ username in the password dialog: "domain\\username".
 .TP 
 .B -c <filename>
 Configuration file. Command-line options, if used, override its single options or are added at the top of the
-list for multi options (tunnels, parent proxies, etc).
-Use \fI/dev/null\fP to disable any config file.
+list for multi options (tunnels, parent proxies, etc) with the exception of ACLs, which are completely
+overridden. Use \fI/dev/null\fP to disable any config file.
+
+.TP
+.B -D IP/mask\ \ \ \ (Deny)
+Deny ACL rule. See option \fB-A\fP above.
 
 .TP
 .B -d <domain>\ \ \ \ (Domain)
@@ -362,14 +379,22 @@ pound signs, etc. No escape sequences are allowed in quoted strings.
 
 There are two types of keywords, \fIlocal\fP and \fIglobal\fP. Local options specify authentication details
 per domain (or location). Global keywords apply to all sections and proxies. They should be placed before all
-sections, but it's not necessary. They are: \fCGateway, Listen, SOCKS5Proxy, SOCKS5User,
+sections, but it's not necessary. They are: \fCAllow, Deny, Gateway, Listen, SOCKS5Proxy, SOCKS5User,
 NTLMToBasic, Tunnel\fP.
 
 All available keywords are listed here, full descriptions are in the OPTIONS section:
 
 .TP
+.B Allow <IP>[/<mask>]
+ACL allow rule, see \fB-A\fP.
+
+.TP
 .B Auth NTLMv2 | NTLM2SR | NT | NTLM | LM
 Select any possible combination of NTLM hashes using a single parameter.
+
+.TP
+.B Deny <IP>[/<mask>]
+ACL deny rule, see \fB-A\fP.
 
 .TP
 .B Domain <domain_name>
