@@ -19,10 +19,11 @@ OS		:= $(shell uname -s)
 OSLDFLAGS	:= $(shell [ $(OS) = "SunOS" ] && echo "-lrt -lsocket -lnsl")
 LDFLAGS		:= -lpthread $(OSLDFLAGS)
 CYGWIN_REQS	:= cygwin1.dll cygrunsrv.exe
-GCC_GTEQ_430 := $(shell expr `${CC} -dumpfullversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 40300)
-GCC_GTEQ_450 := $(shell expr `${CC} -dumpfullversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 40500)
-GCC_GTEQ_600 := $(shell expr `${CC} -dumpfullversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 60000)
-GCC_GTEQ_700 := $(shell expr `${CC} -dumpfullversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 70000)
+GCC_VER := $(shell ${CC} -dumpfullversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/')
+GCC_GTEQ_430 := $(shell expr ${GCC_VER} \>= 40300)
+GCC_GTEQ_450 := $(shell expr ${GCC_VER} \>= 40500)
+GCC_GTEQ_600 := $(shell expr ${GCC_VER} \>= 60000)
+GCC_GTEQ_700 := $(shell expr ${GCC_VER} \>= 70000)
 
 CFLAGS	+= -std=c99 -D__BSD_VISIBLE -D_ALL_SOURCE -D_XOPEN_SOURCE=600 -D_POSIX_C_SOURCE=200112 -D_ISOC99_SOURCE -D_REENTRANT -D_BSD_SOURCE -D_DEFAULT_SOURCE -D_DARWIN_C_SOURCE -DVERSION=\"'$(VER)'\"
 CFLAGS	+= -Wall -Wextra -pedantic -Wshadow -Wcast-qual -Wbad-function-cast -Wstrict-prototypes
@@ -79,12 +80,10 @@ ifeq ($(ENABLE_PACPARSER),1)
 	LDFLAGS+=-lpacparser
 endif
 
-
 ENABLE_STATIC=$(shell grep -c ENABLE_STATIC config/config.h)
 ifeq ($(ENABLE_STATIC),1)
         LDFLAGS+=-static
 endif
-
 
 all: $(NAME)
 
