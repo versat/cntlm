@@ -21,7 +21,7 @@ if [ -n "$CC" ]; then
 fi
 
 if [ -z "$CC" ]; then
-	CCS="xlc_r gcc clang"
+	CCS="xlc_r clang gcc"
 
 	#
 	# Look for supported compilers
