@@ -134,14 +134,9 @@ pthread_mutex_t pacparser_mtx = PTHREAD_MUTEX_INITIALIZER;
  * General signal handler. If in debug mode, quit immediately.
  */
 void sighandler(int p) {
-	if (!quit) {
+	if (!quit)
 		syslog(LOG_INFO, "Signal %d received, issuing clean shutdown\n", p);
-#ifdef ENABLE_PACPARSER
-		if (pacparser_initialized) {
-			pacparser_cleanup();
-		}
-#endif
-	} else
+	else
 		syslog(LOG_INFO, "Signal %d received, forcing shutdown\n", p);
 
 	if (quit++ || debug)
@@ -2049,6 +2044,10 @@ bailout:
 	plist_free(rules);
 
 #ifdef ENABLE_PACPARSER
+	if (pacparser_initialized) {
+		pacparser_cleanup();
+	}
+
 	free(pac_file);
 #endif
 
