@@ -50,8 +50,6 @@ void UnloadSecurityDll(HMODULE hModule) {
 	if (hModule)
 		FreeLibrary(hModule);
 
-	sspi_dll = NULL;
-
 	_AcceptSecurityContext      = NULL;
 	_AcquireCredentialsHandle   = NULL;
 	_CompleteAuthToken          = NULL;
@@ -193,6 +191,15 @@ int sspi_set(char* mode)
 	}
 	sspi_mode = NULL;
 	return 0;
+}
+
+int sspi_unset(char* mode)
+{
+	free(sspi_mode);
+	sspi_mode = NULL;
+	UnloadSecurityDll(sspi_dll);
+	sspi_dll = NULL;
+	return 1;
 }
 
 int sspi_request(char **dst, struct sspi_handle *sspi)

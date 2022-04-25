@@ -42,6 +42,7 @@ struct sspi_handle
 
 extern int sspi_enabled(void);
 extern int sspi_set(char *mode);
+extern int sspi_unset();
 
 extern int sspi_request(char **dst, struct sspi_handle *sspi);
 extern int sspi_response(char **dst, char *challenge, int challen, struct sspi_handle *sspi);

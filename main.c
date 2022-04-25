@@ -2058,5 +2058,10 @@ bailout:
 
 	proxylist_free(parent_list);
 
+#ifdef __CYGWIN__
+	if (sspi_enabled())
+		sspi_unset();
+#endif
+
 	exit(0);
 }
