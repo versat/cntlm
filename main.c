@@ -1839,7 +1839,7 @@ int main(int argc, char **argv) {
 		umask(0);
 		cd = open(cpidfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 		if (cd < 0) {
-			syslog(LOG_ERR, "Error creating a new PID file\n");
+			syslog(LOG_ERR, "Error creating a new PID file (%s)\n", strerror(errno));
 			myexit(1);
 		}
 
@@ -2027,8 +2027,18 @@ int main(int argc, char **argv) {
 	}
 
 bailout:
-	if (strlen(cpidfile))
-		unlink(cpidfile);
+#ifdef ENABLE_PACPARSER
+	if (pacparser_initialized) {
+		pacparser_initialized = 0;
+		pacparser_cleanup();
+	}
+
+	free(pac_file);
+#endif
+#ifdef __CYGWIN__
+	if (sspi_enabled())
+		sspi_unset();
+#endif
 
 	syslog(LOG_INFO, "Terminating with %u active threads\n", tc - tj);
 	pthread_mutex_lock(&connection_mtx);
@@ -2043,14 +2053,6 @@ bailout:
 	plist_free(socksd_list);
 	plist_free(rules);
 
-#ifdef ENABLE_PACPARSER
-	if (pacparser_initialized) {
-		pacparser_cleanup();
-	}
-
-	free(pac_file);
-#endif
-
 	free(cuid);
 	free(cpidfile);
 	free(magic_detect);
@@ -2058,10 +2060,8 @@ bailout:
 
 	proxylist_free(parent_list);
 
-#ifdef __CYGWIN__
-	if (sspi_enabled())
-		sspi_unset();
-#endif
+	if (strlen(cpidfile))
+		unlink(cpidfile);
 
 	exit(0);
 }
