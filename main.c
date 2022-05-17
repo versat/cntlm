@@ -156,7 +156,7 @@ int parent_add(const char *parent, int port) {
 	 */
 	spec = strdup(parent);
 	const char *q = strrchr(spec, ':');
-	if (q != NULL || !port) {
+	if (q != NULL || port) {
 		int p;
 		p = (q != NULL) ? (int)(q - spec) : (int)strlen(spec);
 
