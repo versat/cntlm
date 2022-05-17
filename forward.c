@@ -35,380 +35,10 @@
 #include "auth.h"
 #include "http.h"
 #include "socket.h"
-#include "ntlm.h"
 #include "forward.h"
 #include "scanner.h"
 #include "pages.h"
-
-#ifdef ENABLE_KERBEROS
-#include "kerberos.h"
-#endif
-
-int parent_curr = 0;
-pthread_mutex_t parent_mtx = PTHREAD_MUTEX_INITIALIZER;
-
-#ifdef ENABLE_KERBEROS
-proxy_t *curr_proxy;
-#endif
-
-#ifdef ENABLE_PACPARSER
-int single_proxy_connect(proxy_t *proxy) {
-	proxy_t *aux = proxy;
-
-	if (aux->resolved == 0) {
-		if (debug)
-			printf("Resolving proxy %s...\n", aux->hostname);
-		if (so_resolv(&aux->addresses, aux->hostname, aux->port)) {
-			aux->resolved = 1;
-		} else {
-			syslog(LOG_ERR, "Cannot resolve proxy %s\n", aux->hostname);
-			return -1;
-		}
-	}
-	return so_connect(aux->addresses);
-}
-
-int pac_proxy_connect(proxy_t *proxy, struct auth_s *credentials) {
-	int i;
-
-	i = single_proxy_connect(proxy);
-	if (i >= 0 && credentials != NULL)
-		copy_auth(credentials, g_creds, /* fullcopy */ !ntlmbasic);
-
-	return i;
-}
-
-rr_data_t pac_forward_request(void *thread_data, rr_data_t request, plist_t proxy_list) {
-	int pac_parent_curr = 0;
-	int pac_parent_count;
-	rr_data_t ret = (void *)-2;
-	int cd = ((struct thread_arg_s *)thread_data)->fd;
-
-	pac_parent_count = plist_count(proxy_list);
-
-	while (pac_parent_curr < pac_parent_count && ret == (void *)-2) {
-		proxy_t *aux;
-		aux = (proxy_t *)plist_get(proxy_list, ++pac_parent_curr);
-
-		if (aux->type == DIRECT) {
-			if (debug)
-				printf("\n~~~~~~~ (%d/%d) PAC DIRECT ~~~~~~~\n", pac_parent_curr, pac_parent_count);
-			ret = direct_request(thread_data, request);
-		} else {
-			if (debug)
-				printf("\n~~~~~~~ (%d/%d) PAC PROXY %s:%d ~~~~~~~\n", pac_parent_curr, pac_parent_count, aux->hostname, aux->port);
-#ifdef ENABLE_KERBEROS
-			curr_proxy = aux;
-#endif
-			ret = forward_request(thread_data, request, aux);
-		}
-		if (debug && ret == (void *)-2) {
-			printf("pac_forward_request: (%d/%d) PAC type = %d, host = %s, ret = %p\n", pac_parent_curr, pac_parent_count, aux->type, aux->type == PROXY ? aux->hostname : "", (void *)ret);
-		}
-	}
-
-	if (ret == (void *)-2) {
-		char *tmp;
-		ret = (void *)-1;
-		syslog(LOG_ERR, "Could not establish connection using PAC\n");
-		tmp = gen_502_page(request->http, "Could not establisch connection using PAC");
-		write_wrapper(cd, tmp, strlen(tmp));
-		free(tmp);
-	}
-	return ret;
-}
-#endif
-
-/*
- * Connect to the selected proxy. If the request fails, pick next proxy
- * in the line. Each request scans the whole list until all items are tried
- * or a working proxy is found, in which case it is selected and used by
- * all threads until it stops working. Then the search starts again.
- *
- * Writes required credentials into passed auth_s structure
- */
-
-int proxy_connect(struct auth_s *credentials) {
-	proxy_t *aux;
-	int i;
-	int prev;
-	int loop = 0;
-
-	prev = parent_curr;
-	pthread_mutex_lock(&parent_mtx);
-	if (parent_curr == 0) {
-		aux = (proxy_t *)plist_get(parent_list, ++parent_curr);
-		syslog(LOG_INFO, "Using proxy %s:%d\n", aux->hostname, aux->port);
-	}
-	pthread_mutex_unlock(&parent_mtx);
-
-	do {
-		pthread_mutex_lock(&parent_mtx);
-		aux = (proxy_t *)plist_get(parent_list, parent_curr);
-		if (aux->resolved == 0) {
-			if (debug)
-				printf("Resolving proxy %s...\n", aux->hostname);
-			if (so_resolv(&aux->addresses, aux->hostname, aux->port)) {
-				aux->resolved = 1;
-			} else {
-				syslog(LOG_ERR, "Cannot resolve proxy %s\n", aux->hostname);
-			}
-		}
-		pthread_mutex_unlock(&parent_mtx);
-
-		i = -1;
-		if (aux->resolved != 0)
-			i = so_connect(aux->addresses);
-
-		/*
-		 * Resolve or connect failed?
-		 */
-		if (i < 0) {
-			pthread_mutex_lock(&parent_mtx);
-			if (parent_curr >= parent_count)
-				parent_curr = 0;
-			aux = (proxy_t *)plist_get(parent_list, ++parent_curr);
-			pthread_mutex_unlock(&parent_mtx);
-			syslog(LOG_ERR, "Proxy connect failed, will try %s:%d\n", aux->hostname, aux->port);
-
-#ifdef ENABLE_KERBEROS
-		} else {
-			//kerberos needs the hostname of the parent proxy for generate the token, so we keep it
-			curr_proxy = aux;
-#endif
-		}
-	} while (i < 0 && ++loop < parent_count);
-
-	if (i < 0 && loop >= parent_count)
-		syslog(LOG_ERR, "No proxy on the list works. You lose.\n");
-
-	/*
-	 * We have to invalidate the cached connections if we moved to a different proxy
-	 */
-	if (prev != parent_curr) {
-		pthread_mutex_lock(&connection_mtx);
-		plist_const_t list = connection_list;
-		while (list) {
-			plist_const_t tmp = list->next;
-			close(list->key);
-			list = tmp;
-		}
-		plist_free(connection_list);
-		pthread_mutex_unlock(&connection_mtx);
-	}
-
-	if (i >= 0 && credentials != NULL)
-		copy_auth(credentials, g_creds, /* fullcopy */ !ntlmbasic);
-
-	return i;
-}
-
-/*
- * Send request, read reply, if it contains NTLM challenge, generate final
- * NTLM auth message and insert it into the original client header,
- * which is then processed by caller himself.
- *
- * If response is present, we fill in proxy's reply. Caller can tell
- * if auth was required or not from response->code. If not, caller has
- * a full reply to forward to client.
- *
- * Return 0 in case of network error, 1 when proxy replies
- *
- * Caller must init & free "request" and "response" (if supplied)
- *
- */
-int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct auth_s *credentials) {
-	char *tmp;
-	char *buf;
-	char *challenge;
-	rr_data_t auth;
-	int len;
-
-	int pretend407 = 0;
-	int rc = 0;
-
-	buf = zmalloc(BUFSIZE);
-
-#ifdef ENABLE_KERBEROS
-	if(g_creds->haskrb && acquire_kerberos_token(curr_proxy, credentials, buf, BUFSIZE)) {
-		//pre auth, we try to authenticate directly with kerberos, without to ask if auth is needed
-		//we assume that if kdc releases a ticket for the proxy, then the proxy is configured for kerberos auth
-		//drawback is that later in the code cntlm logs that no auth is required because we have already authenticated
-		if (debug)
-			printf("Using Negotiation ...\n");
-	}
-	else {
-#endif
-
-		strlcpy(buf, "NTLM ", BUFSIZE);
-		len = ntlm_request(&tmp, credentials);
-		if (len) {
-			to_base64(MEM(buf, uint8_t, 5), MEM(tmp, uint8_t, 0), len, BUFSIZE-5);
-			free(tmp);
-		}
-
-#ifdef ENABLE_KERBEROS
-	}
-#endif
-
-	auth = dup_rr_data(request);
-	auth->headers = hlist_mod(auth->headers, "Proxy-Authorization", buf, 1);
-
-	if (HEAD(request) || http_has_body(request, response) != 0) {
-		/*
-		 * There's a body - make this request just a probe. Do not send any body. If no auth
-		 * is required, we let our caller send the reply directly to the client to avoid
-		 * another duplicate request later (which traditionally finishes the 2nd part of
-		 * NTLM handshake). Without auth, there's no need for the final request.
-		 *
-		 * However, if client has a body, we make this request without it and let caller do
-		 * the second request in full. If we did it here, we'd have to cache the request
-		 * body in memory (even chunked) and carry it around. Not practical.
-		 *
-		 * When caller sees 407, he makes the second request. That's why we pretend a 407
-		 * in this situation. Without it, caller wouldn't make it, sending the client a
-		 * reply to our PROBE, not the real request.
-		 *
-		 * The same for HEAD requests - at least one ISA doesn't allow making auth
-		 * request using HEAD!!
-		 */
-		if (debug)
-			printf("Will send just a probe request.\n");
-		pretend407 = 1;
-	}
-
-	/*
-	 * For broken ISA's that don't accept HEAD in auth request
-	 */
-	if (HEAD(request)) {
-		free(auth->method);
-		auth->method = strdup("GET");
-	}
-
-	auth->headers = hlist_mod(auth->headers, "Content-Length", "0", 1);
-	auth->headers = hlist_del(auth->headers, "Transfer-Encoding");
-
-	if (debug) {
-		printf("\nSending PROXY auth request...\n");
-		printf("HEAD: %s %s %s\n", auth->method, auth->url, auth->http);
-		hlist_dump(auth->headers);
-	}
-
-	if (!headers_send(*sd, auth)) {
-		close(*sd);
-		goto bailout;
-	}
-
-	if (debug)
-		printf("\nReading PROXY auth response...\n");
-
-	/*
-	 * Return response if requested. "auth" is used to get it,
-	 * so make it point to the caller's structure.
-	 */
-	if (response) {
-		free_rr_data(&auth);
-		auth = response;
-	}
-
-	reset_rr_data(auth);
-	if (!headers_recv(*sd, auth)) {
-		close(*sd);
-		goto bailout;
-	}
-
-	if (debug)
-		hlist_dump(auth->headers);
-
-	rc = 1;
-
-	/*
-	 * Auth required?
-	 */
-	if (auth->code == 407) {
-		if (!http_body_drop(*sd, auth)) {				// FIXME: if below fails, we should forward what we drop here...
-			rc = 0;
-			close(*sd);
-			goto bailout;
-		}
-		tmp = hlist_get(auth->headers, "Proxy-Authenticate");
-
-		if (tmp) {
-#ifdef ENABLE_KERBEROS
-			if(g_creds->haskrb && strncasecmp(tmp, "NEGOTIATE", 9) == 0 && acquire_kerberos_token(curr_proxy, credentials, buf, BUFSIZE)) {
-				if (debug)
-					printf("Using Negotiation ...\n");
-
-				request->headers = hlist_mod(request->headers, "Proxy-Authorization", buf, 1);
-				free(tmp);
-			}
-			else {
-#endif
-				challenge = zmalloc(strlen(tmp) + 5 + 1);
-				len = from_base64(challenge, tmp + 5);
-				if (len > NTLM_CHALLENGE_MIN) {
-					tmp = NULL;
-					len = ntlm_response(&tmp, challenge, len, credentials);
-					if (len > 0) {
-						strlcpy(buf, "NTLM ", BUFSIZE);
-						to_base64(MEM(buf, uint8_t, 5), MEM(tmp, uint8_t, 0), len, BUFSIZE-5);
-						request->headers = hlist_mod(request->headers, "Proxy-Authorization", buf, 1);
-						free(tmp);
-					} else {
-						syslog(LOG_ERR, "No target info block. Cannot do NTLMv2!\n");
-						free(challenge);
-						free(tmp);
-						close(*sd);
-						goto bailout;
-					}
-				} else {
-					syslog(LOG_ERR, "Proxy returning invalid challenge!\n");
-					free(challenge);
-					close(*sd);
-					goto bailout;
-				}
-
-				free(challenge);
-#ifdef ENABLE_KERBEROS
-			}
-#endif
-		} else {
-			syslog(LOG_WARNING, "No Proxy-Authenticate, NTLM/Negotiate not supported?\n");
-		}
-	} else if (pretend407) {
-		if (debug)
-			printf("Client %s - forcing second request.\n", HEAD(request) ? "sent HEAD" : "has a body");
-		if (response)
-			response->code = 407;				// See explanation above
-		if (!http_body_drop(*sd, auth)) {
-			rc = 0;
-			close(*sd);
-			goto bailout;
-		}
-	}
-
-	/*
-	 * Did proxy closed connection? It's our fault, reconnect for the caller.
-	 */
-	if (so_closed(*sd)) {
-		if (debug)
-			printf("Proxy closed on us, reconnect.\n");
-		close(*sd);
-		*sd = proxy_connect(credentials);
-		if (*sd < 0) {
-			rc = 0;
-			goto bailout;
-		}
-	}
-
-bailout:
-	if (!response)
-		free_rr_data(&auth);
-
-	free(buf);
-
-	return rc;
-}
+#include "proxy.h"
 
 /*
  * Forwarding thread. Connect to the proxy, process auth then
@@ -443,11 +73,7 @@ bailout:
  * request is NOT freed
  * pac_aux is NOT freed
  */
-#ifdef ENABLE_PACPARSER
-rr_data_t forward_request(void *thread_data, rr_data_t request, proxy_t *proxy) {
-#else
 rr_data_t forward_request(void *thread_data, rr_data_t request) {
-#endif
 	int i;
 	int loop;
 	int plugin;
@@ -473,11 +99,7 @@ rr_data_t forward_request(void *thread_data, rr_data_t request) {
 	INET_NTOP(&((struct thread_arg_s *)thread_data)->addr, saddr, INET6_ADDRSTRLEN);
 
 beginning:
-#ifdef ENABLE_PACPARSER
-	sd = -1;
-#else
 	sd = 0;
-#endif
 	was_cached = noauth = authok = conn_alive = proxy_alive = 0;
 
 	rsocket[0] = wsocket[1] = &cd;
@@ -510,30 +132,20 @@ beginning:
 	} else {
 		tcreds = new_auth();
 #ifdef ENABLE_PACPARSER
-		if (proxy) {
-			sd = pac_proxy_connect(proxy, tcreds);
-			if (sd < 0) {
-				rc = (void *)-2;
-				goto bailout;
-			}
-		} else {
-			sd = proxy_connect(tcreds);
-			if (sd <= 0) {
-				tmp = gen_502_page(request->http, "Parent proxy unreachable");
-				(void) write_wrapper(cd, tmp, strlen(tmp));
-				free(tmp);
-				rc = (void *)-2;
-				goto bailout;
-			}
+		sd = proxy_connect(tcreds, request->url, request->hostname);
+		if (sd == -2) {
+			rc = (void *)-2;
+			goto bailout;
+		}
 #else
 		sd = proxy_connect(tcreds);
+#endif
 		if (sd < 0) {
 			tmp = gen_502_page(request->http, "Parent proxy unreachable");
 			(void) write_wrapper(cd, tmp, strlen(tmp));
 			free(tmp);
 			rc = (void *)-1;
 			goto bailout;
-#endif
 		}
 	}
 
@@ -971,7 +583,11 @@ bailout:
 	return rc;
 }
 
+#ifdef ENABLE_PACPARSER
+int forward_tunnel(void *thread_data) {
+#else
 void forward_tunnel(void *thread_data) {
+#endif
 	struct auth_s *tcreds;
 	int sd;
 
@@ -982,7 +598,11 @@ void forward_tunnel(void *thread_data) {
 	INET_NTOP(&((struct thread_arg_s *)thread_data)->addr, saddr, INET6_ADDRSTRLEN);
 
 	tcreds = new_auth();
+#ifdef ENABLE_PACPARSER
+	sd = proxy_connect(tcreds, "/", thost);
+#else
 	sd = proxy_connect(tcreds);
+#endif
 
 	if (sd < 0)
 		goto bailout;
@@ -1002,7 +622,9 @@ bailout:
 	close(cd);
 	free(tcreds);
 
-	return;
+#ifdef ENABLE_PACPARSER
+	return sd;
+#endif
 }
 
 #define MAGIC_TESTS	5
@@ -1068,7 +690,11 @@ void magic_auth_detect(const char *url) {
 
 		printf("Config profile %2d/%d... ", i+1, MAGIC_TESTS);
 
+#ifdef ENABLE_PACPARSER
+		nc = proxy_connect(NULL, url, host);
+#else
 		nc = proxy_connect(NULL);
+#endif
 		if (nc < 0) {
 			printf("\nConnection to proxy failed, bailing out\n");
 			free_rr_data(&res);

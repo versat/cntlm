@@ -249,14 +249,14 @@ int client_establish_context(char *service_name,
 /**
  * acquires a kerberos token for default credential using SPN HTTP@<thost>
  */
-int acquire_kerberos_token(proxy_t* proxy, struct auth_s *credentials,
+int acquire_kerberos_token(const char* hostname, struct auth_s *credentials,
 		char* buf, size_t bufsize) {
 	char service_name[BUFSIZE];
 	OM_uint32 ret_flags, min_stat;
 
 	if (credentials->haskrb == KRB_KO) {
 		if (debug)
-			printf("Skipping already failed gss auth for %s\n", proxy->hostname);
+			printf("Skipping already failed gss auth for %s\n", hostname);
 		return 0;
 	}
 
@@ -273,7 +273,7 @@ int acquire_kerberos_token(proxy_t* proxy, struct auth_s *credentials,
 	gss_buffer_desc send_tok;
 
 	strlcpy(service_name, "HTTP@", BUFSIZE);
-	strlcat(service_name, proxy->hostname, BUFSIZE);
+	strlcat(service_name, hostname, BUFSIZE);
 
 	int rc = client_establish_context(service_name, &ret_flags, &send_tok);
 

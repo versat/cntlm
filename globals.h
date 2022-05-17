@@ -47,30 +47,9 @@ extern pthread_mutex_t threads_mtx;
 extern plist_t connection_list;
 extern pthread_mutex_t connection_mtx;
 
-extern int parent_count;
-extern plist_t parent_list;
-
 #ifdef ENABLE_PACPARSER
 extern int pacparser_initialized;
-extern pthread_mutex_t pacparser_mtx;
-
-/*
- * Proxy types defined by PAC specification. Used in proxy_t to
- * specify proxy type.
- */
-enum proxy_type_t { DIRECT, PROXY };
 #endif
-
-typedef struct {
-#ifdef ENABLE_PACPARSER
-	enum proxy_type_t type;
-#endif
-	char hostname[64];
-	int port;
-	struct auth_s creds;
-	struct addrinfo *addresses;
-	int resolved;
-} proxy_t;
 
 extern hlist_t header_list;			/* forward_request() */
 extern hlist_t users_list;			/* socks5_thread() */

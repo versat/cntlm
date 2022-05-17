@@ -46,8 +46,6 @@ int host_connect(const char *hostname, int port) {
 
 	errno = 0;
 	if (!so_resolv(&addresses, hostname, port)) {
-		//if (debug)
-		//	printf("so_resolv: %s failed (%d: %s)\n", hostname, h_errno, hstrerror(h_errno));
 		return -1;
 	}
 
@@ -207,13 +205,7 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 		tmp = gen_502_page(request->http, strerror(errno));
 		(void) write_wrapper(cd, tmp, strlen(tmp)); // We don't really care about the result
 		free(tmp);
-
-#ifdef ENABLE_PACPARSER
-		rc = (void *)-2;
-#else
 		rc = (void *)-1;
-#endif
-
 		goto bailout;
 	}
 

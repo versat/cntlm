@@ -149,7 +149,6 @@ extern char *plist_get(plist_const_t list, const unsigned long key) __attribute_
 extern int plist_pop(plist_t *list, void **aux);
 extern int plist_count(plist_const_t list) __attribute__((warn_unused_result));
 extern plist_t plist_free(plist_t list);
-extern plist_t proxylist_free(plist_t list);
 
 extern hlist_t hlist_add(hlist_t list, char *key, char *value, hlist_add_t allockey, hlist_add_t allocvalue);
 extern hlist_t hlist_dup(hlist_const_t list) __attribute__((warn_unused_result));

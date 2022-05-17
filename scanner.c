@@ -33,6 +33,7 @@
 #include "globals.h"
 #include "forward.h"
 #include "scanner.h"
+#include "proxy.h"
 
 /*
  * This code is a piece of shit, but it works. Cannot rewrite it now, because
@@ -233,7 +234,11 @@ int scanner_hook(rr_data_const_t request, rr_data_t response, struct auth_s *cre
 				hlist_mod(newreq->headers, "Content-Length", tmp, 1);
 				free(tmp);
 
+#ifdef ENABLE_PACPARSER
+				nc = proxy_connect(credentials, newreq->url, newreq->hostname);
+#else
 				nc = proxy_connect(credentials);
+#endif
 				c = proxy_authenticate(&nc, newreq, newres, credentials);
 				if (c && newres->code == 407) {
 					if (debug)
