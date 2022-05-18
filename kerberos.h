@@ -50,6 +50,4 @@ int acquire_kerberos_token(proxy_t* proxy, struct auth_s *credentials, char* buf
  */
 int check_credential(void);
 
-int acquire_credential(struct auth_s *credentials);
-
 #endif /* KERBEROS_H_ */
