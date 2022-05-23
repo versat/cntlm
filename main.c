@@ -2053,15 +2053,15 @@ bailout:
 	plist_free(socksd_list);
 	plist_free(rules);
 
+	if (strlen(cpidfile))
+		unlink(cpidfile);
+
 	free(cuid);
 	free(cpidfile);
 	free(magic_detect);
 	free(g_creds);
 
 	proxylist_free(parent_list);
-
-	if (strlen(cpidfile))
-		unlink(cpidfile);
 
 	exit(0);
 }
