@@ -73,7 +73,7 @@
 #include "kerberos.h"
 #endif
 #ifdef ENABLE_PACPARSER
-#include <pacparser.h>
+#include "pac.h"
 #endif
 
 #define STACK_SIZE	sizeof(void *)*8*1024
@@ -1349,7 +1349,7 @@ int main(int argc, char **argv) {
 
 		/* Initiailize Pacparser. */
 		pacparser_init();
-		pacparser_parse_pac(pac_file);
+		pacparser_parse_pac_file(pac_file);
 		if (debug)
 			printf("Pacparser initialized with PAC file %s\n", pac_file);
 		// TODO handle parsing errors from pacparser

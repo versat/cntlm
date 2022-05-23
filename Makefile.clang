@@ -45,7 +45,9 @@ endif
 
 ENABLE_PACPARSER=$(shell grep -c ENABLE_PACPARSER config/config.h)
 ifeq ($(ENABLE_PACPARSER),1)
-	LDFLAGS+=-lpacparser
+	OBJS+=pac.o duktape.o
+	CFLAGS+=-Wno-overlength-strings
+	LDFLAGS+=-lm
 endif
 
 ENABLE_STATIC=$(shell grep -c ENABLE_STATIC config/config.h)
@@ -70,6 +72,12 @@ main.o: main.c
 %.o: %.c
 	@echo "Compiling $<"
 	@$(CC) $(CFLAGS) -c -o $@ $<
+
+ifeq ($(ENABLE_PACPARSER),1)
+duktape.o: duktape/duktape.c
+	@echo "Compiling $<"
+	@$(CC) $(CFLAGS) -Wno-bad-function-cast -c -o $@ $<
+endif
 
 configure-stamp:
 	./configure

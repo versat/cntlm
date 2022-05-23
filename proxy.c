@@ -37,7 +37,7 @@
 #endif
 
 #ifdef ENABLE_PACPARSER
-#include <pacparser.h>
+#include "pac.h"
 
 /*
  * Proxy types defined by PAC specification. Used in proxy_t to
@@ -437,7 +437,7 @@ int proxy_connect(struct auth_s *credentials) {
 
 #ifdef ENABLE_PACPARSER
 	paclist_t paclist = NULL;
-	char *pacp_str;
+	const char *pacp_str;
 	if (pacparser_initialized) {
 		/*
 		 * Create proxy list for request from PAC file.
