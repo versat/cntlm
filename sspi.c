@@ -193,7 +193,7 @@ int sspi_set(char* mode)
 	return 0;
 }
 
-int sspi_unset(char* mode)
+int sspi_unset(void)
 {
 	free(sspi_mode);
 	sspi_mode = NULL;
