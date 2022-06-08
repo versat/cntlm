@@ -1577,9 +1577,6 @@ int main(int argc, char **argv) {
 #ifdef ENABLE_KERBEROS
 		} else if (!strcasecmp("gss", cauth)) {
 			g_creds->haskrb = KRB_FORCE_USE_KRB;
-			g_creds->hashnt = 0;
-			g_creds->hashlm = 0;
-			g_creds->hashntlm2 = 0;
 			syslog(LOG_INFO, "Forcing GSS auth.\n");
 #endif
 		} else {
