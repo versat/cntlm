@@ -36,7 +36,7 @@
 #include "kerberos.h"
 #endif
 
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 #include "pac.h"
 
 /*
@@ -47,7 +47,7 @@ enum proxy_type_t { DIRECT, PROXY };
 #endif
 
 typedef struct {
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 	enum proxy_type_t type;
 #endif
 	char hostname[64];
@@ -65,7 +65,7 @@ struct proxylist_s {
 	struct proxylist_s *next;
 };
 
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 typedef struct paclist_s *paclist_t;
 typedef const struct paclist_s *paclist_const_t;
 struct paclist_s {
@@ -81,9 +81,9 @@ paclist_t pac_list = NULL;
 void paclist_free(paclist_t paclist);
 
 /*
- * Pacparser Mutex
+ * Pac Mutex
  */
-pthread_mutex_t pacparser_mtx = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t pac_mtx = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 /*
@@ -168,7 +168,7 @@ void proxylist_dump(proxylist_const_t list) {
 
 	t = list;
 	while (t) {
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 		if (t->proxy->type == DIRECT)
 			printf("List data: %lu => DIRECT\n", (unsigned long int)t->key);
 		else
@@ -231,7 +231,7 @@ int parent_add(const char *parent, int port) {
 	}
 
 	proxy = (proxy_t *)zmalloc(sizeof(proxy_t));
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 	proxy->type = PROXY;
 #endif
 	strlcpy(proxy->hostname, tmp, sizeof(proxy->hostname));
@@ -256,16 +256,16 @@ int parent_available(void) {
  * Frees the global proxy list.
  */
 void parent_free(void) {
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 	paclist_free(pac_list);
 #endif
 	proxylist_free(parent_list, 1);
 }
 
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 /*
  * Create list of proxy_t structs parsed from the PAC string returned
- * by Pacparser.
+ * by Pac.
  * TODO: Harden against malformed pacp_str.
  */
 paclist_t paclist_create(const char *pacp_str) {
@@ -281,7 +281,7 @@ paclist_t paclist_create(const char *pacp_str) {
 	}
 
 	/* Make a copy of shared PAC string pacp_str (coming
-	 * from pacparser) to avoid manipulation by strsep.
+	 * from pac) to avoid manipulation by strsep.
 	 */
 	pacp_start = strdup(pacp_str);
 	pacp_tmp = pacp_start; // save the pointer to this buffer so we can free it
@@ -422,7 +422,7 @@ void paclist_free(paclist_t paclist) {
  *
  * Writes required credentials into passed auth_s structure
  */
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 int proxy_connect(struct auth_s *credentials, const char* url, const char* hostname) {
 #else
 int proxy_connect(struct auth_s *credentials) {
@@ -435,16 +435,16 @@ int proxy_connect(struct auth_s *credentials) {
 	int loop = 0;
 	int proxycount = 0;
 
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 	paclist_t paclist = NULL;
 	const char *pacp_str;
-	if (pacparser_initialized) {
+	if (pac_initialized) {
 		/*
 		 * Create proxy list for request from PAC file.
 		 */
-		pthread_mutex_lock(&pacparser_mtx);
-		pacp_str = pacparser_find_proxy(url, hostname);
-		pthread_mutex_unlock(&pacparser_mtx);
+		pthread_mutex_lock(&pac_mtx);
+		pacp_str = pac_find_proxy(url, hostname);
+		pthread_mutex_unlock(&pac_mtx);
 
 		paclist = paclist_get(pacp_str);
 		proxylist = paclist->proxylist;
@@ -455,7 +455,7 @@ int proxy_connect(struct auth_s *credentials) {
 		proxylist = parent_list;
 		proxycurr = parent_curr;
 		proxycount = parent_count;
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 	}
 #endif
 
@@ -467,7 +467,7 @@ int proxy_connect(struct auth_s *credentials) {
 		pthread_mutex_lock(&parent_mtx);
 		proxy = proxylist_get(proxylist, proxycurr);
 		if (proxy &&
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 			proxy->type == PROXY &&
 #endif		
 			proxy->resolved == 0) {
@@ -481,7 +481,7 @@ int proxy_connect(struct auth_s *credentials) {
 		}
 		pthread_mutex_unlock(&parent_mtx);
 
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 		if (proxy && proxy->type == DIRECT)
 			return -2;
 #endif		
@@ -527,8 +527,8 @@ int proxy_connect(struct auth_s *credentials) {
 
 		pthread_mutex_lock(&parent_mtx);
 		parent_curr = proxycurr;
-#ifdef ENABLE_PACPARSER
-		if (pacparser_initialized)
+#ifdef ENABLE_PAC
+		if (pac_initialized)
 			paclist->proxycurr = proxycurr;
 #endif
 		pthread_mutex_unlock(&parent_mtx);
@@ -731,7 +731,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 		if (debug)
 			printf("Proxy closed on us, reconnect.\n");
 		close(*sd);
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 		*sd = proxy_connect(credentials, request->url, request->hostname);
 #else
 		*sd = proxy_connect(credentials);

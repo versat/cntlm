@@ -22,7 +22,7 @@
 #ifndef _PROXY_H
 #define _PROXY_H
 
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 extern int proxy_connect(struct auth_s *credentials, const char* url, const char* hostname);
 #else
 extern int proxy_connect(struct auth_s *credentials);

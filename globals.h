@@ -47,8 +47,8 @@ extern pthread_mutex_t threads_mtx;
 extern plist_t connection_list;
 extern pthread_mutex_t connection_mtx;
 
-#ifdef ENABLE_PACPARSER
-extern int pacparser_initialized;
+#ifdef ENABLE_PAC
+extern int pac_initialized;
 #endif
 
 extern hlist_t header_list;			/* forward_request() */

@@ -43,8 +43,8 @@ ifeq ($(ENABLE_KERBEROS),1)
 	LDFLAGS+=-lgssapi_krb5
 endif
 
-ENABLE_PACPARSER=$(shell grep -c ENABLE_PACPARSER config/config.h)
-ifeq ($(ENABLE_PACPARSER),1)
+ENABLE_PAC=$(shell grep -c ENABLE_PAC config/config.h)
+ifeq ($(ENABLE_PAC),1)
 	OBJS+=pac.o duktape.o
 	CFLAGS+=-Wno-overlength-strings
 	LDFLAGS+=-lm
@@ -73,7 +73,7 @@ main.o: main.c
 	@echo "Compiling $<"
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
-ifeq ($(ENABLE_PACPARSER),1)
+ifeq ($(ENABLE_PAC),1)
 duktape.o: duktape/duktape.c
 	@echo "Compiling $<"
 	@$(CC) $(CFLAGS) -Wno-bad-function-cast -c -o $@ $<

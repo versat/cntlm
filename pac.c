@@ -103,7 +103,7 @@ char * read_file(const char* filename) {
     return buf;
 }
 
-int pacparser_init(void) {
+int pac_init(void) {
     pac_ctx = duk_create_heap_default();
 
     if (pac_ctx) {
@@ -119,18 +119,18 @@ int pacparser_init(void) {
     return pac_ctx != NULL;
 }
 
-int pacparser_parse_pac_file(const char *pacfile) {
+int pac_parse_file(const char *pacfile) {
     char *pacstring = read_file(pacfile);
     if (!pacstring)
         return 0;
 
-    int rc = pacparser_parse_pac_string(pacstring);
+    int rc = pac_parse_string(pacstring);
     free(pacstring);
 
     return rc;
 }
 
-int pacparser_parse_pac_string(const char *pacstring) {
+int pac_parse_string(const char *pacstring) {
     if (!pac_ctx)
         return 0;
 
@@ -140,7 +140,7 @@ int pacparser_parse_pac_string(const char *pacstring) {
     return 1;
 }
 
-const char *pacparser_find_proxy(const char *url, const char *host) {
+const char *pac_find_proxy(const char *url, const char *host) {
     if (!pac_ctx || !url || !host)
         return NULL;
 
@@ -151,7 +151,7 @@ const char *pacparser_find_proxy(const char *url, const char *host) {
     return res;
 }
 
-void pacparser_cleanup(void) {
+void pac_cleanup(void) {
     if (pac_ctx) {
         duk_destroy_heap(pac_ctx);
         pac_ctx = NULL;

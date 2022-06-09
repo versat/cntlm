@@ -105,8 +105,8 @@ do
 			printf "#define ENABLE_KERBEROS" >> $CONFIG
 			echo "" >> $CONFIG
 			;;
-		--enable-pacparser)
-			printf "#define ENABLE_PACPARSER" >> $CONFIG
+		--enable-pac)
+			printf "#define ENABLE_PAC" >> $CONFIG
 			echo "" >> $CONFIG
 			;;
         --enable-static)

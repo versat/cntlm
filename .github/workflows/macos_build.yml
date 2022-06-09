@@ -13,8 +13,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Install packages required for optional configurations of cntlm
-      run: brew install pacparser krb5
     - name: Normal build
       run: |
         ./configure
@@ -25,9 +23,9 @@ jobs:
         ./configure
         CFLAGS=-DUNICODE make
         make clean
-    - name: Build with pacparser enabled
+    - name: Build with pac enabled
       run: |
-        ./configure --enable-pacparser
+        ./configure --enable-pac
         make
         make clean
     - name: Build with kerberos enabled

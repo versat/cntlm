@@ -72,7 +72,7 @@
 #ifdef ENABLE_KERBEROS
 #include "kerberos.h"
 #endif
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 #include "pac.h"
 #endif
 
@@ -115,9 +115,9 @@ hlist_t users_list = NULL;			/* socks5_thread() */
 plist_t scanner_agent_list = NULL;		/* scanner_hook() */
 plist_t noproxy_list = NULL;			/* proxy_thread() */
 
-#ifdef ENABLE_PACPARSER
-/* 1 = Pacparser engine is initialized and in use. */
-int pacparser_initialized = 0;
+#ifdef ENABLE_PAC
+/* 1 = Pac engine is initialized and in use. */
+int pac_initialized = 0;
 #endif
 
 /*
@@ -320,7 +320,7 @@ void *proxy_thread(void *thread_data) {
 				ret = direct_request(thread_data, request);
 			} else {
 				ret = forward_request(thread_data, request);
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 				if (ret == (void *)-2)
 					ret = direct_request(thread_data, request);
 #endif
@@ -372,7 +372,7 @@ void *tunnel_thread(void *thread_data) {
 	if (noproxy_match(hostname)) {
 		direct_tunnel(thread_data);
 	} else {
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 		if (forward_tunnel(thread_data) == -2)
 			direct_tunnel(thread_data);
 #else
@@ -625,7 +625,7 @@ void *socks5_thread(void *thread_data) {
 		strlcat(thost, tport, HOST_BUFSIZE);
 
 		tcreds = new_auth();
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 		sd = proxy_connect(tcreds, "/", thost);
 		if (sd == -2) {
 			// remove previously added port to thost
@@ -751,7 +751,7 @@ int main(int argc, char **argv) {
 	plist_t rules = NULL;
 	config_t cf = NULL;
 	char *magic_detect = NULL;
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 	int pac = 0;
 	char *pac_file;
 
@@ -799,7 +799,7 @@ int main(int argc, char **argv) {
 				strlcpy(cdomain, optarg, MINIBUF_SIZE);
 				break;
 			case 'x':
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 				pac = 1;
 				/*
 				 * Resolve relative paths if necessary.
@@ -1046,7 +1046,7 @@ int main(int argc, char **argv) {
 		fprintf(stream, "\t-w  <workstation>\n"
 				"\t    Some proxies require correct NetBIOS hostname.\n");
 		fprintf(stream, "\t-x  <PAC_file>\n"
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 				"\t    Specify a PAC file to load."
 #else
 				"\t    PAC file is not supported with this version of CNTLM"
@@ -1208,7 +1208,7 @@ int main(int argc, char **argv) {
 			free(tmp);
 		}
 
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 		/*
 		 * Check if PAC file is defined.
 		 */
@@ -1335,8 +1335,8 @@ int main(int argc, char **argv) {
 	config_close(cf);
 
 
-#ifdef ENABLE_PACPARSER
-	/* Start Pacparser engine if pac_file available */
+#ifdef ENABLE_PAC
+	/* Start Pac engine if pac_file available */
 	/* TODO: pac file option in config file */
 	if (pac) {
 		/* Check if PAC file can be opened. */
@@ -1347,13 +1347,13 @@ int main(int argc, char **argv) {
 		}
 		fclose(test_fd);
 
-		/* Initiailize Pacparser. */
-		pacparser_init();
-		pacparser_parse_pac_file(pac_file);
+		/* Initiailize Pac. */
+		pac_init();
+		pac_parse_file(pac_file);
 		if (debug)
-			printf("Pacparser initialized with PAC file %s\n", pac_file);
-		// TODO handle parsing errors from pacparser
-		pacparser_initialized = 1;
+			printf("Pac initialized with PAC file %s\n", pac_file);
+		// TODO handle parsing errors from pac
+		pac_initialized = 1;
 	}
 
 	if (!interactivehash && !parent_available() && !pac)
@@ -1852,10 +1852,10 @@ int main(int argc, char **argv) {
 	}
 
 bailout:
-#ifdef ENABLE_PACPARSER
-	if (pacparser_initialized) {
-		pacparser_initialized = 0;
-		pacparser_cleanup();
+#ifdef ENABLE_PAC
+	if (pac_initialized) {
+		pac_initialized = 0;
+		pac_cleanup();
 	}
 
 	free(pac_file);

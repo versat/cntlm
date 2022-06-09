@@ -131,7 +131,7 @@ beginning:
 		was_cached = 1;
 	} else {
 		tcreds = new_auth();
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 		sd = proxy_connect(tcreds, request->url, request->hostname);
 		if (sd == -2) {
 			rc = (void *)-2;
@@ -583,7 +583,7 @@ bailout:
 	return rc;
 }
 
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 int forward_tunnel(void *thread_data) {
 #else
 void forward_tunnel(void *thread_data) {
@@ -598,7 +598,7 @@ void forward_tunnel(void *thread_data) {
 	INET_NTOP(&((struct thread_arg_s *)thread_data)->addr, saddr, INET6_ADDRSTRLEN);
 
 	tcreds = new_auth();
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 	sd = proxy_connect(tcreds, "/", thost);
 #else
 	sd = proxy_connect(tcreds);
@@ -622,7 +622,7 @@ bailout:
 	close(cd);
 	free(tcreds);
 
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 	return sd;
 #endif
 }
@@ -690,7 +690,7 @@ void magic_auth_detect(const char *url) {
 
 		printf("Config profile %2d/%d... ", i+1, MAGIC_TESTS);
 
-#ifdef ENABLE_PACPARSER
+#ifdef ENABLE_PAC
 		nc = proxy_connect(NULL, url, host);
 #else
 		nc = proxy_connect(NULL);
