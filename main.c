@@ -979,7 +979,7 @@ int main(int argc, char **argv) {
 			exit_code = 1;
 		}
 
-		fprintf(stream, "Usage: %s [-AaBcDdFfgHhILlMNOPpqRrSsTUuvwXx] <proxy_host>[:]<proxy_port> ...\n", argv[0]);
+		fprintf(stream, "Usage: %s [-AaBcDdFfGgHhILlMNOPpqRrSsTUuvwXx] <proxy_host>[:]<proxy_port> ...\n", argv[0]);
 		fprintf(stream, "\t-A  <address>[/<net>]\n"
 				"\t    ACL allow rule. IP or hostname, net must be a number (CIDR notation)\n");
 		fprintf(stream, "\t-a  ntlm | nt | lm"
@@ -1000,9 +1000,9 @@ int main(int argc, char **argv) {
 				"\t    ACL deny rule. Syntax same as -A.\n");
 		fprintf(stream, "\t-d  <domain>\n"
 				"\t    Domain/workgroup can be set separately.\n");
-		fprintf(stream, "\t-f  Run in foreground, do not fork into daemon mode.\n");
 		fprintf(stream, "\t-F  <flags>\n"
 				"\t    NTLM authentication flags.\n");
+		fprintf(stream, "\t-f  Run in foreground, do not fork into daemon mode.\n");
 		fprintf(stream, "\t-G  <pattern>\n"
 				"\t    User-Agent matching for the trans-isa-scan plugin.\n");
 		fprintf(stream, "\t-g  Gateway mode - listen on all interfaces, not only loopback.\n");

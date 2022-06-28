@@ -5,7 +5,7 @@
 .SH SYNOPSIS
 .B cntlm
 [
-.B -AaBcDdFfgHhILlMPprSsTUuvw
+.B -AaBcDdFfGgHhILlMNOPpqRrSsTUuvwXx
 ] [ \fIhost1\fP \fIport1\fP | \fIhost1\fP:\fIport1\fP ] ... \fIhostN\fP \fIportN\fP
 
 .SH DESCRIPTION
@@ -220,7 +220,7 @@ machine running \fBcntlm\fP (possibly localhost) as proxy settings in your brows
 Most applications (including console) support the notion of proxy to connect to other hosts. On POSIX, set the
 following variables to use e.g. \fBwget(1)\fP without any trouble (fill in the actual address of \fBcntlm\fP):
 .nf
-.ft C
+.ft B
 
     $ export ftp_proxy=http://localhost:3128
     $ export http_proxy=$ftp_proxy
@@ -281,11 +281,20 @@ with inspection tools like \fBps(1)\fP, but the preferable way of setting passwo
 To that end, you can use \fBPassword\fP option (for plaintext, human readable format), or "encrypt" your
 password via \fB-H\fP and then use \fBPassNTLMv2\fP, \fBPassNT\fP and/or \fBPassLM\fP.
 
+.TP
+.B -q
+Sets the Syslog logging level to DEBUG (default level is INFO).
+
 .ne 3
 .TP
 .B -R <username>:<password>\ \ \ \ (SOCKS5User)
 If SOCKS5 proxy is enabled, this option can make it accessible only to those who have been authorized.
 It can be used several times, to create a whole list of accounts (allowed user:pass combinations).
+
+.TP
+.B -r \fB"<name>: <value>"\fP\ \ \ \ (Header)
+Header substitution. Every client's request will be processed and any headers defined using \fB-r\fP or in the
+configuration file will be added to it. In case the header is already present, its value will be replaced.
 
 .TP
 .B -S <max_size_in_kb>\ \ \ \ (ISAScannerSize)
@@ -317,7 +326,7 @@ If the plugin cannot parse the interactive page for some reason (unknown formatt
 page is forwarded to you - it's never "lost".
 
 .ne 6
-The keepalive header is called \fCISA-Scanner\fP and shows ISA's progress, e.g.:
+The keepalive header is called \fBISA-Scanner\fP and shows ISA's progress, e.g.:
 .nf
 .ft C
 
@@ -327,11 +336,6 @@ The keepalive header is called \fCISA-Scanner\fP and shows ISA's progress, e.g.:
     ...
 .ft P
 .fi
-
-.TP
-.B -r \fB"<name>: <value>"\fP\ \ \ \ (Header)
-Header substitution. Every client's request will be processed and any headers defined using \fB-r\fP or in the
-configuration file will be added to it. In case the header is already present, its value will be replaced.
 
 .TP
 .B -s
@@ -369,6 +373,14 @@ Workstation NetBIOS name. Do not use full qualified domain name (FQDN) here. Jus
 If not specified, \fBcntlm\fP tries to get the system hostname and if that fails, uses "cntlm" - it's because
 some proxies require this field non-empty.
 
+.TP
+.B -x <PAC_file>\ \ \ \ (Pac)
+Specify a PAC file to load.
+
+.TP
+.B -X <sspi_handle_type>\ \ \ \ (SSPI)
+Use SSPI with specified handle type. Works only under Windows. Default is negotiate (NTLM).
+
 .SH CONFIGURATION
 Configuration file is basically an INI file, except there are no "=" between keys and values. It comprises of
 whitespace delimited keyword and value pairs. Apart from that, there are sections as well, they have the usual
@@ -389,8 +401,9 @@ All available keywords are listed here, full descriptions are in the OPTIONS sec
 ACL allow rule, see \fB-A\fP.
 
 .TP
-.B Auth NTLMv2 | NTLM2SR | NT | NTLM | LM
+.B Auth NTLMv2 | NTLM2SR | NT | NTLM | LM | GSS
 Select any possible combination of NTLM hashes using a single parameter.
+GSS option activates the kerberos authentication, see \fB-a\fP.
 
 .TP
 .B Deny <IP>[/<mask>]
@@ -466,6 +479,10 @@ Avoid parent proxy for these host names. All matching URL's will be proxied \fId
 stand-alone proxy. \fBCntlm\fP supports WWW authentication in this mode, thus allowing you to access local
 intranet sites with corporate NTLM authentication. Hopefully, you won't need that virtualized MSIE any more. :)
 See \fB-N\fP for more.
+
+.TP
+.B Pac </path/to/proxy.pac>
+Specify a PAC file to load.
 
 .TP
 .B SOCKS5Proxy [<saddr>:]<lport>
