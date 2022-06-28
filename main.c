@@ -1210,16 +1210,12 @@ int main(int argc, char **argv) {
 
 #ifdef ENABLE_PACPARSER
 		/*
-		 * Check if PAC mode is requested.
+		 * Check if PAC file is defined.
 		 */
-		tmp = zmalloc(MINIBUF_SIZE);
-		CFG_DEFAULT(cf, "Pac", tmp, MINIBUF_SIZE);
-		if (!strcasecmp("yes", tmp)) {
+		CFG_DEFAULT(cf, "Pac", pac_file, PATH_MAX);
+		if (strlen(pac_file) > 0) {
 			pac = 1;
 		}
-		free(tmp);
-
-		CFG_DEFAULT(cf, "PacFile", pac_file, PATH_MAX);
 #endif
 
 		/*
