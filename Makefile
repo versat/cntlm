@@ -17,7 +17,7 @@ CC		:= gcc
 VER		:= $(shell cat VERSION)
 OS		:= $(shell uname -s)
 OSLDFLAGS	:= $(shell [ $(OS) = "SunOS" ] && echo "-lrt -lsocket -lnsl")
-LDFLAGS		:= -lpthread $(OSLDFLAGS)
+LDFLAGS		:= -lpthread -lm $(OSLDFLAGS)
 CYGWIN_REQS	:= cygwin1.dll cygrunsrv.exe
 GCC_VER := $(shell ${CC} -dumpfullversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/')
 GCC_GTEQ_430 := $(shell expr ${GCC_VER} \>= 40300)
@@ -26,7 +26,7 @@ GCC_GTEQ_600 := $(shell expr ${GCC_VER} \>= 60000)
 GCC_GTEQ_700 := $(shell expr ${GCC_VER} \>= 70000)
 
 CFLAGS	+= -std=c99 -D__BSD_VISIBLE -D_ALL_SOURCE -D_XOPEN_SOURCE=600 -D_POSIX_C_SOURCE=200112 -D_ISOC99_SOURCE -D_REENTRANT -D_BSD_SOURCE -D_DEFAULT_SOURCE -D_DARWIN_C_SOURCE -DVERSION=\"'$(VER)'\"
-CFLAGS	+= -Wall -Wextra -pedantic -Wshadow -Wcast-qual -Wbad-function-cast -Wstrict-prototypes
+CFLAGS	+= -Wall -Wextra -pedantic -Wshadow -Wcast-qual -Wbad-function-cast -Wstrict-prototypes -Wno-overlength-strings
 CFLAGS	+= -D_FORTIFY_SOURCE=1
 #CFLAGS  += -ftrapv
 #CFLAGS  += -fsanitize=undefined -fsanitize-undefined-trap-on-error
@@ -64,22 +64,15 @@ else
 endif
 
 ifneq ($(findstring CYGWIN,$(OS)),)
-	OBJS=utils.o ntlm.o xcrypt.o config.o socket.o acl.o auth.o http.o forward.o direct.o scanner.o pages.o proxy.o main.o sspi.o win/resources.o
+	OBJS=utils.o ntlm.o xcrypt.o config.o socket.o acl.o auth.o http.o forward.o direct.o scanner.o pages.o proxy.o pac.o duktape.o main.o sspi.o win/resources.o
 else
-	OBJS=utils.o ntlm.o xcrypt.o config.o socket.o acl.o auth.o http.o forward.o direct.o scanner.o pages.o proxy.o main.o
+	OBJS=utils.o ntlm.o xcrypt.o config.o socket.o acl.o auth.o http.o forward.o direct.o scanner.o pages.o proxy.o pac.o duktape.o main.o
 endif
 
 ENABLE_KERBEROS=$(shell grep -c ENABLE_KERBEROS config/config.h)
 ifeq ($(ENABLE_KERBEROS),1)
 	OBJS+=kerberos.o
 	LDFLAGS+=-lgssapi_krb5
-endif
-
-ENABLE_PAC=$(shell grep -c ENABLE_PAC config/config.h)
-ifeq ($(ENABLE_PAC),1)
-	OBJS+=pac.o duktape.o
-	CFLAGS+=-Wno-overlength-strings
-	LDFLAGS+=-lm
 endif
 
 ENABLE_STATIC=$(shell grep -c ENABLE_STATIC config/config.h)
@@ -105,11 +98,9 @@ main.o: main.c
 	@echo "Compiling $<"
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
-ifeq ($(ENABLE_PAC),1)
 duktape.o: duktape/duktape.c
 	@echo "Compiling $<"
 	@$(CC) $(CFLAGS) -Wno-bad-function-cast -c -o $@ $<
-endif
 
 configure-stamp:
 	./configure

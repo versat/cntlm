@@ -25,11 +25,7 @@
 
 extern int prepare_http_connect(int sd, struct auth_s *credentials, const char *thost);
 extern rr_data_t forward_request(void *cdata, rr_data_t request);
-#ifdef ENABLE_PAC
 extern int forward_tunnel(void *thread_data);
-#else
-extern void forward_tunnel(void *thread_data);
-#endif
 extern void magic_auth_detect(const char *url);
 
 #endif /* _FORWARD_H */

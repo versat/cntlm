@@ -22,11 +22,7 @@
 #ifndef _PROXY_H
 #define _PROXY_H
 
-#ifdef ENABLE_PAC
 extern int proxy_connect(struct auth_s *credentials, const char* url, const char* hostname);
-#else
-extern int proxy_connect(struct auth_s *credentials);
-#endif
 extern int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct auth_s *creds);
 
 extern int parent_add(const char *parent, int port);

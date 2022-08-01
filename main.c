@@ -65,15 +65,13 @@
 #include "forward.h"				/* code serving via parent proxy */
 #include "direct.h"				/* code serving directly without proxy */
 #include "proxy.h"
+#include "pac.h"
 #ifdef __CYGWIN__
 #include "sspi.h"				/* code for SSPI management */
 #endif
 
 #ifdef ENABLE_KERBEROS
 #include "kerberos.h"
-#endif
-#ifdef ENABLE_PAC
-#include "pac.h"
 #endif
 
 #define STACK_SIZE	sizeof(void *)*8*1024
@@ -115,10 +113,8 @@ hlist_t users_list = NULL;			/* socks5_thread() */
 plist_t scanner_agent_list = NULL;		/* scanner_hook() */
 plist_t noproxy_list = NULL;			/* proxy_thread() */
 
-#ifdef ENABLE_PAC
 /* 1 = Pac engine is initialized and in use. */
 int pac_initialized = 0;
-#endif
 
 /*
  * General signal handler. If in debug mode, quit immediately.
@@ -320,10 +316,8 @@ void *proxy_thread(void *thread_data) {
 				ret = direct_request(thread_data, request);
 			} else {
 				ret = forward_request(thread_data, request);
-#ifdef ENABLE_PAC
 				if (ret == (void *)-2)
 					ret = direct_request(thread_data, request);
-#endif
 			}
 
 			if (debug)
@@ -372,12 +366,8 @@ void *tunnel_thread(void *thread_data) {
 	if (noproxy_match(hostname)) {
 		direct_tunnel(thread_data);
 	} else {
-#ifdef ENABLE_PAC
 		if (forward_tunnel(thread_data) == -2)
 			direct_tunnel(thread_data);
-#else
-		forward_tunnel(thread_data);
-#endif
 	}
 
 	free(hostname);
@@ -625,7 +615,6 @@ void *socks5_thread(void *thread_data) {
 		strlcat(thost, tport, HOST_BUFSIZE);
 
 		tcreds = new_auth();
-#ifdef ENABLE_PAC
 		sd = proxy_connect(tcreds, "/", thost);
 		if (sd == -2) {
 			// remove previously added port to thost
@@ -638,11 +627,6 @@ void *socks5_thread(void *thread_data) {
 		} else if (sd >= 0) {
 			i = prepare_http_connect(sd, tcreds, thost);
 		}
-#else
-		sd = proxy_connect(tcreds);
-		if (sd >= 0)
-			i = prepare_http_connect(sd, tcreds, thost);
-#endif
 	}
 
 	/*
@@ -751,13 +735,10 @@ int main(int argc, char **argv) {
 	plist_t rules = NULL;
 	config_t cf = NULL;
 	char *magic_detect = NULL;
-#ifdef ENABLE_PAC
 	int pac = 0;
 	char *pac_file;
 
 	pac_file = zmalloc(PATH_MAX);
-#endif
-
 	g_creds = new_auth();
 	cuser = zmalloc(MINIBUF_SIZE);
 	cdomain = zmalloc(MINIBUF_SIZE);
@@ -799,7 +780,6 @@ int main(int argc, char **argv) {
 				strlcpy(cdomain, optarg, MINIBUF_SIZE);
 				break;
 			case 'x':
-#ifdef ENABLE_PAC
 				pac = 1;
 				/*
 				 * Resolve relative paths if necessary.
@@ -810,9 +790,6 @@ int main(int argc, char **argv) {
 					syslog(LOG_ERR, "Resolving path to PAC file failed: %s\n", strerror(errno));
 					myexit(1);
 				}
-#else
-			fprintf(stderr, "-x specified but CNTLM was compiled without PAC support\n");
-#endif
 				break;
 			case 'F':
 				cflags = swap32(strtoul(optarg, &tmp, 0));
@@ -1046,12 +1023,7 @@ int main(int argc, char **argv) {
 		fprintf(stream, "\t-w  <workstation>\n"
 				"\t    Some proxies require correct NetBIOS hostname.\n");
 		fprintf(stream, "\t-x  <PAC_file>\n"
-#ifdef ENABLE_PAC
-				"\t    Specify a PAC file to load."
-#else
-				"\t    PAC file is not supported with this version of CNTLM"
-#endif
-				"\n");
+				"\t    Specify a PAC file to load.\n");
 		fprintf(stream, "\t-X  <sspi_handle_type>\n"
 				"\t    Use SSPI with specified handle type. Works only under Windows.\n"
 				"\t    Default is negotiate.\n");
@@ -1208,7 +1180,6 @@ int main(int argc, char **argv) {
 			free(tmp);
 		}
 
-#ifdef ENABLE_PAC
 		/*
 		 * Check if PAC file is defined.
 		 */
@@ -1216,7 +1187,6 @@ int main(int argc, char **argv) {
 		if (strlen(pac_file) > 0) {
 			pac = 1;
 		}
-#endif
 
 		/*
 		 * Add the rest of parent proxies.
@@ -1334,8 +1304,6 @@ int main(int argc, char **argv) {
 
 	config_close(cf);
 
-
-#ifdef ENABLE_PAC
 	/* Start Pac engine if pac_file available */
 	/* TODO: pac file option in config file */
 	if (pac) {
@@ -1357,9 +1325,6 @@ int main(int argc, char **argv) {
 	}
 
 	if (!interactivehash && !parent_available() && !pac)
-#else
-	if (!interactivehash && !parent_available())
-#endif
 		croak("Parent proxy address missing.\n", interactivepwd || magic_detect);
 
 	if (!interactivehash && !magic_detect && !proxyd_list)
@@ -1852,14 +1817,13 @@ int main(int argc, char **argv) {
 	}
 
 bailout:
-#ifdef ENABLE_PAC
 	if (pac_initialized) {
 		pac_initialized = 0;
 		pac_cleanup();
 	}
 
 	free(pac_file);
-#endif
+
 #ifdef __CYGWIN__
 	if (sspi_enabled())
 		sspi_unset();

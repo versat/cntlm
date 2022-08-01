@@ -9,9 +9,9 @@ MANDIR=/usr/local/man
 #
 #
 CC=xlc_r
-OBJS=utils.o ntlm.o xcrypt.o config.o socket.o acl.o auth.o http.o forward.o direct.o scanner.o pages.o proxy.o main.o sspi.o
+OBJS=utils.o ntlm.o xcrypt.o config.o socket.o acl.o auth.o http.o forward.o direct.o scanner.o pages.o proxy.o pac.o duktape.o main.o sspi.o
 CFLAGS=$(FLAGS) -O3 -D_POSIX_C_SOURCE=200112 -D_ISOC99_SOURCE -D_REENTRANT -DVERSION=\"`cat VERSION`\"
-LDFLAGS=-lpthread
+LDFLAGS=-lpthread -lm
 NAME=cntlm
 
 $(NAME): $(OBJS)
@@ -23,6 +23,9 @@ main.o: main.c
 	else \
 		$(CC) $(CFLAGS) -DSYSCONFDIR=\"$(SYSCONFDIR)\" -c main.c -o $@; \
 	fi
+
+duktape.o: duktape/duktape.c
+	$(CC) $(CFLAGS) -Wno-bad-function-cast -c -o $@ $<
 
 install: $(NAME)
 	if [ -f /usr/bin/oslevel ]; then \

@@ -131,15 +131,11 @@ beginning:
 		was_cached = 1;
 	} else {
 		tcreds = new_auth();
-#ifdef ENABLE_PAC
 		sd = proxy_connect(tcreds, request->url, request->hostname);
 		if (sd == -2) {
 			rc = (void *)-2;
 			goto bailout;
 		}
-#else
-		sd = proxy_connect(tcreds);
-#endif
 		if (sd < 0) {
 			tmp = gen_502_page(request->http, "Parent proxy unreachable");
 			(void) write_wrapper(cd, tmp, strlen(tmp));
@@ -583,11 +579,7 @@ bailout:
 	return rc;
 }
 
-#ifdef ENABLE_PAC
 int forward_tunnel(void *thread_data) {
-#else
-void forward_tunnel(void *thread_data) {
-#endif
 	struct auth_s *tcreds;
 	int sd;
 
@@ -598,11 +590,7 @@ void forward_tunnel(void *thread_data) {
 	INET_NTOP(&((struct thread_arg_s *)thread_data)->addr, saddr, INET6_ADDRSTRLEN);
 
 	tcreds = new_auth();
-#ifdef ENABLE_PAC
 	sd = proxy_connect(tcreds, "/", thost);
-#else
-	sd = proxy_connect(tcreds);
-#endif
 
 	if (sd < 0)
 		goto bailout;
@@ -622,9 +610,7 @@ bailout:
 	close(cd);
 	free(tcreds);
 
-#ifdef ENABLE_PAC
 	return sd;
-#endif
 }
 
 #define MAGIC_TESTS	5
@@ -690,11 +676,7 @@ void magic_auth_detect(const char *url) {
 
 		printf("Config profile %2d/%d... ", i+1, MAGIC_TESTS);
 
-#ifdef ENABLE_PAC
 		nc = proxy_connect(NULL, url, host);
-#else
-		nc = proxy_connect(NULL);
-#endif
 		if (nc < 0) {
 			printf("\nConnection to proxy failed, bailing out\n");
 			free_rr_data(&res);

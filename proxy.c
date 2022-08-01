@@ -36,7 +36,6 @@
 #include "kerberos.h"
 #endif
 
-#ifdef ENABLE_PAC
 #include "pac.h"
 
 /*
@@ -44,12 +43,9 @@
  * specify proxy type.
  */
 enum proxy_type_t { DIRECT, PROXY };
-#endif
 
 typedef struct {
-#ifdef ENABLE_PAC
 	enum proxy_type_t type;
-#endif
 	char hostname[64];
 	int port;
 	struct auth_s creds;
@@ -65,7 +61,6 @@ struct proxylist_s {
 	struct proxylist_s *next;
 };
 
-#ifdef ENABLE_PAC
 typedef struct paclist_s *paclist_t;
 typedef const struct paclist_s *paclist_const_t;
 struct paclist_s {
@@ -84,7 +79,6 @@ void paclist_free(paclist_t paclist);
  * Pac Mutex
  */
 pthread_mutex_t pac_mtx = PTHREAD_MUTEX_INITIALIZER;
-#endif
 
 /*
  * List of available proxies and current proxy id for proxy_connect().
@@ -168,12 +162,10 @@ void proxylist_dump(proxylist_const_t list) {
 
 	t = list;
 	while (t) {
-#ifdef ENABLE_PAC
 		if (t->proxy->type == DIRECT)
 			printf("List data: %lu => DIRECT\n", (unsigned long int)t->key);
 		else
-#endif		
-		printf("List data: %lu => %s:%d\n", (unsigned long int)t->key, t->proxy->hostname, t->proxy->port);
+			printf("List data: %lu => %s:%d\n", (unsigned long int)t->key, t->proxy->hostname, t->proxy->port);
 		t = t->next;
 	}
 }
@@ -231,9 +223,7 @@ int parent_add(const char *parent, int port) {
 	}
 
 	proxy = (proxy_t *)zmalloc(sizeof(proxy_t));
-#ifdef ENABLE_PAC
 	proxy->type = PROXY;
-#endif
 	strlcpy(proxy->hostname, tmp, sizeof(proxy->hostname));
 	proxy->port = port;
 	proxy->resolved = 0;
@@ -256,13 +246,10 @@ int parent_available(void) {
  * Frees the global proxy list.
  */
 void parent_free(void) {
-#ifdef ENABLE_PAC
 	paclist_free(pac_list);
-#endif
 	proxylist_free(parent_list, 1);
 }
 
-#ifdef ENABLE_PAC
 /*
  * Create list of proxy_t structs parsed from the PAC string returned
  * by Pac.
@@ -412,7 +399,6 @@ void paclist_free(paclist_t paclist) {
 		paclist = t;
 	}
 }
-#endif
 
 /*
  * Connect to the selected proxy. If the request fails, pick next proxy
@@ -422,11 +408,7 @@ void paclist_free(paclist_t paclist) {
  *
  * Writes required credentials into passed auth_s structure
  */
-#ifdef ENABLE_PAC
 int proxy_connect(struct auth_s *credentials, const char* url, const char* hostname) {
-#else
-int proxy_connect(struct auth_s *credentials) {
-#endif
 	proxylist_const_t proxylist;
 	proxylist_const_t p;
 	int proxycurr;
@@ -435,7 +417,6 @@ int proxy_connect(struct auth_s *credentials) {
 	int loop = 0;
 	int proxycount = 0;
 
-#ifdef ENABLE_PAC
 	paclist_t paclist = NULL;
 	const char *pacp_str;
 	if (pac_initialized) {
@@ -451,13 +432,10 @@ int proxy_connect(struct auth_s *credentials) {
 		proxycurr = paclist->proxycurr;
 		proxycount = paclist->count;
 	} else {
-#endif
 		proxylist = parent_list;
 		proxycurr = parent_curr;
 		proxycount = parent_count;
-#ifdef ENABLE_PAC
 	}
-#endif
 
 	if (proxycurr == 0) {
 		proxycurr = proxylist->key;
@@ -467,9 +445,7 @@ int proxy_connect(struct auth_s *credentials) {
 		pthread_mutex_lock(&parent_mtx);
 		proxy = proxylist_get(proxylist, proxycurr);
 		if (proxy &&
-#ifdef ENABLE_PAC
 			proxy->type == PROXY &&
-#endif		
 			proxy->resolved == 0) {
 			if (debug)
 				printf("Resolving proxy %s...\n", proxy->hostname);
@@ -481,10 +457,8 @@ int proxy_connect(struct auth_s *credentials) {
 		}
 		pthread_mutex_unlock(&parent_mtx);
 
-#ifdef ENABLE_PAC
 		if (proxy && proxy->type == DIRECT)
 			return -2;
-#endif		
 
 		i = -1;
 		if (proxy && proxy->resolved != 0)
@@ -527,10 +501,8 @@ int proxy_connect(struct auth_s *credentials) {
 
 		pthread_mutex_lock(&parent_mtx);
 		parent_curr = proxycurr;
-#ifdef ENABLE_PAC
 		if (pac_initialized)
 			paclist->proxycurr = proxycurr;
-#endif
 		pthread_mutex_unlock(&parent_mtx);
 	}
 
@@ -731,11 +703,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 		if (debug)
 			printf("Proxy closed on us, reconnect.\n");
 		close(*sd);
-#ifdef ENABLE_PAC
 		*sd = proxy_connect(credentials, request->url, request->hostname);
-#else
-		*sd = proxy_connect(credentials);
-#endif
 		if (*sd < 0) {
 			rc = 0;
 			goto bailout;

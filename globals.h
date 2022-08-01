@@ -47,9 +47,7 @@ extern pthread_mutex_t threads_mtx;
 extern plist_t connection_list;
 extern pthread_mutex_t connection_mtx;
 
-#ifdef ENABLE_PAC
 extern int pac_initialized;
-#endif
 
 extern hlist_t header_list;			/* forward_request() */
 extern hlist_t users_list;			/* socks5_thread() */

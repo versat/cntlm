@@ -17,7 +17,7 @@ CC		:= ikos-scan-cc
 VER		:= $(shell cat VERSION)
 OS		:= $(shell uname -s)
 OSLDFLAGS	:= $(shell [ $(OS) = "SunOS" ] && echo "-lrt -lsocket -lnsl")
-LDFLAGS		:= -lpthread $(OSLDFLAGS)
+LDFLAGS		:= -lpthread -lm $(OSLDFLAGS)
 CYGWIN_REQS	:= cygwin1.dll cygrunsrv.exe
 
 CFLAGS	+= -std=c99 -D__BSD_VISIBLE -D_ALL_SOURCE -D_XOPEN_SOURCE=600 -D_POSIX_C_SOURCE=200112 -D_ISOC99_SOURCE -D_REENTRANT -D_BSD_SOURCE -D_DARWIN_C_SOURCE -DVERSION=\"'$(VER)'\"
@@ -33,9 +33,9 @@ else
 endif
 
 ifneq ($(findstring CYGWIN,$(OS)),)
-	OBJS=utils.o ntlm.o xcrypt.o config.o socket.o acl.o auth.o http.o forward.o direct.o scanner.o pages.o proxy.o main.o sspi.o win/resources.o
+	OBJS=utils.o ntlm.o xcrypt.o config.o socket.o acl.o auth.o http.o forward.o direct.o scanner.o pages.o proxy.o pac.o duktape.o main.o sspi.o win/resources.o
 else
-	OBJS=utils.o ntlm.o xcrypt.o config.o socket.o acl.o auth.o http.o forward.o direct.o scanner.o pages.o proxy.o main.o
+	OBJS=utils.o ntlm.o xcrypt.o config.o socket.o acl.o auth.o http.o forward.o direct.o scanner.o pages.o proxy.o pac.o duktape.o main.o
 endif
 
 $(NAME): configure-stamp $(OBJS)
@@ -53,6 +53,10 @@ main.o: main.c
 %.o: %.c
 	@echo "Compiling $<"
 	@$(CC) $(CFLAGS) -c -o $@ $<
+
+duktape.o: duktape/duktape.c
+	@echo "Compiling $<"
+	@$(CC) $(CFLAGS) -Wno-bad-function-cast -c -o $@ $<
 
 configure-stamp:
 	./configure

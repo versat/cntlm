@@ -23,11 +23,6 @@ jobs:
         ./configure
         CFLAGS=-DUNICODE make
         make clean
-    - name: Build with pac enabled
-      run: |
-        ./configure --enable-pac
-        make
-        make clean
     - name: Build with kerberos enabled
       run: |
         ./configure --enable-kerberos
