@@ -100,7 +100,7 @@ main.o: main.c
 
 duktape.o: duktape/duktape.c
 	@echo "Compiling $<"
-	@$(CC) $(CFLAGS) -Wno-bad-function-cast -c -o $@ $<
+	@$(CC) $(CFLAGS) -Wno-bad-function-cast -Wno-null-dereference -Wno-format-nonliteral -Wno-format-overflow -c -o $@ $<
 
 configure-stamp:
 	./configure
