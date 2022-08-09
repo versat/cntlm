@@ -78,7 +78,7 @@ static duk_ret_t native_myipaddress(duk_context *ctx) {
 	return 1;
 }
 
-char * read_file(const char* filename) {
+char *read_file(const char* filename) {
     FILE    *fd;
     char    *buf;
     long    len;
@@ -101,6 +101,39 @@ char * read_file(const char* filename) {
     fclose(fd);
 
     return buf;
+}
+
+// returns an escaped string or null if original string
+// does not need to be escaped, or it is null, 
+// or an allocation error happens
+char *escape_string(const char *str) {
+    if (!str)
+        return NULL;
+
+    int n = 0;
+    const char *p = str;
+    while (*p) {
+        if (*p == '"' || *p == '\\')
+            n++;
+        p++;
+    }
+    if (n == 0)
+        return NULL;
+
+    int len = p - str + n + 1;
+    char *newstr = (char*)calloc(len, sizeof(char));
+    if (!newstr)
+        return NULL;
+
+    char *q = newstr;
+    p = str;
+    while (*p) {
+        if (*p == '"' || *p == '\\')
+            *q++ = '\\';
+        *q++ = *p++;
+    }
+    *q = 0;
+    return newstr;
 }
 
 int pac_init(void) {
@@ -144,10 +177,21 @@ const char *pac_find_proxy(const char *url, const char *host) {
     if (!pac_ctx || !url || !host)
         return NULL;
 
-    duk_push_sprintf(pac_ctx, "FindProxyForURL(\"%s\", \"%s\");", url, host);
+    char* escaped_url = escape_string(url);
+    char* escaped_host = escape_string(host);
+
+    duk_push_sprintf(pac_ctx, "FindProxyForURL(\"%s\", \"%s\");",
+        escaped_url ? escaped_url : url,
+        escaped_host ? escaped_host : host);
     duk_eval(pac_ctx);
     const char* res = duk_get_string(pac_ctx, -1);
     duk_pop(pac_ctx);
+
+    if (escaped_url)
+        free(escaped_url);
+    if (escaped_host)
+        free(escaped_host);
+
     return res;
 }
 
