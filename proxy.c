@@ -86,7 +86,7 @@ pthread_mutex_t pac_mtx = PTHREAD_MUTEX_INITIALIZER;
 int parent_count = 0;
 proxylist_t parent_list = NULL;
 
-int parent_curr = 0;
+unsigned long parent_curr = 0;
 pthread_mutex_t parent_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 #ifdef ENABLE_KERBEROS
@@ -163,9 +163,9 @@ void proxylist_dump(proxylist_const_t list) {
 	t = list;
 	while (t) {
 		if (t->proxy->type == DIRECT)
-			printf("List data: %lu => DIRECT\n", (unsigned long int)t->key);
+			printf("List data: %lu => DIRECT\n", t->key);
 		else
-			printf("List data: %lu => %s:%d\n", (unsigned long int)t->key, t->proxy->hostname, t->proxy->port);
+			printf("List data: %lu => %s:%d\n", t->key, t->proxy->hostname, t->proxy->port);
 		t = t->next;
 	}
 }
@@ -324,7 +324,8 @@ paclist_t paclist_create(const char *pacp_str) {
 				proxy->type = DIRECT;
 				
 				pthread_mutex_lock(&parent_mtx);
-				parent_list = proxylist_add(parent_list, ++parent_count, proxy);
+				++parent_count;
+				parent_list = proxylist_add(parent_list, parent_count, proxy);
 				plist = proxylist_add(plist, parent_count, proxy);
 				pthread_mutex_unlock(&parent_mtx);
 			}
@@ -411,7 +412,7 @@ void paclist_free(paclist_t paclist) {
 int proxy_connect(struct auth_s *credentials, const char* url, const char* hostname) {
 	proxylist_const_t proxylist;
 	proxylist_const_t p;
-	int proxycurr;
+	unsigned long proxycurr;
 	proxy_t *proxy;
 	int i;
 	int loop = 0;
@@ -437,7 +438,7 @@ int proxy_connect(struct auth_s *credentials, const char* url, const char* hostn
 		proxycount = parent_count;
 	}
 
-	if (proxycurr == 0) {
+	if (proxycurr == 0 && proxylist) {
 		proxycurr = proxylist->key;
 	}
 
@@ -501,7 +502,7 @@ int proxy_connect(struct auth_s *credentials, const char* url, const char* hostn
 
 		pthread_mutex_lock(&parent_mtx);
 		parent_curr = proxycurr;
-		if (pac_initialized)
+		if (pac_initialized && paclist)
 			paclist->proxycurr = proxycurr;
 		pthread_mutex_unlock(&parent_mtx);
 	}

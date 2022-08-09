@@ -1125,7 +1125,7 @@ int main(int argc, char **argv) {
 		 * Check if gateway mode is requested before actually binding any ports.
 		 */
 		tmp = zmalloc(MINIBUF_SIZE);
-		CFG_DEFAULT(cf, "Gateway", tmp, MINIBUF_SIZE);
+		CFG_DEFAULT(cf, "Gateway", tmp, MINIBUF_SIZE)
 		if (!strcasecmp("yes", tmp))
 			gateway = 1;
 		free(tmp);
@@ -1134,7 +1134,7 @@ int main(int argc, char **argv) {
 		 * Check for NTLM-to-basic settings
 		 */
 		tmp = zmalloc(MINIBUF_SIZE);
-		CFG_DEFAULT(cf, "NTLMToBasic", tmp, MINIBUF_SIZE);
+		CFG_DEFAULT(cf, "NTLMToBasic", tmp, MINIBUF_SIZE)
 		if (!strcasecmp("yes", tmp))
 			ntlmbasic = 1;
 		free(tmp);
@@ -1183,8 +1183,8 @@ int main(int argc, char **argv) {
 		/*
 		 * Check if PAC file is defined.
 		 */
-		CFG_DEFAULT(cf, "Pac", pac_file, PATH_MAX);
-		if (strlen(pac_file) > 0) {
+		CFG_DEFAULT(cf, "Pac", pac_file, PATH_MAX)
+		if (*pac_file) {
 			pac = 1;
 		}
 
@@ -1217,21 +1217,21 @@ int main(int argc, char **argv) {
 		/*
 		 * Single options.
 		 */
-		CFG_DEFAULT(cf, "Auth", cauth, MINIBUF_SIZE);
-		CFG_DEFAULT(cf, "Domain", cdomain, MINIBUF_SIZE);
-		CFG_DEFAULT(cf, "Password", cpassword, MINIBUF_SIZE);
-		CFG_DEFAULT(cf, "PassNTLMv2", cpassntlm2, MINIBUF_SIZE);
-		CFG_DEFAULT(cf, "PassNT", cpassnt, MINIBUF_SIZE);
-		CFG_DEFAULT(cf, "PassLM", cpasslm, MINIBUF_SIZE);
-		CFG_DEFAULT(cf, "Username", cuser, MINIBUF_SIZE);
-		CFG_DEFAULT(cf, "Workstation", cworkstation, MINIBUF_SIZE);
+		CFG_DEFAULT(cf, "Auth", cauth, MINIBUF_SIZE)
+		CFG_DEFAULT(cf, "Domain", cdomain, MINIBUF_SIZE)
+		CFG_DEFAULT(cf, "Password", cpassword, MINIBUF_SIZE)
+		CFG_DEFAULT(cf, "PassNTLMv2", cpassntlm2, MINIBUF_SIZE)
+		CFG_DEFAULT(cf, "PassNT", cpassnt, MINIBUF_SIZE)
+		CFG_DEFAULT(cf, "PassLM", cpasslm, MINIBUF_SIZE)
+		CFG_DEFAULT(cf, "Username", cuser, MINIBUF_SIZE)
+		CFG_DEFAULT(cf, "Workstation", cworkstation, MINIBUF_SIZE)
 
 #ifdef __CYGWIN__
 		/*
 		 * Check if SSPI is enabled and it's type.
 		 */
 		tmp = zmalloc(MINIBUF_SIZE);
-		CFG_DEFAULT(cf, "SSPI", tmp, MINIBUF_SIZE);
+		CFG_DEFAULT(cf, "SSPI", tmp, MINIBUF_SIZE)
 
 		if (!sspi_enabled() && strlen(tmp)) {
 			if (!sspi_set(tmp)) { // Only NTLM supported for now
@@ -1245,13 +1245,13 @@ int main(int argc, char **argv) {
 #endif
 
 		tmp = zmalloc(MINIBUF_SIZE);
-		CFG_DEFAULT(cf, "Flags", tmp, MINIBUF_SIZE);
+		CFG_DEFAULT(cf, "Flags", tmp, MINIBUF_SIZE)
 		if (!cflags)
 			cflags = swap32(strtoul(tmp, NULL, 0));
 		free(tmp);
 
 		tmp = zmalloc(MINIBUF_SIZE);
-		CFG_DEFAULT(cf, "ISAScannerSize", tmp, MINIBUF_SIZE);
+		CFG_DEFAULT(cf, "ISAScannerSize", tmp, MINIBUF_SIZE)
 		if (!scanner_plugin_maxsize && strlen(tmp)) {
 			scanner_plugin = 1;
 			scanner_plugin_maxsize = atoi(tmp);

@@ -105,10 +105,10 @@ do
 			printf "#define ENABLE_KERBEROS" >> $CONFIG
 			echo "" >> $CONFIG
 			;;
-        --enable-static)
-            printf "#define ENABLE_STATIC" >> $CONFIG
-            echo "" >> $CONFIG
-            ;;
+		--enable-static)
+			printf "#define ENABLE_STATIC" >> $CONFIG
+			echo "" >> $CONFIG
+			;;
 		*)
 			echo "Unknown flag $1"
 			rm -f $CONFIG
