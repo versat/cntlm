@@ -408,6 +408,10 @@ void paclist_free(paclist_t paclist) {
  * all threads until it stops working. Then the search starts again.
  *
  * Writes required credentials into passed auth_s structure
+ *
+ * Returns >0 valid handle
+ * Returns -1 if it fails connection with proxy
+ * Returns -2 if connection is DIRECT
  */
 int proxy_connect(struct auth_s *credentials, const char* url, const char* hostname) {
 	proxylist_const_t proxylist;

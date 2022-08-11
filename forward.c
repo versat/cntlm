@@ -607,7 +607,9 @@ bailout:
 	if (sd >= 0) {
 		close(sd);
 	}
-	close(cd);
+	if (sd != -2) {
+		close(cd);
+	}
 	free(tcreds);
 
 	return sd;
