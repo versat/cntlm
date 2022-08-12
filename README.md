@@ -143,11 +143,10 @@ required for all threaded applications and is very likely to be part of your
 system already, because it comes with libc. Next, install cntlm onto your
 system like so:
 
-Default installation directories are /usr/sbin, /usr/share/man and /etc. Should
-you want to install cntlm into a different location, change the DESTDIR
+Default installation directories are /usr/local/sbin, /usr/local/share/man and /etc.
+Should you want to install cntlm into a different location, change the DESTDIR
 installation prefix (from "/") to add a different installation prefix (e.g.
-/usr/local).  To change individual directories, use BINDIR, MANDIR and
-SYSCONFDIR:
+/usr).  To change individual directories, use BINDIR, MANDIR and SYSCONFDIR:
 
     make SYSCONFDIR=/etc BINDIR=/usr/bin MANDIR=/usr/share/man
     make install SYSCONFDIR=/etc BINDIR=/usr/bin MANDIR=/usr/share/man

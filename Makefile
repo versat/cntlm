@@ -4,8 +4,8 @@
 #
 DESTDIR    	:=
 SYSCONFDIR 	:= $(DESTDIR)/etc
-BINDIR     	:= $(DESTDIR)/usr/sbin
-MANDIR     	:= $(DESTDIR)/usr/share/man
+BINDIR     	:= $(DESTDIR)/usr/local/sbin
+MANDIR     	:= $(DESTDIR)/usr/local/share/man
 
 #
 # Careful now...
@@ -116,10 +116,13 @@ install: $(NAME)
 		install -M 644 -f $(MANDIR)/man1 doc/$(NAME).1; \
 		install -M 600 -c $(SYSCONFDIR) doc/$(NAME).conf; \
 	elif [ "`uname -s`" = "Darwin" ]; then \
-		install -d -m 755 -s $(NAME) $(BINDIR)/$(NAME); \
-		install -d -m 644 doc/$(NAME).1 $(MANDIR)/man1/$(NAME).1; \
+		install -d $(BINDIR)/; \
+		install -m 755 -s $(NAME) $(BINDIR)/$(NAME); \
+		install -d $(MANDIR)/man1/; \
+		install -m 644 doc/$(NAME).1 $(MANDIR)/man1/$(NAME).1; \
 		[ -f $(SYSCONFDIR)/$(NAME).conf -o -z "$(SYSCONFDIR)" ] \
-			|| install -d -m 600 doc/$(NAME).conf $(SYSCONFDIR)/$(NAME).conf; \
+			|| install -d $(SYSCONFDIR)/; \
+			   install -m 600 doc/$(NAME).conf $(SYSCONFDIR)/$(NAME).conf; \
 	else \
 		install -D -m 755 -s $(NAME) $(BINDIR)/$(NAME); \
 		install -D -m 644 doc/$(NAME).1 $(MANDIR)/man1/$(NAME).1; \
