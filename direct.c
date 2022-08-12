@@ -330,7 +330,8 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 				goto bailout;
 			}
 
-			if (loop == 1 && data[1]->code == 401 && hlist_subcmp_all(data[1]->headers, "WWW-Authenticate", "NTLM")) {
+			if (loop == 1 && data[1]->code == 401 && hlist_subcmp_all(data[1]->headers, "WWW-Authenticate", "NTLM") &&
+				!http_has_body(data[0], NULL)) {
 				/*
 				 * Server closing the connection after 401?
 				 * Should never happen.
