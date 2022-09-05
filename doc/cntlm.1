@@ -381,6 +381,13 @@ Specify a PAC file to load.
 .B -X <sspi_handle_type>\ \ \ \ (SSPI)
 Use SSPI with specified handle type. Works only under Windows. Default is negotiate (NTLM).
 
+.ne 5
+.TP
+.B -Z <pattern1>[,<patternN]\ \ \ \ (NoAuth)
+Avoid authentication for these host names. All matching URL's will be redirected to the configured proxy
+but without trying NTLM authentication. This allows to avoid bugs of some proxy (e.g.: eole-amon) which
+does not answer to authenticated request when authentication is not required.
+
 .SH CONFIGURATION
 Configuration file is basically an INI file, except there are no "=" between keys and values. It comprises of
 whitespace delimited keyword and value pairs. Apart from that, there are sections as well, they have the usual
