@@ -130,7 +130,14 @@ beginning:
 		authok = 1;
 		was_cached = 1;
 	} else {
-		tcreds = new_auth();
+	        if (noauth_match(request->hostname)) {
+		  noauth=1;authok=1;loop=1;
+		  tcreds = NULL;
+		  if (debug)
+		    printf("NoAuth requested\n");
+		} else {
+		  tcreds = new_auth();
+		}
 		sd = proxy_connect(tcreds, request->url, request->hostname);
 		if (sd == -2) {
 			rc = (void *)-2;

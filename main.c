@@ -112,6 +112,7 @@ hlist_t header_list = NULL;			/* forward_request() */
 hlist_t users_list = NULL;			/* socks5_thread() */
 plist_t scanner_agent_list = NULL;		/* scanner_hook() */
 plist_t noproxy_list = NULL;			/* proxy_thread() */
+plist_t noauth_list = NULL;			
 
 /* 1 = Pac engine is initialized and in use. */
 int pac_initialized = 0;
@@ -256,10 +257,7 @@ plist_t noproxy_add(plist_t list, char *spec) {
 	return list;
 }
 
-int noproxy_match(const char *addr) {
-	plist_const_t list;
-
-	list = noproxy_list;
+int nolist_match(plist_const_t list, const char *addr) {
 	while (list) {
 		if (list->aux && strlen(list->aux)
 				&& fnmatch(list->aux, addr, 0) == 0) {
@@ -273,6 +271,14 @@ int noproxy_match(const char *addr) {
 	}
 
 	return 0;
+}
+
+int noproxy_match(const char *addr) {
+  return (nolist_match(noproxy_list,addr));
+}
+
+int noauth_match(const char *addr) {
+  return (nolist_match(noauth_list,addr));
 }
 
 /*
@@ -760,7 +766,7 @@ int main(int argc, char **argv) {
 	syslog(LOG_INFO, "Starting cntlm version " VERSION " for LITTLE endian\n");
 #endif
 
-	while ((i = getopt(argc, argv, ":-:T:a:c:d:fghIl:p:r:su:vw:x:A:BD:F:G:HL:M:N:O:P:R:S:U:X:q")) != -1) {
+	while ((i = getopt(argc, argv, ":-:T:a:c:d:fghIl:p:r:su:vw:x:A:BD:F:G:HL:M:N:O:P:R:S:Z:U:X:q")) != -1) {
 		switch (i) {
 			case 'A':
 			case 'D':
@@ -835,6 +841,10 @@ int main(int argc, char **argv) {
 				break;
 			case 'N':
 				noproxy_list = noproxy_add(noproxy_list, tmp=strdup(optarg));
+				free(tmp);
+				break;
+			case 'Z':
+				noauth_list = noproxy_add(noauth_list, tmp=strdup(optarg));
 				free(tmp);
 				break;
 			case 'O':
@@ -1261,6 +1271,13 @@ int main(int argc, char **argv) {
 		while ((tmp = config_pop(cf, "NoProxy"))) {
 			if (strlen(tmp)) {
 				noproxy_list = noproxy_add(noproxy_list, tmp);
+			}
+			free(tmp);
+		}
+
+		while ((tmp = config_pop(cf, "NoAuth"))) {
+			if (strlen(tmp)) {
+				noauth_list = noproxy_add(noauth_list, tmp);
 			}
 			free(tmp);
 		}
@@ -1837,6 +1854,7 @@ bailout:
 	hlist_free(header_list);
 	plist_free(scanner_agent_list);
 	plist_free(noproxy_list);
+	plist_free(noauth_list);
 	plist_free(tunneld_list);
 	plist_free(proxyd_list);
 	plist_free(socksd_list);
