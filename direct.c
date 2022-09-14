@@ -54,7 +54,7 @@ int host_connect(const char *hostname, int port) {
 	return fd;
 }
 
-int www_authenticate(int sd, rr_data_t request, rr_data_t response, struct auth_s *creds) {
+int www_authenticate(int sd, int cd, rr_data_t request, rr_data_t response, struct auth_s *creds, int probe) {
 	char *tmp;
 	char *buf;
 	char *challenge;
@@ -79,9 +79,10 @@ int www_authenticate(int sd, rr_data_t request, rr_data_t response, struct auth_
 	auth->headers = hlist_del(auth->headers, "Transfer-Encoding");
 
 	/*
-	 * Drop whatever error page server returned
+	 * Drop whatever error page server returned, only if we didn't send a HEAD request (probe)
+	 * In this case the response can contain a Content-Length > 0 but anyway there is no body.
 	 */
-	if (!http_body_drop(sd, response))
+	if (!probe && !http_body_drop(sd, response))
 		goto bailout;
 
 	if (debug) {
@@ -156,10 +157,18 @@ int www_authenticate(int sd, rr_data_t request, rr_data_t response, struct auth_
 		goto bailout;
 	}
 
+	/*
+	 * If we sent a HEAD request (probe) this is the moment to send the body of
+	 * the original request (we just sent headers with authorization)
+	 */
+	reset_rr_data(auth);
+	if (probe && !http_body_send(sd, cd, request, auth)) {
+		goto bailout;
+	}
+
 	if (debug)
 		printf("\nReading final server response...\n");
 
-	reset_rr_data(auth);
 	if (!headers_recv(sd, auth)) {
 		goto bailout;
 	}
@@ -187,6 +196,7 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 	int loop;
 	int sd;
 	char *tmp;
+	int probe = 0;
 
 	char *hostname = NULL;
 	int port = 0;
@@ -229,6 +239,14 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 
 	do {
 		if (request) {
+			/*
+			* If there's a body make this request just a probe (HEAD request), unless the
+			* request is a CONNECT (in which case it is simply tunnelled between client and server).
+			* Do not send any body. If no auth is required, then we simply send the original request.
+			* If auth is required we send the request body in the 2nd and last part of the
+			* NTLM handshake.
+			*/
+			probe = !CONNECT(request) && http_has_body(request, NULL);
 			data[0] = dup_rr_data(request);
 			request = NULL;
 		} else {
@@ -330,8 +348,7 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 				goto bailout;
 			}
 
-			if (loop == 1 && data[1]->code == 401 && hlist_subcmp_all(data[1]->headers, "WWW-Authenticate", "NTLM") &&
-				!http_has_body(data[0], NULL)) {
+			if (loop == 1 && data[1]->code == 401 && hlist_subcmp_all(data[1]->headers, "WWW-Authenticate", "NTLM")) {
 				/*
 				 * Server closing the connection after 401?
 				 * Should never happen.
@@ -346,11 +363,14 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 						(void) write_wrapper(cd, tmp, strlen(tmp));
 						free(tmp);
 
+						free_rr_data(&data[0]);
+						free_rr_data(&data[1]);
+
 						rc = (void *)-1;
 						goto bailout;
 					}
 				}
-				if (!www_authenticate(*wsocket[0], data[0], data[1], tcreds)) {
+				if (!www_authenticate(*wsocket[0], *rsocket[0], data[0], data[1], tcreds, probe)) {
 					if (debug)
 						printf("WWW auth connection error.\n");
 
@@ -378,6 +398,34 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 					rc = (void *)-1;
 					goto bailout;
 				}
+				probe = 0;
+			}
+
+			if (loop == 1 && probe) {
+				/*
+				 * Remote server did not require authentication, so we rewind and start again
+				 * sending the original request. If the server closed the connection we must
+				 * reopen it. We must also reset response data.
+				 */
+				if (so_closed(sd)) {
+					close(sd);
+					sd = host_connect(data[0]->hostname, data[0]->port);
+					if (sd < 0) {
+						tmp = gen_502_page(data[0]->http, "Connection to remote server failed");
+						(void) write_wrapper(cd, tmp, strlen(tmp));
+						free(tmp);
+
+						free_rr_data(&data[0]);
+						free_rr_data(&data[1]);
+
+						rc = (void *)-1;
+						goto bailout;
+					}
+					syslog(LOG_DEBUG, "server reconnect after probe");
+				}
+				reset_rr_data(data[1]);
+				probe = 0;
+				loop = 0;
 			}
 
 			/*
@@ -410,21 +458,43 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 				}
 			}
 
-			/*
-			 * Send headers
-			 */
-			if (!headers_send(*wsocket[loop], data[loop])) {
-				free_rr_data(&data[0]);
-				free_rr_data(&data[1]);
-				rc = (void *)-1;
-				goto bailout;
-			}
+			if (loop == 0 && probe) {
+				/*
+				 * The first request has a body, so we must send a HEAD request (probe) first,
+				 * to check if the remote server requires authentication, in that case
+				 * the body is sent at the end of the NTLM challenge with the correct method
+				 */
+				rr_data_t auth = dup_rr_data(data[0]);
+				free(auth->method);
+				auth->method = strdup("HEAD");
+				auth->headers = hlist_mod(auth->headers, "Content-Length", "0", 1);
+				auth->headers = hlist_del(auth->headers, "Transfer-Encoding");
 
-			if (!http_body_send(*wsocket[loop], *rsocket[loop], data[0], data[1])) {
-				free_rr_data(&data[0]);
-				free_rr_data(&data[1]);
-				rc = (void *)-1;
-				goto bailout;
+				if (!headers_send(*wsocket[0], auth)) {
+					free_rr_data(&auth);
+					free_rr_data(&data[0]);
+					free_rr_data(&data[1]);
+					rc = (void *)-1;
+					goto bailout;
+				}
+				free_rr_data(&auth);
+			} else {
+				/*
+				* Send headers
+				*/
+				if (!headers_send(*wsocket[loop], data[loop])) {
+					free_rr_data(&data[0]);
+					free_rr_data(&data[1]);
+					rc = (void *)-1;
+					goto bailout;
+				}
+
+				if (!http_body_send(*wsocket[loop], *rsocket[loop], data[0], data[1])) {
+					free_rr_data(&data[0]);
+					free_rr_data(&data[1]);
+					rc = (void *)-1;
+					goto bailout;
+				}
 			}
 		}
 
