@@ -3,9 +3,10 @@
 # like, but do not touch more unless you know what you are doing. ;)
 #
 DESTDIR    	:=
+PREFIX     	:= /usr/local
 SYSCONFDIR 	:= $(DESTDIR)/etc
-BINDIR     	:= $(DESTDIR)/usr/local/sbin
-MANDIR     	:= $(DESTDIR)/usr/local/share/man
+BINDIR     	:= $(DESTDIR)$(PREFIX)/sbin
+MANDIR     	:= $(DESTDIR)$(PREFIX)/share/man
 
 #
 # Careful now...

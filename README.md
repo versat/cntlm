@@ -145,8 +145,9 @@ system like so:
 
 Default installation directories are /usr/local/sbin, /usr/local/share/man and /etc.
 Should you want to install cntlm into a different location, change the DESTDIR
-installation prefix (from "/") to add a different installation prefix (e.g.
-/usr).  To change individual directories, use BINDIR, MANDIR and SYSCONFDIR:
+installation prefix (from "/") to add a different installation prefix.
+To change the location of binaries and manual (from "/usr/local") use PREFIX.
+To change individual directories, use BINDIR, MANDIR and SYSCONFDIR:
 
     make SYSCONFDIR=/etc BINDIR=/usr/bin MANDIR=/usr/share/man
     make install SYSCONFDIR=/etc BINDIR=/usr/bin MANDIR=/usr/share/man
