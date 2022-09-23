@@ -654,7 +654,6 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 					printf("Using Negotiation ...\n");
 
 				request->headers = hlist_mod(request->headers, "Proxy-Authorization", buf, 1);
-				free(tmp);
 			}
 			else {
 #endif
