@@ -26,33 +26,6 @@
 #include "utils.h"
 #include "auth.h"
 
-struct auth_s *new_auth(void) {
-	struct auth_s *tmp;
-
-	tmp = (struct auth_s *)malloc(sizeof(struct auth_s));
-	if (tmp == NULL)
-		return NULL;
-
-	memset(tmp->user, 0, MINIBUF_SIZE);
-	memset(tmp->domain, 0, MINIBUF_SIZE);
-	memset(tmp->workstation, 0, MINIBUF_SIZE);
-	memset(tmp->passntlm2, 0, MINIBUF_SIZE);
-	memset(tmp->passnt, 0, MINIBUF_SIZE);
-	memset(tmp->passlm, 0, MINIBUF_SIZE);
-#ifdef __CYGWIN__
-	memset(&tmp->sspi, 0, sizeof(struct sspi_handle));
-#endif
-	tmp->hashntlm2 = 1;
-	tmp->hashnt = 0;
-	tmp->hashlm = 0;
-	tmp->flags = 0;
-#if config_gss == 1
-	tmp->haskrb = 0;
-#endif
-
-	return tmp;
-}
-
 struct auth_s *copy_auth(struct auth_s *dst, const struct auth_s *src, int fullcopy) {
 	dst->hashntlm2 = src->hashntlm2;
 	dst->hashnt = src->hashnt;
@@ -83,10 +56,7 @@ struct auth_s *copy_auth(struct auth_s *dst, const struct auth_s *src, int fullc
 struct auth_s *dup_auth(const struct auth_s *creds, int fullcopy) {
 	struct auth_s *tmp;
 
-	tmp = new_auth();
-	if (tmp == NULL)
-		return NULL;
-
+	tmp = zmalloc(sizeof(struct auth_s));
 	return copy_auth(tmp, creds, fullcopy);
 }
 

@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _NTLM_H
-#define _NTLM_H
+#ifndef NTLM_H
+#define NTLM_H
 
 #include "xcrypt.h"
 #include "auth.h"
@@ -34,4 +34,4 @@ extern char *ntlm2_hash_password(const char *username, const char *domain, const
 extern int ntlm_request(char **dst, struct auth_s *creds);
 extern int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds);
 
-#endif /* _NTLM_H */
+#endif /* NTLM_H */

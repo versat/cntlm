@@ -130,7 +130,7 @@ beginning:
 		authok = 1;
 		was_cached = 1;
 	} else {
-		tcreds = new_auth();
+		tcreds = zmalloc(sizeof(struct auth_s));
 		sd = proxy_connect(tcreds, request->url, request->hostname);
 		if (sd == -2) {
 			rc = (void *)-2;
@@ -187,8 +187,9 @@ beginning:
 		retry = 0;
 		proxy_alive = 0;
 		conn_alive = 0;
+		loop = 0; // 0 = request from client; 1 = response from server
 
-		for (loop = 0; loop < 2; ++loop) {
+		while (loop < 2) {
 			if (data[loop]->empty) {				// Isn't this the first loop with request supplied by caller?
 				if (debug) {
 					printf("\n******* Round %d C: %d, S: %d (authok=%d, noauth=%d) *******\n", loop+1, cd, sd, authok, noauth);
@@ -213,7 +214,7 @@ beginning:
 			 * we were called. If former, set proxy_alive=1 to cache the connection.
 			 */
 			if (loop == 0 && hostname && data[0]->hostname
-					&& strcasecmp(hostname, data[0]->hostname)) {
+					&& strcasecmp(hostname, data[0]->hostname) != 0) {
 				if (debug)
 					printf("\n******* F RETURN: %s *******\n", data[0]->url);
 				if (authok && data[0]->http_version >= 11
@@ -462,6 +463,8 @@ shortcut:
 					rc = (void *)-1;
 				}
 			}
+
+			++loop;
 		}
 
 		free_rr_data(&data[0]);
@@ -597,7 +600,7 @@ int forward_tunnel(void *thread_data) {
 	char saddr[INET6_ADDRSTRLEN] = {0};
 	INET_NTOP(&((struct thread_arg_s *)thread_data)->addr, saddr, INET6_ADDRSTRLEN);
 
-	tcreds = new_auth();
+	tcreds = zmalloc(sizeof(struct auth_s));
 	if ((pos = strchr(hostname, ':')) != NULL) // separate port
 		*pos = 0;
 	sd = proxy_connect(tcreds, thost, hostname);
@@ -648,8 +651,7 @@ void magic_auth_detect(const char *url) {
 		{  2,  0,  0,      0,     4 }
 	};
 
-	tcreds = new_auth();
-	copy_auth(tcreds, g_creds, /* fullcopy */ 1);
+	tcreds = dup_auth(g_creds, /* fullcopy */ 1);
 
 	if (   is_memory_all_zero(tcreds->passnt, ARRAY_SIZE(tcreds->passnt))
 		|| is_memory_all_zero(tcreds->passlm, ARRAY_SIZE(tcreds->passlm))

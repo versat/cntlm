@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _UTILS_H
-#define _UTILS_H
+#ifndef UTILS_H
+#define UTILS_H
 
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 # include <sys/param.h>
@@ -178,8 +178,8 @@ extern size_t strlcat(char *dst, const char *src, size_t siz);
 extern char *trimr(char * const buf);
 extern char *lowercase(char * const str);
 extern char *uppercase(char * const str);
-extern int unicode(char **dst, const char * const src);
-extern char *zmalloc(size_t size) __attribute__((warn_unused_result, malloc, alloc_size(1)));
+extern size_t unicode(char **dst, const char * const src);
+extern void *zmalloc(size_t size) __attribute__((warn_unused_result, malloc, alloc_size(1)));
 extern char *urlencode(const char * const str) __attribute__((warn_unused_result));
 
 extern rr_data_t new_rr_data(void) __attribute__((warn_unused_result));
@@ -206,4 +206,4 @@ extern void compat_memset_s( void *dest, size_t destsz, char ch, size_t count );
 extern char *strdup(const char *src)  __attribute__((warn_unused_result));
 #endif
 
-#endif /* _UTILS_H */
+#endif /* UTILS_H */

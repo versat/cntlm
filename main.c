@@ -614,7 +614,7 @@ void *socks5_thread(void *thread_data) {
 		strlcat(thost, ":", HOST_BUFSIZE);
 		strlcat(thost, tport, HOST_BUFSIZE);
 
-		tcreds = new_auth();
+		tcreds = zmalloc(sizeof(struct auth_s));
 		sd = proxy_connect(tcreds, thost, hostname);
 		if (sd == -2) {
 			sd = host_connect(hostname, ntohs(port));
@@ -735,7 +735,7 @@ int main(int argc, char **argv) {
 	char *pac_file;
 
 	pac_file = zmalloc(PATH_MAX);
-	g_creds = new_auth();
+	g_creds = zmalloc(sizeof(struct auth_s));
 	cuser = zmalloc(MINIBUF_SIZE);
 	cdomain = zmalloc(MINIBUF_SIZE);
 	cpassword = zmalloc(PASSWORD_BUFSIZE);
@@ -759,8 +759,11 @@ int main(int argc, char **argv) {
 	while ((i = getopt(argc, argv, ":-:T:a:c:d:fghIl:p:r:su:vw:x:A:BD:F:G:HL:M:N:O:P:R:S:U:X:q")) != -1) {
 		switch (i) {
 			case 'A':
+				if (!acl_add(&rules, optarg, ACL_ALLOW))
+					myexit(1);
+				break;
 			case 'D':
-				if (!acl_add(&rules, optarg, (i == 'A' ? ACL_ALLOW : ACL_DENY)))
+				if (!acl_add(&rules, optarg, ACL_DENY))
 					myexit(1);
 				break;
 			case 'a':
@@ -1342,27 +1345,19 @@ int main(int argc, char **argv) {
 	/*
 	 * Parse selected NTLM hash combination.
 	 */
+	assert(g_creds);
 	if (strlen(cauth)) {
 		if (!strcasecmp("ntlm", cauth)) {
 			g_creds->hashnt = 1;
 			g_creds->hashlm = 1;
-			g_creds->hashntlm2 = 0;
 		} else if (!strcasecmp("nt", cauth)) {
 			g_creds->hashnt = 1;
-			g_creds->hashlm = 0;
-			g_creds->hashntlm2 = 0;
 		} else if (!strcasecmp("lm", cauth)) {
-			g_creds->hashnt = 0;
 			g_creds->hashlm = 1;
-			g_creds->hashntlm2 = 0;
 		} else if (!strcasecmp("ntlmv2", cauth)) {
-			g_creds->hashnt = 0;
-			g_creds->hashlm = 0;
 			g_creds->hashntlm2 = 1;
 		} else if (!strcasecmp("ntlm2sr", cauth)) {
 			g_creds->hashnt = 2;
-			g_creds->hashlm = 0;
-			g_creds->hashntlm2 = 0;
 #if config_gss == 1
 		} else if (!strcasecmp("gss", cauth)) {
 			g_creds->haskrb = KRB_FORCE_USE_KRB;
@@ -1372,6 +1367,9 @@ int main(int argc, char **argv) {
 			syslog(LOG_ERR, "Unknown NTLM auth combination.\n");
 			myexit(1);
 		}
+	} else {
+		// default "ntlmv2"
+		g_creds->hashntlm2 = 1;
 	}
 
 	if (socksd_list && !users_list)

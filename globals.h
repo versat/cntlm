@@ -32,8 +32,6 @@
 
 extern int debug;
 
-extern int request_logging_level;
-
 extern struct auth_s *g_creds;			/* global NTLM credentials */
 
 extern int ntlmbasic;				/* forward_request() */

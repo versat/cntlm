@@ -83,7 +83,7 @@ plist_t plist_add(plist_t list, const unsigned long key, void *aux) {
 	plist_t tmp;
 	plist_t t = list;
 
-	tmp = malloc(sizeof(struct plist_s));
+	tmp = zmalloc(sizeof(struct plist_s));
 	tmp->key = key;
 	tmp->aux = aux;
 	tmp->next = NULL;
@@ -277,7 +277,7 @@ hlist_t hlist_add(hlist_t list, char *key, char *value, hlist_add_t allockey, hl
 	if (key == NULL || value == NULL)
 		return list;
 
-	tmp = malloc(sizeof(struct hlist_s));
+	tmp = zmalloc(sizeof(struct hlist_s));
 	tmp->key = (allockey == HLIST_ALLOC ? strdup(key) : key);
 	tmp->value = (allocvalue == HLIST_ALLOC ? strdup(value) : value);
 	tmp->next = NULL;
@@ -527,7 +527,7 @@ char *substr(const char *src, int pos, int len) {
 rr_data_t new_rr_data(void) {
 	rr_data_t data;
 
-	data = malloc(sizeof(struct rr_data_s));
+	data = zmalloc(sizeof(struct rr_data_s));
 	data->req = 0;
 	data->code = 0;
 	data->skip_http = 0;
@@ -685,7 +685,7 @@ char *trimr(char * const buf) {
 
 	assert(buf != NULL);
 
-	for (i = strlen(buf)-1; i >= 0 && isspace((u_char)buf[i]); --i);
+	for (i = strlen(buf)-1; i >= 0 && isspace((u_char)buf[i]); --i) {};
 	buf[i+1] = 0;
 
 	return buf;
@@ -783,8 +783,8 @@ size_t strlcat(char *dst, const char *src, size_t siz) {
 /*
  * Allocates memory and makes sure it is zero initialized.
  */
-char *zmalloc(size_t size) {
-	char *tmp = calloc(1, size);
+void *zmalloc(size_t size) {
+	void *tmp = calloc(1, size);
 	return tmp;
 }
 
@@ -816,10 +816,10 @@ char *uppercase(char * const str) {
 	return str;
 }
 
-int unicode(char **dst, const char * const src) {
+size_t unicode(char **dst, const char * const src) {
 	char *tmp;
-	int l;
-	int i;
+	size_t l;
+	size_t i;
 
 	if (!src) {
 		*dst = NULL;
