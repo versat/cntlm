@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef _SSPI_H
-#define _SSPI_H
+#ifndef SSPI_H
+#define SSPI_H
 
 #ifdef __CYGWIN__
 
@@ -49,4 +49,4 @@ extern int sspi_response(char **dst, char *challenge, int challen, struct sspi_h
 
 #endif /*  __CYGWIN__ */
 
-#endif /* _SSPI_H */
+#endif /* SSPI_H */

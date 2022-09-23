@@ -108,7 +108,7 @@ int scanner_hook(rr_data_const_t request, rr_data_t response, struct auth_s *cre
 	if (strstr(buf, "<title>Downloading status</title>") && (pos=strstr(buf, "ISAServerUniqueID=")) && (pos = strchr(pos, '"'))) {
 		pos++;
 		c = strlen(pos);
-		for (i = 0; i < c && pos[i] != '"'; ++i);
+		for (i = 0; i < c && pos[i] != '"'; ++i) {};
 
 		if (pos[i] == '"') {
 			isaid = substr(pos, 0, i);

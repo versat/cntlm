@@ -184,7 +184,7 @@ char *ntlm_hash_lm_password(const char *password) {
 char *ntlm_hash_nt_password(const char *password) {
 	char *u16;
 	char *keys;
-	int len;
+	size_t len;
 
 	keys = zmalloc(21 + 1);
 	len = unicode(&u16, password);
@@ -202,7 +202,7 @@ char *ntlm2_hash_password(const char *username, const char *domain, const char *
 	char *buf;
 	char *passnt;
 	char *passnt2;
-	int len;
+	size_t len;
 
 	passnt = ntlm_hash_nt_password(password);
 
@@ -291,9 +291,9 @@ int ntlm_request(char **dst, struct auth_s *creds) {
 	return 32+dlen+hlen;
 }
 
-static char *printuc(const char *src, int len) {
+static char *printuc(const char *src, size_t len) {
 	char *tmp;
-	int i;
+	size_t i;
 
 	tmp = zmalloc((len+1)/2 + 1);
 	for (i = 0; i < len/2; ++i) {
@@ -330,9 +330,9 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 	char *uuser;
 	char *uhost;
 	char *tmp;
-	int dlen;
-	int ulen;
-	int hlen;
+	size_t dlen;
+	size_t ulen;
+	size_t hlen;
 	uint16_t tpos;
 	uint16_t tlen;
 	uint16_t ttype = -1;
