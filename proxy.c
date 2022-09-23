@@ -474,7 +474,7 @@ int proxy_connect(struct auth_s *credentials, const char* url, const char* hostn
 		 */
 		if (i < 0) {
 			p = proxylist_get_next(proxylist, proxycurr);
-			if (p) {
+			if (p && p->proxy) {
 				proxycurr = p->key;
 				proxy = p->proxy;
 				syslog(LOG_ERR, "Proxy connect failed, will try %s:%d\n", proxy->hostname, proxy->port);
