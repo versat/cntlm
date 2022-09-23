@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef _FORWARD_H
-#define _FORWARD_H
+#ifndef FORWARD_H
+#define FORWARD_H
 
 #include "utils.h"
 #include "auth.h"
@@ -28,4 +28,4 @@ extern rr_data_t forward_request(void *cdata, rr_data_t request);
 extern int forward_tunnel(void *thread_data);
 extern void magic_auth_detect(const char *url);
 
-#endif /* _FORWARD_H */
+#endif /* FORWARD_H */

@@ -258,8 +258,9 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 		rsocket[1] = wsocket[0] = &sd;
 
 		conn_alive = 0;
+		loop = 0; // 0 = request from client; 1 = response from server
 
-		for (loop = 0; loop < 2; ++loop) {
+		while (loop < 2) {
 			if (data[loop]->empty) {				// Isn't this the first loop with request supplied by caller?
 				if (debug) {
 					printf("\n******* Round %d C: %d, S: %d *******\n", loop+1, cd, sd);
@@ -279,7 +280,7 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 			 * approach.
 			 */
 			if (loop == 0 && hostname && data[0]->hostname
-					&& (strcasecmp(hostname, data[0]->hostname) || port != data[0]->port)) {
+					&& (strcasecmp(hostname, data[0]->hostname) || port != data[0]->port) != 0) {
 				if (debug)
 					printf("\n******* D RETURN: %s *******\n", data[0]->url);
 
@@ -501,6 +502,8 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 					goto bailout;
 				}
 			}
+
+			++loop;
 		}
 
 		free_rr_data(&data[0]);

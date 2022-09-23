@@ -106,7 +106,7 @@ proxylist_t proxylist_add(proxylist_t list, const unsigned long key, proxy_t *pr
 	proxylist_t tmp;
 	proxylist_t t = list;
 
-	tmp = malloc(sizeof(struct proxylist_s));
+	tmp = zmalloc(sizeof(struct proxylist_s));
 	tmp->key = key;
 	tmp->proxy = proxy;
 	tmp->next = NULL;
@@ -344,7 +344,7 @@ paclist_t paclist_create(const char *pacp_str) {
 
 	free(pacp_start);
 
-	tmp = malloc(sizeof(struct paclist_s));
+	tmp = zmalloc(sizeof(struct paclist_s));
 	tmp->pacstr = pacp_str;
 	tmp->proxylist = plist;
 	tmp->proxycurr = 0;
@@ -474,7 +474,7 @@ int proxy_connect(struct auth_s *credentials, const char* url, const char* hostn
 		 */
 		if (i < 0) {
 			p = proxylist_get_next(proxylist, proxycurr);
-			if (p) {
+			if (p && p->proxy) {
 				proxycurr = p->key;
 				proxy = p->proxy;
 				syslog(LOG_ERR, "Proxy connect failed, will try %s:%d\n", proxy->hostname, proxy->port);

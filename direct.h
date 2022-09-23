@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef _DIRECT_H
-#define _DIRECT_H
+#ifndef DIRECT_H
+#define DIRECT_H
 
 #include "utils.h"
 
@@ -26,4 +26,4 @@ extern int host_connect(const char *hostname, int port);
 extern rr_data_t direct_request(void *cdata, rr_data_const_t request);
 extern void direct_tunnel(void *thread_data);
 
-#endif /* _DIRECT_H */
+#endif /* DIRECT_H */

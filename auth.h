@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _AUTH_H
-#define _AUTH_H
+#ifndef AUTH_H
+#define AUTH_H
 
 #include <stdint.h>
 
@@ -63,13 +63,8 @@ struct auth_s {
 		memcpy(((creds)->var), (value), MIN(len, MINIBUF_SIZE)); \
 	}
 
-/*
- * No free_auth() required, just use free()
- * new_auth() is also just a convenience malloc/memset() wrapper
- */
-extern struct auth_s *new_auth(void);
 extern struct auth_s *copy_auth(struct auth_s *dst, const struct auth_s *src, int fullcopy);
 extern struct auth_s *dup_auth(const struct auth_s *creds, int fullcopy);
 extern void dump_auth(const struct auth_s *creds);
 
-#endif /* _AUTH_H */
+#endif /* AUTH_H */

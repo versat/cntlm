@@ -38,8 +38,8 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#ifndef _XCRYPT_H
-#define _XCRYPT_H
+#ifndef XCRYPT_H
+#define XCRYPT_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -108,4 +108,4 @@ extern void *md5_read_ctx (const struct md5_ctx *ctx, void *resbuf);
 extern int md5_stream (FILE *stream, void *resblock);
 extern void *md5_buffer (const char *buffer, size_t len, void *resblock);
 
-#endif /* _XCRYPT_H */
+#endif /* XCRYPT_H */
