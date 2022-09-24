@@ -187,8 +187,9 @@ beginning:
 		retry = 0;
 		proxy_alive = 0;
 		conn_alive = 0;
+		loop = 0; // 0 = request from client; 1 = response from server
 
-		for (loop = 0; loop < 2; ++loop) {
+		while (loop < 2) {
 			if (data[loop]->empty) {				// Isn't this the first loop with request supplied by caller?
 				if (debug) {
 					printf("\n******* Round %d C: %d, S: %d (authok=%d, noauth=%d) *******\n", loop+1, cd, sd, authok, noauth);
@@ -462,6 +463,8 @@ shortcut:
 					rc = (void *)-1;
 				}
 			}
+
+			++loop;
 		}
 
 		free_rr_data(&data[0]);
