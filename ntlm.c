@@ -69,13 +69,14 @@ static int ntlm_calc_resp(char **dst, char *keys, const char *challenge) {
 }
 
 static void ntlm2_calc_resp(char **nthash, int *ntlen, char **lmhash, int *lmlen,
-		const char *passnt2, char *challenge, int tbofs, int tblen) {
+		const char *passnt2, char *challenge, const char *domain) {
 	char *tmp;
 	char *blob;
 	char *nonce;
 	char *buf;
 	int64_t tw;
 	int blen;
+    uint domainLen = strlen(domain);
 
 	nonce = zmalloc(8 + 1);
 	VAL(nonce, uint64_t, 0) = getrandom64();
@@ -91,15 +92,15 @@ static void ntlm2_calc_resp(char **nthash, int *ntlen, char **lmhash, int *lmlen
 		free(tmp);
 	}
 
-	blob = zmalloc(4+4+8+8+4+tblen+4 + 1);
+	blob = zmalloc(4+4+8+8+4+domainLen+4 + 1);
 	VAL(blob, uint32_t, 0) = U32LE(0x00000101);
 	VAL(blob, uint32_t, 4) = U32LE(0);
 	VAL(blob, uint64_t, 8) = U64LE(tw);
 	VAL(blob, uint64_t, 16) = U64LE(VAL(nonce, uint64_t, 0));
 	VAL(blob, uint32_t, 24) = U32LE(0);
-	memcpy(blob+28, MEM(challenge, char, tbofs), tblen);
-	memset(blob+28+tblen, 0, 4);
-	blen = 28+tblen+4;
+	memcpy(blob+28, domain, domainLen);
+	memset(blob+28+domainLen, 0, 4);
+	blen = 28+domainLen+4;
 
 	if (0 && debug) {
 		tmp = printmem(blob, blen, 7);
@@ -396,12 +397,8 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 		}
 	}
 
-	if (creds->hashntlm2 && !tblen) {
-		return 0;
-	}
-
 	if (creds->hashntlm2) {
-		ntlm2_calc_resp(&nthash, &ntlen, &lmhash, &lmlen, creds->passntlm2, challenge, tbofs, tblen);
+		ntlm2_calc_resp(&nthash, &ntlen, &lmhash, &lmlen, creds->passntlm2, challenge, creds->domain);
 	}
 
 	if (creds->hashnt == 2) {
