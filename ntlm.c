@@ -344,12 +344,14 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 	int lmlen = 0;
 	int ntlen = 0;
 
+    uint32_t flags = U32LE(VAL(challenge, uint32_t, 20));
+
 	if (debug) {
 		printf("NTLM Challenge:\n");
 		tmp = printmem(MEM(challenge, char, 24), 8, 7);
 		printf("\tChallenge: %s (len: %d)\n", tmp, challen);
 		free(tmp);
-		printf("\t    Flags: 0x%X\n", U32LE(VAL(challenge, uint32_t, 20)));
+		printf("\t    Flags: 0x%X\n", flags);
 	}
 
 	if (challen >= NTLM_CHALLENGE_MIN) {
@@ -398,7 +400,23 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 	}
 
 	if (creds->hashntlm2) {
-		ntlm2_calc_resp(&nthash, &ntlen, &lmhash, &lmlen, creds->passntlm2, challenge, creds->domain);
+        char* userDom;
+        bool useDomFromTarget = 0;
+
+        // 0x10000 is N bit from 2.2.2.5 MS-NLMP, indicating that the target type is domain
+        if(flags&0x10000 && tblen && tbofs){
+            userDom = malloc(sizeof(char)*(tblen+1));
+            strncpy(userDom, challenge+tbofs, tblen);
+            useDomFromTarget = 1;
+        } else{
+            userDom = creds->domain;
+        }
+
+		ntlm2_calc_resp(&nthash, &ntlen, &lmhash, &lmlen, creds->passntlm2, challenge, userDom);
+
+        if(useDomFromTarget){
+            free(userDom);
+        }
 	}
 
 	if (creds->hashnt == 2) {
