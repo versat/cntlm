@@ -405,8 +405,7 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 
         // 0x10000 is N bit from 2.2.2.5 MS-NLMP, indicating that the target type is domain
         if(flags&0x10000 && tblen && tbofs){
-            userDom = malloc(sizeof(char)*(tblen+1));
-            strncpy(userDom, challenge+tbofs, tblen);
+            userDom = printuc(MEM(challenge, char, tbofs),tblen);
             useDomFromTarget = 1;
         } else{
             userDom = creds->domain;
