@@ -69,7 +69,7 @@ static int ntlm_calc_resp(char **dst, char *keys, const char *challenge) {
 }
 
 static void ntlm2_calc_resp(char **nthash, int *ntlen, char **lmhash, int *lmlen,
-		const char *passnt2, char *challenge, int tbofs, int tblen) {
+		const char *passnt2, char *challenge, char* tb, int tblen) {
 	char *tmp;
 	char *blob;
 	char *nonce;
@@ -97,7 +97,7 @@ static void ntlm2_calc_resp(char **nthash, int *ntlen, char **lmhash, int *lmlen
 	VAL(blob, uint64_t, 8) = U64LE(tw);
 	VAL(blob, uint64_t, 16) = U64LE(VAL(nonce, uint64_t, 0));
 	VAL(blob, uint32_t, 24) = U32LE(0);
-	memcpy(blob+28, MEM(challenge, char, tbofs), tblen);
+	memcpy(blob+28, tb, tblen);
 	memset(blob+28+tblen, 0, 4);
 	blen = 28+tblen+4;
 
@@ -396,12 +396,10 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 		}
 	}
 
-	if (creds->hashntlm2 && !tblen) {
-		return 0;
-	}
-
 	if (creds->hashntlm2) {
-		ntlm2_calc_resp(&nthash, &ntlen, &lmhash, &lmlen, creds->passntlm2, challenge, tbofs, tblen);
+		ntlm2_calc_resp(&nthash, &ntlen, &lmhash, &lmlen, creds->passntlm2, challenge,
+			tblen ? MEM(challenge, char, tbofs) : creds->domain,
+			tblen ? tblen : strlen(creds->domain));
 	}
 
 	if (creds->hashnt == 2) {
