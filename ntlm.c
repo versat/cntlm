@@ -396,10 +396,6 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 		}
 	}
 
-	if (creds->hashntlm2 && !tblen) {
-		return 0;
-	}
-
 	if (creds->hashntlm2) {
 		ntlm2_calc_resp(&nthash, &ntlen, &lmhash, &lmlen, creds->passntlm2, challenge, tbofs, tblen);
 	}
