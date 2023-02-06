@@ -97,17 +97,22 @@ broken RPM build environment. You should add this to your ~/.rpmmacros:
 
 ## Creating WINDOWS INSTALLER
 
-Install Cygwin and include at least the ghostscript, zip, dos2unix and libgcc
+Install Cygwin and include at least the gcc, make, cygrunsrv, ghostscript, zip, dos2unix and libgcc
 packages.
 
 In case you are using a 64-bit version of Cygwin: rename cyggcc_s-1.dll to
 cyggcc_s-seh-1.dll in Makefile and win/setup.iss.
+
+Install Cygwin using
+
+    setup-x86_64.exe -qgnNdO -l C:\cygwin64\var\cache\setup -R C:\cygwin64 -s http://cygwin.mirror.constant.com -P gcc-core -P make -P ghostscript -P dos2unix -P zip -P cygrunsrv
 
 Start a Cygwin console by using the shortcut on your desktop or startup menu.
 
 From within the Cygwin command shell:
 
     cd /cygdrive/yourdrive/your_ctnlm_src_location
+    export CC=gcc
     ./configure
     make
 
@@ -117,6 +122,11 @@ project definition file, installer:
     make win
 
 Now this automatically creates the installer.
+
+Alternative, run this command, which does these steps, too:
+
+    C:\cygwin64\bin\bash -e -l -c "cd /cygdrive/yourdrive/your_ctnlm_src_location && make distclean && ./configure && make DEBUG=1 && make win"
+
 For manually creating the installer you can do this:
 
 Run InnoSetup compiler to pack it all into an automatic installer EXE:
