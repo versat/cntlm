@@ -34,7 +34,7 @@
 #include "sspi.h"
 #endif
 
-extern int debug;
+extern int debug;	//skipcq: CXX-W2009
 
 static void ntlm_set_key(const unsigned char *src, gl_des_ctx *context) {
 	char key[8];

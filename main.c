@@ -81,40 +81,40 @@
  * them. Having these global avoids the need to pass them to each thread and
  * from there again a few times to inner calls.
  */
-int debug = 0;					/* all debug printf's and possibly external modules */
+int debug = 0;					/* all debug printf's and possibly external modules */	//skipcq: CXX-W2009
 
-struct auth_s *g_creds = NULL;			/* throughout the whole module */
+struct auth_s *g_creds = NULL;			/* throughout the whole module */	//skipcq: CXX-W2009, CXX-W2011
 
-int quit = 0;					/* sighandler() */
-int ntlmbasic = 0;				/* forward_request() */
-int serialize = 0;
-int scanner_plugin = 0;
-long scanner_plugin_maxsize = 0;
+int quit = 0;						/* sighandler() */		//skipcq: CXX-W2009
+int ntlmbasic = 0;					/* forward_request() */	//skipcq: CXX-W2009
+int serialize = 0;					//skipcq: CXX-W2009
+int scanner_plugin = 0;				//skipcq: CXX-W2009
+long scanner_plugin_maxsize = 0;	//skipcq: CXX-W2009
 
 /*
  * List of finished threads. Each forward_request() thread adds itself to it when
  * finished. Main regularly joins and removes all tid's in there.
  */
-plist_t threads_list = NULL;
-pthread_mutex_t threads_mtx = PTHREAD_MUTEX_INITIALIZER;
+plist_t threads_list = NULL;	//skipcq: CXX-W2009
+pthread_mutex_t threads_mtx = PTHREAD_MUTEX_INITIALIZER;	//skipcq: CXX-W2009
 
 /*
  * List of cached connections. Accessed by each thread forward_request().
  */
-plist_t connection_list = NULL;
-pthread_mutex_t connection_mtx = PTHREAD_MUTEX_INITIALIZER;
+plist_t connection_list = NULL;	//skipcq: CXX-W2009
+pthread_mutex_t connection_mtx = PTHREAD_MUTEX_INITIALIZER;	//skipcq: CXX-W2009
 
 /*
  * List of custom header substitutions, SOCKS5 proxy users and
  * UserAgents for the scanner plugin.
  */
-hlist_t header_list = NULL;			/* forward_request() */
-hlist_t users_list = NULL;			/* socks5_thread() */
-plist_t scanner_agent_list = NULL;		/* scanner_hook() */
-plist_t noproxy_list = NULL;			/* proxy_thread() */
+hlist_t header_list = NULL;				/* forward_request() */	//skipcq: CXX-W2009
+hlist_t users_list = NULL;				/* socks5_thread() */	//skipcq: CXX-W2009
+plist_t scanner_agent_list = NULL;		/* scanner_hook() */	//skipcq: CXX-W2009
+plist_t noproxy_list = NULL;			/* proxy_thread() */	//skipcq: CXX-W2009
 
 /* 1 = Pac engine is initialized and in use. */
-int pac_initialized = 0;
+int pac_initialized = 0;	//skipcq: CXX-W2009
 
 /*
  * General signal handler. If in debug mode, quit immediately.
@@ -763,8 +763,11 @@ int main(int argc, char **argv) {
 	while ((i = getopt(argc, argv, ":-:T:a:c:d:fghIl:p:r:su:vw:x:A:BD:F:G:HL:M:N:O:P:R:S:U:X:q")) != -1) {
 		switch (i) {
 			case 'A':
+				if (!acl_add(&rules, optarg, ACL_ALLOW))
+					myexit(1);
+				break;
 			case 'D':
-				if (!acl_add(&rules, optarg, (i == 'A' ? ACL_ALLOW : ACL_DENY)))
+				if (!acl_add(&rules, optarg, ACL_DENY))
 					myexit(1);
 				break;
 			case 'a':
@@ -804,7 +807,7 @@ int main(int argc, char **argv) {
 						scanner_plugin_maxsize = 1;
 					i = strlen(optarg) + 3;
 					tmp = zmalloc(i);
-					snprintf(tmp, i, "*%s*", optarg);
+					snprintf(tmp, i, "*%s*", optarg);	//skipcq: CXX-S1004 - we already use snptintf with size
 					scanner_agent_list = plist_add(scanner_agent_list, 0, tmp);
 				}
 				break;

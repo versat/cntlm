@@ -35,7 +35,7 @@
 
 #include "utils.h"
 
-extern int debug;
+extern int debug;	//skipcq: CXX-W2009
 
 /*
  * getaddrinfo() wrapper. Return 1 if OK, otherwise 0.

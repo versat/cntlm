@@ -26,24 +26,24 @@
 
 // SSPI mode
 #ifdef UNICODE
-wchar_t* sspi_mode = NULL;
+wchar_t* sspi_mode = NULL;	//skipcq: CXX-W2009
 #else
-char* sspi_mode = NULL;
+char* sspi_mode = NULL;		//skipcq: CXX-W2009
 #endif
 
 // Security DLL handle
-HMODULE sspi_dll = NULL;
+HMODULE sspi_dll = NULL;	//skipcq: CXX-W2009
 
 // Function pointers
-ACCEPT_SECURITY_CONTEXT_FN       _AcceptSecurityContext     = NULL;
-ACQUIRE_CREDENTIALS_HANDLE_FN    _AcquireCredentialsHandle  = NULL;
-COMPLETE_AUTH_TOKEN_FN           _CompleteAuthToken         = NULL;
-DELETE_SECURITY_CONTEXT_FN       _DeleteSecurityContext     = NULL;
-FREE_CONTEXT_BUFFER_FN           _FreeContextBuffer         = NULL;
-FREE_CREDENTIALS_HANDLE_FN       _FreeCredentialsHandle     = NULL;
-INITIALIZE_SECURITY_CONTEXT_FN   _InitializeSecurityContext = NULL;
-QUERY_SECURITY_PACKAGE_INFO_FN   _QuerySecurityPackageInfo  = NULL;
-QUERY_SECURITY_CONTEXT_TOKEN_FN  _QuerySecurityContextToken = NULL;
+ACCEPT_SECURITY_CONTEXT_FN       _AcceptSecurityContext     = NULL;	//skipcq: CXX-W2009
+ACQUIRE_CREDENTIALS_HANDLE_FN    _AcquireCredentialsHandle  = NULL;	//skipcq: CXX-W2009
+COMPLETE_AUTH_TOKEN_FN           _CompleteAuthToken         = NULL;	//skipcq: CXX-W2009
+DELETE_SECURITY_CONTEXT_FN       _DeleteSecurityContext     = NULL;	//skipcq: CXX-W2009
+FREE_CONTEXT_BUFFER_FN           _FreeContextBuffer         = NULL;	//skipcq: CXX-W2009
+FREE_CREDENTIALS_HANDLE_FN       _FreeCredentialsHandle     = NULL;	//skipcq: CXX-W2009
+INITIALIZE_SECURITY_CONTEXT_FN   _InitializeSecurityContext = NULL;	//skipcq: CXX-W2009
+QUERY_SECURITY_PACKAGE_INFO_FN   _QuerySecurityPackageInfo  = NULL;	//skipcq: CXX-W2009
+QUERY_SECURITY_CONTEXT_TOKEN_FN  _QuerySecurityContextToken = NULL;	//skipcq: CXX-W2009
 
 void UnloadSecurityDll(HMODULE hModule) {
 

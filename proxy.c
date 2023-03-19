@@ -90,7 +90,7 @@ unsigned long parent_curr = 0;	//skipcq: CXX-W2009
 pthread_mutex_t parent_mtx = PTHREAD_MUTEX_INITIALIZER;	//skipcq: CXX-W2009
 
 #ifdef ENABLE_KERBEROS
-proxy_t *curr_proxy;
+proxy_t *curr_proxy;	//skipcq: CXX-W2009
 #endif
 
 /*
