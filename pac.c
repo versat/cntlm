@@ -28,7 +28,7 @@
 /*
  * global duktape context
  */
-duk_context *pac_ctx = NULL;	//skipcq: CXX-W2009
+duk_context *pac_ctx = NULL;	//skipcq: CXX-W2009, CXX-W2011
 
 static duk_ret_t native_dnsresolve(duk_context *ctx) {
 	const char *hostname;
