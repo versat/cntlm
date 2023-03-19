@@ -471,7 +471,7 @@ int tunnel(int cd, int sd) {
 	fd_set set;
 	int from;
 	int to;
-	int ret;
+	ssize_t ret;
 	int sel;
 	char *buf;
 

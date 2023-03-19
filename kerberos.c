@@ -250,8 +250,10 @@ int client_establish_context(char *service_name,
  * acquires a kerberos token for default credential using SPN HTTP@<thost>
  */
 int acquire_kerberos_token(const char* hostname, struct auth_s *credentials,
-		char* buf, size_t bufsize) {
+		char** buf, size_t *bufsize) {
 	char service_name[BUFSIZE];
+        size_t token_size;
+        char *token = NULL;
 	OM_uint32 ret_flags, min_stat;
 
 	if (credentials->haskrb == KRB_KO) {
@@ -278,20 +280,24 @@ int acquire_kerberos_token(const char* hostname, struct auth_s *credentials,
 	int rc = client_establish_context(service_name, &ret_flags, &send_tok);
 
 	if (rc == GSS_S_COMPLETE) {
-		char token[BUFSIZE];
 		credentials->haskrb = KRB_OK;
 
-		to_base64((unsigned char *) token, send_tok.value, send_tok.length,
-				BUFSIZE);
+                token_size = 4*send_tok.length;
+                token_size /= 3;
+                token_size += 4 + 4;
+                *bufsize = token_size + (9+1) + 1;
+                *buf = realloc(*buf, *bufsize);
+
+                strcpy(*buf, "NEGOTIATE ");
+                token = *buf + strlen(*buf);
+
+                to_base64((unsigned char *)token, send_tok.value, send_tok.length, token_size);
+
 
 		if (debug) {
-			printf("Token B64 (size=%d)... %s\n",
-					(int) strlen(token), token);
+                        printf("Token B64 (%d size=%d)... %s\n", (int)token_size, (int) strlen(token), token);
 			display_ctx_flags(ret_flags);
 		}
-
-		strlcpy(buf, "NEGOTIATE ", bufsize);
-		strlcat(buf, token, bufsize);
 
 		rc=1;
 	} else {
