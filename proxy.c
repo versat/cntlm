@@ -540,11 +540,11 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 
 	int pretend407 = 0;
 	int rc = 0;
-
-	buf = zmalloc(BUFSIZE);
+	size_t bufsize = BUFSIZE;
+	buf = zmalloc(bufsize);
 
 #ifdef ENABLE_KERBEROS
-	if(g_creds->haskrb && acquire_kerberos_token(curr_proxy->hostname, credentials, buf, BUFSIZE)) {
+	if(g_creds->haskrb && acquire_kerberos_token(curr_proxy->hostname, credentials, &buf, &bufsize)) {
 		//pre auth, we try to authenticate directly with kerberos, without to ask if auth is needed
 		//we assume that if kdc releases a ticket for the proxy, then the proxy is configured for kerberos auth
 		//drawback is that later in the code cntlm logs that no auth is required because we have already authenticated
@@ -554,10 +554,10 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 	else {
 #endif
 
-		strlcpy(buf, "NTLM ", BUFSIZE);
+		strlcpy(buf, "NTLM ", bufsize);
 		len = ntlm_request(&tmp, credentials);
 		if (len) {
-			to_base64(MEM(buf, uint8_t, 5), MEM(tmp, uint8_t, 0), len, BUFSIZE-5);
+			to_base64(MEM(buf, uint8_t, 5), MEM(tmp, uint8_t, 0), len, bufsize-5);
 			free(tmp);
 		}
 
@@ -649,7 +649,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 
 		if (tmp) {
 #ifdef ENABLE_KERBEROS
-			if(g_creds->haskrb && strncasecmp(tmp, "NEGOTIATE", 9) == 0 && acquire_kerberos_token(curr_proxy->hostname, credentials, buf, BUFSIZE)) {
+			if(g_creds->haskrb && strncasecmp(tmp, "NEGOTIATE", 9) == 0 && acquire_kerberos_token(curr_proxy->hostname, credentials, &buf, &bufsize)) {
 				if (debug)
 					printf("Using Negotiation ...\n");
 
@@ -664,8 +664,8 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 					tmp = NULL;
 					len = ntlm_response(&tmp, challenge, len, credentials);
 					if (len > 0) {
-						strlcpy(buf, "NTLM ", BUFSIZE);
-						to_base64(MEM(buf, uint8_t, 5), MEM(tmp, uint8_t, 0), len, BUFSIZE-5);
+						strlcpy(buf, "NTLM ", bufsize);
+						to_base64(MEM(buf, uint8_t, 5), MEM(tmp, uint8_t, 0), len, bufsize-5);
 						request->headers = hlist_mod(request->headers, "Proxy-Authorization", buf, 1);
 						free(tmp);
 					} else {
