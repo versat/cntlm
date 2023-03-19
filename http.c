@@ -39,7 +39,7 @@
 
 #define BLOCK		2048
 
-extern int debug;
+extern int debug;	//skipcq: CXX-W2009
 
 /*
  * True if src is a header. This is just a basic check
