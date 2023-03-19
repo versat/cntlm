@@ -252,8 +252,7 @@ int client_establish_context(char *service_name,
 int acquire_kerberos_token(const char* hostname, struct auth_s *credentials,
 		char** buf, size_t *bufsize) {
 	char service_name[BUFSIZE];
-        size_t token_size;
-        char *token = NULL;
+	char *token = NULL;
 	OM_uint32 ret_flags, min_stat;
 
 	if (credentials->haskrb == KRB_KO) {
@@ -281,21 +280,20 @@ int acquire_kerberos_token(const char* hostname, struct auth_s *credentials,
 
 	if (rc == GSS_S_COMPLETE) {
 		credentials->haskrb = KRB_OK;
+		size_t token_size = 4*send_tok.length;
+		token_size /= 3;
+		token_size += 4 + 4;
+		*bufsize = token_size + (9+1) + 1;
+		*buf = realloc(*buf, *bufsize);
 
-                token_size = 4*send_tok.length;
-                token_size /= 3;
-                token_size += 4 + 4;
-                *bufsize = token_size + (9+1) + 1;
-                *buf = realloc(*buf, *bufsize);
+		strcpy(*buf, "NEGOTIATE ");
+		token = *buf + strlen(*buf);
 
-                strcpy(*buf, "NEGOTIATE ");
-                token = *buf + strlen(*buf);
-
-                to_base64((unsigned char *)token, send_tok.value, send_tok.length, token_size);
+		to_base64((unsigned char *)token, send_tok.value, send_tok.length, token_size);
 
 
 		if (debug) {
-                        printf("Token B64 (%d size=%d)... %s\n", (int)token_size, (int) strlen(token), token);
+			printf("Token B64 (%d size=%d)... %s\n", (int)token_size, (int) strlen(token), token);
 			display_ctx_flags(ret_flags);
 		}
 

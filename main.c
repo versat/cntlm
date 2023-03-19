@@ -1516,7 +1516,7 @@ int main(int argc, char **argv) {
 #ifdef __CYGWIN__
 			!sspi_enabled() &&
 #endif
-			    ((g_creds->hashnt && is_memory_all_zero(g_creds->passnt, ARRAY_SIZE(g_creds->passnt)))
+				((g_creds->hashnt && is_memory_all_zero(g_creds->passnt, ARRAY_SIZE(g_creds->passnt)))
 			 || (g_creds->hashlm && is_memory_all_zero(g_creds->passlm, ARRAY_SIZE(g_creds->passlm)))
 			 || (g_creds->hashntlm2 &&  is_memory_all_zero(g_creds->passntlm2, ARRAY_SIZE(g_creds->passntlm2))))) {
 		syslog(LOG_ERR, "Parent proxy account password (or required hashes) missing.\n");

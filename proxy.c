@@ -540,7 +540,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 
 	int pretend407 = 0;
 	int rc = 0;
-        size_t bufsize = BUFSIZE;
+	size_t bufsize = BUFSIZE;
 	buf = zmalloc(bufsize);
 
 #ifdef ENABLE_KERBEROS
