@@ -71,22 +71,22 @@ struct paclist_s {
 	struct paclist_s *next;
 }; 
 
-paclist_t pac_list = NULL;
+paclist_t pac_list = NULL;	//skipcq: CXX-W2009
 
 void paclist_free(paclist_t paclist);
 
 /*
  * Pac Mutex
  */
-pthread_mutex_t pac_mtx = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t pac_mtx = PTHREAD_MUTEX_INITIALIZER;	//skipcq: CXX-W2009
 
 /*
  * List of available proxies and current proxy id for proxy_connect().
  */
-int parent_count = 0;
-proxylist_t parent_list = NULL;
+int parent_count = 0;			//skipcq: CXX-W2009
+proxylist_t parent_list = NULL;	//skipcq: CXX-W2009
 
-unsigned long parent_curr = 0;
+unsigned long parent_curr = 0;	//skipcq: CXX-W2009
 pthread_mutex_t parent_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 #ifdef ENABLE_KERBEROS

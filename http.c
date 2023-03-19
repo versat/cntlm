@@ -134,7 +134,7 @@ int headers_recv(int fd, rr_data_t data) {
 			ccode = strdup(tok);
 
 			tok += strlen(ccode);
-			while (tok < buf+len && *tok++ == ' ');
+			while (tok < buf+len && *tok++ == ' ') { continue; }
 
 			if (strlen(tok))
 				data->msg = strdup(tok);
@@ -663,7 +663,7 @@ int http_parse_basic(hlist_const_t headers, const char *header, struct auth_s *t
 	assert(tmp != NULL);
 	buf = zmalloc(strlen(tmp) + 1);
 	i = 5;
-	while (i < strlen(tmp) && tmp[++i] == ' ');
+	while (i < strlen(tmp) && tmp[++i] == ' ') { continue; }
 	from_base64(buf, tmp+i);
 	pos = strchr(buf, ':');
 

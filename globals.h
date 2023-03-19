@@ -30,28 +30,28 @@
 #include "utils.h"
 #include "auth.h"
 
-extern int debug;
+extern int debug;						//skipcq: CXX-W2009
 
-extern int request_logging_level;
+extern int request_logging_level;		//skipcq: CXX-W2009
 
-extern struct auth_s *g_creds;			/* global NTLM credentials */
+extern struct auth_s *g_creds;			/* global NTLM credentials */	//skipcq: CXX-W2009, CXX-W2011
 
-extern int ntlmbasic;				/* forward_request() */
-extern int serialize;
-extern int scanner_plugin;
-extern long scanner_plugin_maxsize;
+extern int ntlmbasic;					/* forward_request() */			//skipcq: CXX-W2009
+extern int serialize;					//skipcq: CXX-W2009
+extern int scanner_plugin;				//skipcq: CXX-W2009
+extern long scanner_plugin_maxsize;		//skipcq: CXX-W2009
 
-extern plist_t threads_list;
-extern pthread_mutex_t threads_mtx;
+extern plist_t threads_list;			//skipcq: CXX-W2009
+extern pthread_mutex_t threads_mtx;		//skipcq: CXX-W2009
 
-extern plist_t connection_list;
-extern pthread_mutex_t connection_mtx;
+extern plist_t connection_list;			//skipcq: CXX-W2009
+extern pthread_mutex_t connection_mtx;	//skipcq: CXX-W2009
 
-extern int pac_initialized;
+extern int pac_initialized;				//skipcq: CXX-W2009
 
-extern hlist_t header_list;			/* forward_request() */
-extern hlist_t users_list;			/* socks5_thread() */
-extern plist_t scanner_agent_list;		/* scanner_hook() */
-extern plist_t noproxy_list;			/* proxy_thread() */
+extern hlist_t header_list;				/* forward_request() */	//skipcq: CXX-W2009
+extern hlist_t users_list;				/* socks5_thread() */	//skipcq: CXX-W2009
+extern plist_t scanner_agent_list;		/* scanner_hook() */	//skipcq: CXX-W2009
+extern plist_t noproxy_list;			/* proxy_thread() */	//skipcq: CXX-W2009
 
 #endif /* _GLOBALS_H */
