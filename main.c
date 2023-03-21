@@ -393,10 +393,10 @@ void *socks5_thread(void *thread_data) {
 	static const uint8_t SOCKS5_AUTH_NO_AUTHENTICATION_REQUIRED = 0x00;
 	static const uint8_t SOCKS5_AUTH_USERNAME_PASSWORD = 0x02;
 	static const uint8_t SOCKS5_AUTH_NO_ACCEPTABLE_METHODS = 0xFF;
-	char *thost;
-	char *tport;
-	char *uname;
-	char *upass;
+	char *thost = NULL;
+	char *tport = NULL;
+	char *uname = NULL;
+	char *upass = NULL;
 	unsigned short port;
 	int ver;
 	int r;
@@ -410,6 +410,11 @@ void *socks5_thread(void *thread_data) {
 	unsigned char *addr = NULL;
 	int found = -1;
 	int sd = -1;
+
+	if (thread_data == NULL) {
+		return NULL;
+	}
+
 	int open = !hlist_count(users_list);
 
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
@@ -696,23 +701,23 @@ bailout:
 }
 
 int main(int argc, char **argv) {
-	char *tmp;
-	char *head;
-	char *cpassword;
-	char *cpassntlm2;
-	char *cpassnt;
-	char *cpasslm;
-	char *cuser;
-	char *cdomain;
-	char *cworkstation;
-	char *cuid;
-	char *cpidfile;
-	char *cauth;
+	char *tmp = NULL;
+	char *head = NULL;
+	char *cpassword = NULL;
+	char *cpassntlm2 = NULL;
+	char *cpassnt = NULL;
+	char *cpasslm = NULL;
+	char *cuser = NULL;
+	char *cdomain = NULL;
+	char *cworkstation = NULL;
+	char *cuid = NULL;
+	char *cpidfile = NULL;
+	char *cauth = NULL;
 	struct termios termold;
 	struct termios termnew;
 	pthread_attr_t pattr;
 	pthread_t pthr;
-	hlist_const_t list;
+	hlist_const_t list = NULL;
 	int i;
 	int w;
 
@@ -1728,7 +1733,9 @@ int main(int argc, char **argv) {
 		 * which routes the request as forwarded or direct, depending on the
 		 * URL host name and NoProxy settings.
 		 */
-		cd = select(FD_SETSIZE, &set, NULL, NULL, &tv);
+		do {
+			cd = select(FD_SETSIZE, &set, NULL, NULL, &tv);
+		} while(cd < 0 && errno == EINTR);
 		if (cd > 0) {
 			for (i = 0; i < FD_SETSIZE; ++i) {
 				if (!FD_ISSET(i, &set))
