@@ -357,6 +357,11 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 					if (debug)
 						printf("Reconnect before WWW auth\n");
 					close(sd);
+					/*
+					 * Make sure nobody tries to read the body, particularly http_body_drop():
+					 * now that we closed the socket, it would wait indefinitely.
+					 */
+					data[1]->headers = hlist_mod(data[1]->headers, "Content-Length", "0", 1);
 					sd = host_connect(data[0]->hostname, data[0]->port);
 					if (sd < 0) {
 						tmp = gen_502_page(data[0]->http, "WWW authentication reconnect failed");
