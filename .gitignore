@@ -25,3 +25,4 @@ cntlm*.tar.gz
 .cproject
 .project
 .settings/
+/.idea/
