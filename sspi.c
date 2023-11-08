@@ -24,6 +24,8 @@
 
 #include "sspi.h"
 
+// Change for build triggering
+
 // SSPI mode
 #ifdef UNICODE
 wchar_t* sspi_mode = NULL;
