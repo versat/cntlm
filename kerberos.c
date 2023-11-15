@@ -46,7 +46,11 @@
 
 #include <string.h>
 #include <stdio.h>
+#ifdef __APPLE__
+#include <GSS/GSS.h>
+#else
 #include <gssapi/gssapi.h>
+#endif
 #include <stdlib.h>
 
 /*
@@ -130,12 +134,10 @@ void display_status(char *msg, OM_uint32 maj_stat, OM_uint32 min_stat) {
 }
 
 void display_name(char* txt, gss_name_t *name) {
-	gss_OID mechOid = GSS_C_NO_OID;
 	OM_uint32 maj_stat;
 	OM_uint32 min_stat;
 	gss_buffer_desc out_name;
 
-//	maj_stat = gss_display_name(&min_stat, *name, &out_name, &mechOid);
 	maj_stat = gss_display_name(&min_stat, *name, &out_name, NULL);
 	if (maj_stat != GSS_S_COMPLETE && debug) {
 		display_status("Display name", maj_stat, min_stat);
@@ -144,9 +146,6 @@ void display_name(char* txt, gss_name_t *name) {
 	printf("%s %s\n", txt, (char *)out_name.value);
 
 	(void) gss_release_buffer(&min_stat, &out_name);
-
-	if (mechOid != GSS_C_NO_OID)
-		(void) gss_release_oid(&min_stat, &mechOid);
 }
 
 int acquire_name(gss_name_t *target_name, char *service_name, gss_OID oid) {
@@ -311,7 +310,7 @@ int acquire_kerberos_token(const char* hostname, struct auth_s *credentials,
 /**
  * checks if a default cached credential is cached
  */
-int check_credential() {
+int check_credential(void) {
 	OM_uint32 min_stat;
 	gss_name_t name;
 	OM_uint32 lifetime;
