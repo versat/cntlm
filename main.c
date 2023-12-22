@@ -611,22 +611,19 @@ void *socks5_thread(void *thread_data) {
 		i = (sd >= 0);
 	} else {
 		snprintf(tport, MINIBUF_SIZE, "%d", ntohs(port));
+		char *hostname = strdup(thost);
 		strlcat(thost, ":", HOST_BUFSIZE);
 		strlcat(thost, tport, HOST_BUFSIZE);
 
 		tcreds = new_auth();
-		sd = proxy_connect(tcreds, "/", thost);
+		sd = proxy_connect(tcreds, thost, hostname);
 		if (sd == -2) {
-			// remove previously added port to thost
-			char* t = thost;
-			while (*t != ':') ++t;
-			*t = 0;
-
-			sd = host_connect(thost, ntohs(port));
+			sd = host_connect(hostname, ntohs(port));
 			i = (sd >= 0);
 		} else if (sd >= 0) {
 			i = prepare_http_connect(sd, tcreds, thost);
 		}
+		free(hostname);
 	}
 
 	/*

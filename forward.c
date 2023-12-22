@@ -509,6 +509,7 @@ int prepare_http_connect(int sd, struct auth_s *credentials, const char *thost) 
 	rr_data_t data2;
 	int rc = 0;
 	hlist_t tl;
+	char *pos;
 
 	if (!sd || !thost || !strlen(thost))
 		return 0;
@@ -519,6 +520,11 @@ int prepare_http_connect(int sd, struct auth_s *credentials, const char *thost) 
 	data1->req = 1;
 	data1->method = strdup("CONNECT");
 	data1->url = strdup(thost);
+	data1->hostname = strdup(thost);
+	if ((pos = strchr(data1->hostname, ':')) != NULL) { // separate port
+		*pos = 0;
+		data1->port = atoi(pos + 1);
+	}
 	data1->http = strdup("HTTP/1.1");
 	data1->headers = hlist_mod(data1->headers, "Proxy-Connection", "keep-alive", 1);
 
@@ -586,11 +592,15 @@ int forward_tunnel(void *thread_data) {
 	assert(thread_data != NULL);
 	int cd = ((struct thread_arg_s *)thread_data)->fd;
 	char *thost = ((struct thread_arg_s *)thread_data)->target;
+	char *hostname = strdup(thost);
+	char *pos;
 	char saddr[INET6_ADDRSTRLEN] = {0};
 	INET_NTOP(&((struct thread_arg_s *)thread_data)->addr, saddr, INET6_ADDRSTRLEN);
 
 	tcreds = new_auth();
-	sd = proxy_connect(tcreds, "/", thost);
+	if ((pos = strchr(hostname, ':')) != NULL) // separate port
+		*pos = 0;
+	sd = proxy_connect(tcreds, thost, hostname);
 
 	if (sd < 0)
 		goto bailout;
@@ -611,6 +621,7 @@ bailout:
 		close(cd);
 	}
 	free(tcreds);
+	free(hostname);
 
 	return sd;
 }
