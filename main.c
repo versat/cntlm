@@ -739,7 +739,7 @@ int main(int argc, char **argv) {
 	g_creds = new_auth();
 	cuser = zmalloc(MINIBUF_SIZE);
 	cdomain = zmalloc(MINIBUF_SIZE);
-	cpassword = zmalloc(MINIBUF_SIZE);
+	cpassword = zmalloc(PASSWORD_BUFSIZE);
 	cpassntlm2 = zmalloc(MINIBUF_SIZE);
 	cpassnt = zmalloc(MINIBUF_SIZE);
 	cpasslm = zmalloc(MINIBUF_SIZE);
@@ -845,7 +845,7 @@ int main(int argc, char **argv) {
 				 * Overwrite the password parameter with '*'s to make it
 				 * invisible in "ps", /proc, etc.
 				 */
-				strlcpy(cpassword, optarg, MINIBUF_SIZE);
+				strlcpy(cpassword, optarg, PASSWORD_BUFSIZE);
 				for (i = strlen(optarg)-1; i >= 0; --i)
 					optarg[i] = '*';
 				break;
@@ -1216,7 +1216,7 @@ int main(int argc, char **argv) {
 		 */
 		CFG_DEFAULT(cf, "Auth", cauth, MINIBUF_SIZE)
 		CFG_DEFAULT(cf, "Domain", cdomain, MINIBUF_SIZE)
-		CFG_DEFAULT(cf, "Password", cpassword, MINIBUF_SIZE)
+		CFG_DEFAULT(cf, "Password", cpassword, PASSWORD_BUFSIZE)
 		CFG_DEFAULT(cf, "PassNTLMv2", cpassntlm2, MINIBUF_SIZE)
 		CFG_DEFAULT(cf, "PassNT", cpassnt, MINIBUF_SIZE)
 		CFG_DEFAULT(cf, "PassLM", cpasslm, MINIBUF_SIZE)
@@ -1396,7 +1396,7 @@ int main(int argc, char **argv) {
 		termnew = termold;
 		termnew.c_lflag &= ~(ISIG | ECHO);
 		tcsetattr(0, TCSADRAIN, &termnew);
-		tmp = fgets(cpassword, MINIBUF_SIZE, stdin);
+		tmp = fgets(cpassword, PASSWORD_BUFSIZE, stdin);
 		tcsetattr(0, TCSADRAIN, &termold);
 		i = strlen(cpassword) - 1;
 		if (cpassword[i] == '\n') {
@@ -1457,6 +1457,7 @@ int main(int argc, char **argv) {
 			free(tmp);
 		}
 		memset(cpassword, 0, strlen(cpassword));
+		__asm__ volatile ("" ::: "memory");
 	}
 
 	auth_strcpy(g_creds, user, cuser);

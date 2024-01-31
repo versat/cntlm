@@ -668,7 +668,8 @@ int http_parse_basic(hlist_const_t headers, const char *header, struct auth_s *t
 	pos = strchr(buf, ':');
 
 	if (pos == NULL) {
-		memset(buf, 0, strlen(buf));	/* clean password memory */ /* FIXME: This is very likely to be optimized away and password remains in memory. */
+		memset(buf, 0, strlen(buf));
+		__asm__ volatile ("" ::: "memory"); /* clean password memory; try to avoid the compiler optimizing this out */
 		free(buf);
 		return -1;
 	} else {
@@ -702,6 +703,7 @@ int http_parse_basic(hlist_const_t headers, const char *header, struct auth_s *t
 		}
 
 		memset(buf, 0, strlen(buf));
+		__asm__ volatile ("" ::: "memory");
 		free(buf);
 	}
 
