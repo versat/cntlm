@@ -32,6 +32,12 @@
 
 #define BUFSIZE			4096
 #define MINIBUF_SIZE		50
+/*
+* Longest password that appears to be supported in a Microsoft authn/authz implementation is 256 characters;
+* therefore support passwords up to 256 characters plus null terminator.
+* source: https://learn.microsoft.com/en-us/entra/identity/authentication/concept-password-ban-bad-combined-policy#azure-ad-password-policies
+*/
+#define PASSWORD_BUFSIZE	257
 #define HOST_BUFSIZE	260
 #define VAL(var, type, offset)	*((type *)(var+offset))
 #define MEM(var, type, offset)	(type *)(var+offset)

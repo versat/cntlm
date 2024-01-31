@@ -821,7 +821,7 @@ int unicode(char **dst, const char * const src) {
 		return 0;
 	}
 
-	l = MIN(64, strlen(src));
+	l = MIN(BUFSIZE, strlen(src));
 	tmp = zmalloc(2*l);
 	for (i = 0; i < l; ++i)
 		tmp[2*i] = src[i];
@@ -855,12 +855,14 @@ char *urlencode(const char * const str) {
 
 char *printmem(const char * const src, const size_t len, const int bitwidth) {
 	char *tmp;
+	uint8_t val;
 	size_t i;
 
 	tmp = zmalloc(2*len+1);
 	for (i = 0; i < len; ++i) {
-		tmp[i*2] = hextab[((uint8_t)src[i] ^ (uint8_t)(7-bitwidth)) >> 4];
-		tmp[i*2+1] = hextab[(src[i] ^ (uint8_t)(7-bitwidth)) & 0x0F];
+		val = (uint8_t)src[i] & (0xFF >> (8-bitwidth));
+		tmp[i*2] = hextab[val >> 4];
+		tmp[i*2+1] = hextab[val & 0x0F];
 	}
 
 	return tmp;
@@ -884,7 +886,7 @@ char *scanmem(const char * const src, const int bitwidth) {
 			free(tmp);
 			return NULL;
 		}
-		tmp[i] = ((h << 4) + l) ^ (uint8_t)(7-bitwidth);
+		tmp[i] = ((h << 4) + l) & (0xFF >> (8-bitwidth));
 	}
 	tmp[i] = 0;
 
