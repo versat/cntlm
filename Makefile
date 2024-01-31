@@ -126,22 +126,29 @@ win/resources.o: win/resources.rc
 	@echo Win64: adding ICON resource
 	@windres $^ -o $@
 
+ifneq ($(NOSTRIP),1)
+	STRIP="-s"
+	STRIPAIX="-S"
+else
+	STRIP=""
+	STRIPAIX="-S"
+endif
 install: $(NAME)
 	# Special handling for install(1)
 	if [ "`uname -s`" = "AIX" ]; then \
-		install -M 755 -S -f $(BINDIR) $(NAME); \
+		install -M 755 $(STRIPAIX) -f $(BINDIR) $(NAME); \
 		install -M 644 -f $(MANDIR)/man1 doc/$(NAME).1; \
 		install -M 600 -c $(SYSCONFDIR) doc/$(NAME).conf; \
 	elif [ "`uname -s`" = "Darwin" ]; then \
 		install -d $(BINDIR)/; \
-		install -m 755 -s $(NAME) $(BINDIR)/$(NAME); \
+		install -m 755 $(STRIP) $(NAME) $(BINDIR)/$(NAME); \
 		install -d $(MANDIR)/man1/; \
 		install -m 644 doc/$(NAME).1 $(MANDIR)/man1/$(NAME).1; \
 		[ -f $(SYSCONFDIR)/$(NAME).conf -o -z "$(SYSCONFDIR)" ] \
 			|| install -d $(SYSCONFDIR)/; \
 			   install -m 600 doc/$(NAME).conf $(SYSCONFDIR)/$(NAME).conf; \
 	else \
-		install -D -m 755 -s $(NAME) $(BINDIR)/$(NAME); \
+		install -D -m 755 $(STRIP) $(NAME) $(BINDIR)/$(NAME); \
 		install -D -m 644 doc/$(NAME).1 $(MANDIR)/man1/$(NAME).1; \
 		[ -f $(SYSCONFDIR)/$(NAME).conf -o -z "$(SYSCONFDIR)" ] \
 			|| install -D -m 600 doc/$(NAME).conf $(SYSCONFDIR)/$(NAME).conf; \
@@ -175,15 +182,11 @@ deb:
 	fi
 	mv ../cntlm_$(VER)*.deb .
 
-rpm:
-	sed -i "s/^\(Version:[\t ]*\)\(.*\)/\1$(VER)/g" rpm/cntlm.spec
-	if [ `id -u` = 0 ]; then \
-		rpm/rules binary; \
-		rpm/rules clean; \
-	else \
-		fakeroot rpm/rules binary; \
-		fakeroot rpm/rules clean; \
-	fi
+rpm: tbz2
+	sed -i "s/^\(Version:[\t ]*\)\(.*\)/\1$(VER)/g" rpm/SPECS/cntlm.spec
+	@cp $(NAME)-$(VER).tar.bz2 rpm/SOURCES/
+	rpmbuild --define '_topdir $(CURDIR)/rpm' -ba rpm/SPECS/cntlm.spec
+	mv rpm/RPMS/**/*.rpm .
 
 win: win/setup.iss $(NAME) win/cntlm_manual.pdf win/cntlm.ini win/LICENSE.txt $(NAME)-$(VER)-win64.exe $(NAME)-$(VER)-win64.zip
 

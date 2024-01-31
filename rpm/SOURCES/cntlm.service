@@ -1,0 +1,12 @@
+[Unit]
+Description=cNTLM authentication Proxy
+After=network.target
+
+[Service]
+Type=simple
+Environment="RUNAS=cntlm"
+EnvironmentFile=-/etc/sysconfig/cntlmd
+ExecStart=/usr/sbin/cntlm -f -U $RUNAS -c /etc/cntlm.conf $OPTARGS
+
+[Install]
+WantedBy=multi-user.target
