@@ -1456,8 +1456,7 @@ int main(int argc, char **argv) {
 			auth_memcpy(g_creds, passntlm2, tmp, 16);
 			free(tmp);
 		}
-		memset(cpassword, 0, strlen(cpassword));
-		__asm__ volatile ("" ::: "memory");
+		compat_memset_s(cpassword, PASSWORD_BUFSIZE, 0, strlen(cpassword));
 	}
 
 	auth_strcpy(g_creds, user, cuser);
