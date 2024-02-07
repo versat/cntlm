@@ -855,12 +855,11 @@ char *urlencode(const char * const str) {
 
 char *printmem(const char * const src, const size_t len, const int bitwidth) {
 	char *tmp;
-	uint8_t val;
 	size_t i;
 
 	tmp = zmalloc(2*len+1);
 	for (i = 0; i < len; ++i) {
-		val = (uint8_t)src[i] & (0xFF >> (8-bitwidth));
+		uint8_t val = (uint8_t)src[i] & (0xFF >> (8-bitwidth));
 		tmp[i*2] = hextab[val >> 4];
 		tmp[i*2+1] = hextab[val & 0x0F];
 	}
@@ -1127,4 +1126,12 @@ ssize_t write_wrapper(int fildes, const void *buf, const size_t nbyte)
 	}
 
 	return retval;
+}
+
+void compat_memset_s( void *dest, size_t destsz, char ch, size_t count ){
+	count = MIN(count, destsz);
+	volatile unsigned char *p = dest;
+	while (count--){
+		*p++ = ch;
+	}
 }

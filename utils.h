@@ -200,6 +200,8 @@ extern uint64_t getrandom64(void) __attribute__((warn_unused_result));
 
 extern ssize_t write_wrapper(int fildes, const void *buf, const size_t nbyte);
 
+extern void compat_memset_s( void *dest, size_t destsz, char ch, size_t count );
+
 #if config_strdup == 0
 extern char *strdup(const char *src)  __attribute__((warn_unused_result));
 #endif

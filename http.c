@@ -661,15 +661,15 @@ int http_parse_basic(hlist_const_t headers, const char *header, struct auth_s *t
 
 	tmp = hlist_get(headers, header);
 	assert(tmp != NULL);
-	buf = zmalloc(strlen(tmp) + 1);
+	size_t header_bufsize = strlen(tmp) + 1;
+	buf = zmalloc(header_bufsize);
 	i = 5;
 	while (i < strlen(tmp) && tmp[++i] == ' ');
 	from_base64(buf, tmp+i);
 	pos = strchr(buf, ':');
 
 	if (pos == NULL) {
-		memset(buf, 0, strlen(buf));
-		__asm__ volatile ("" ::: "memory"); /* clean password memory; try to avoid the compiler optimizing this out */
+		compat_memset_s(buf, header_bufsize, 0, strlen(buf)); /* clean memory containing credentials */
 		free(buf);
 		return -1;
 	} else {
@@ -702,8 +702,7 @@ int http_parse_basic(hlist_const_t headers, const char *header, struct auth_s *t
 			free(tmp);
 		}
 
-		memset(buf, 0, strlen(buf));
-		__asm__ volatile ("" ::: "memory");
+		compat_memset_s(buf, header_bufsize, 0, strlen(buf));
 		free(buf);
 	}
 
