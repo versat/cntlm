@@ -241,10 +241,8 @@ distclean: clean
 ifeq ($(findstring CYGWIN,$(OS)),)
 	if [ `id -u` = 0 ]; then \
 		debian/rules clean; \
-		rpm/rules clean; \
 	else \
 		fakeroot debian/rules clean; \
-		fakeroot rpm/rules clean; \
 	fi
 endif
 	@rm -f *.exe *.deb *.rpm *.tgz *.tar.gz *.tar.bz2 *.zip *.exe tags ctags pid 2>/dev/null
