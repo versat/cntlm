@@ -1,0 +1,12 @@
+#!/bin/bash
+# cNTLM per user launcher script
+USERNAME="$(id -un)"
+HOME="$(getent passwd "$(id -u)" | cut -d: -f6)"
+USER_CONF_DIR="${HOME}/.cntlm"
+
+if [ ! -e "${USER_CONF_DIR}" ] ; then
+  echo "${USER_CONF_DIR} does not exist! Unable to run cNTLM for user ${USERNAME}."
+  exit 1
+fi
+
+exec /usr/sbin/cntlm -f -c "${USER_CONF_DIR}/cntlm.conf"

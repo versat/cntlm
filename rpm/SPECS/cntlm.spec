@@ -9,8 +9,10 @@ License:          GPLv2+
 URL:              https://github.com/versat/cntlm
 Source0:          %{name}-%{version}.tar.bz2
 Source1:          cntlm.tmpfiles
-Source2:          cntlm.service
-Source3:          cntlm.sysconfig
+Source2:          cntlm.sysconfig
+Source3:          cntlm.service
+Source4:          cntlm@.service
+Source5:          cntlm-user
 
 Requires:         systemd
 BuildRequires:    systemd
@@ -43,8 +45,10 @@ make %{?_smp_mflags} SYSCONFDIR=%{_sysconfdir}
 make BINDIR=%{buildroot}%{_sbindir} MANDIR=%{buildroot}%{_mandir} SYSCONFDIR=%{buildroot}%{_sysconfdir} NOSTRIP=1 install
 
 install -D -m 0644 %{SOURCE1} %{buildroot}%{_tmpfilesdir}/%{name}.conf
-install -D -m 0644 %{SOURCE2} %{buildroot}%{_unitdir}/%{name}.service
-install -D -m 0644 %{SOURCE3} %{buildroot}%{_sysconfdir}/sysconfig/cntlmd
+install -D -m 0644 %{SOURCE2} %{buildroot}%{_sysconfdir}/sysconfig/cntlmd
+install -D -m 0644 %{SOURCE3} %{buildroot}%{_unitdir}/%{name}.service
+install -D -m 0644 %{SOURCE4} %{buildroot}%{_unitdir}/%{name}@.service
+install -D -m 0755 %{SOURCE5} %{buildroot}%{_libexecdir}/%{name}-user
 
 install -D -d -m 0755 %{buildroot}/run/%{name}/
 
@@ -73,11 +77,13 @@ exit 0
 %doc README COPYRIGHT
 %license LICENSE
 %{_sbindir}/%{name}
+%{_libexecdir}/%{name}-user
 %{_mandir}/man1/%{name}.1*
 %config(noreplace) %{_sysconfdir}/%{name}.conf
 %config(noreplace) %{_sysconfdir}/sysconfig/cntlmd
 %{_tmpfilesdir}/%{name}.conf
 %{_unitdir}/%{name}.service
+%{_unitdir}/%{name}@.service
 %attr(755, %{name}, %{name}) %dir /run/%{name}/
 
 

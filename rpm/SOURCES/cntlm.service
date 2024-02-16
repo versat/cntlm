@@ -1,5 +1,5 @@
 [Unit]
-Description=cNTLM authentication Proxy
+Description=cNTLM authentication proxy
 After=network.target
 
 [Service]
