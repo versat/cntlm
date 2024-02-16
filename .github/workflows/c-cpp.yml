@@ -2,7 +2,9 @@ name: C/C++ CI
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
+      - containers
   pull_request:
     branches: [ master ]
 
@@ -49,3 +51,43 @@ jobs:
         ./configure
         make duktape.o
         scan-build --force-analyze-debug-code make
+
+  package-rhel:
+    runs-on: ubuntu-latest
+    container:
+      image: registry.access.redhat.com/ubi9/ubi:latest
+    steps:
+      - name: Install build dependencies
+        run: dnf install -y make gcc systemd rpm-build git shadow-utils && dnf clean all
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Set working directory as safe
+        run: git config --global --add safe.directory ${GITHUB_WORKSPACE}
+      - name: Build the source
+        run: |
+         ./configure
+         make rpm
+      - name: Install the RPM
+        run: 'rpm -iv cntlm*.rpm'
+      - name: Invoke cNTLM to ensure it is installed properly
+        run: cntlm -h
+
+  package-sles:
+    runs-on: ubuntu-latest
+    container:
+      image: registry.suse.com/suse/sle15:latest
+    steps:
+      - name: Install build dependencies
+        run: zypper install -y make gcc systemd rpm-build git shadow && zypper clean -a
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Set working directory as safe
+        run: git config --global --add safe.directory ${GITHUB_WORKSPACE}
+      - name: Build the source
+        run: |
+         ./configure
+         make rpm
+      - name: Install the RPM
+        run: 'rpm -iv cntlm*.rpm'
+      - name: Invoke cNTLM to ensure it is installed properly
+        run: cntlm -h
