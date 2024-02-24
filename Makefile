@@ -8,29 +8,39 @@ SYSCONFDIR 	:= $(DESTDIR)/etc
 BINDIR     	:= $(DESTDIR)$(PREFIX)/sbin
 MANDIR     	:= $(DESTDIR)$(PREFIX)/share/man
 
+STAMP	:= configure-stamp
+ifeq ($(wildcard $(STAMP)),)
+_ := $(shell ./configure)
+endif
+
 #
 # Careful now...
 # __BSD_VISIBLE is for FreeBSD AF_* constants
 # _ALL_SOURCE is for AIX 5.3 LOG_PERROR constant
 #
 NAME		:= cntlm
-CC		:= gcc
+CC		:= $(shell head -n 1 $(STAMP))
 VER		:= $(shell cat VERSION)
 OS		:= $(shell uname -s)
 OSLDFLAGS	:= $(shell [ $(OS) = "SunOS" ] && echo "-lrt -lsocket -lnsl")
 LDFLAGS		:= -lpthread -lm $(OSLDFLAGS)
 CYGWIN_REQS	:= cygwin1.dll cygrunsrv.exe
+
+ifeq ($(CC),gcc)
 GCC_VER := $(shell ${CC} -dumpfullversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/')
 GCC_GTEQ_430 := $(shell expr ${GCC_VER} \>= 40300)
 GCC_GTEQ_450 := $(shell expr ${GCC_VER} \>= 40500)
 GCC_GTEQ_600 := $(shell expr ${GCC_VER} \>= 60000)
 GCC_GTEQ_700 := $(shell expr ${GCC_VER} \>= 70000)
+endif
 
 CFLAGS	+= -std=c99 -D__BSD_VISIBLE -D_ALL_SOURCE -D_XOPEN_SOURCE=600 -D_POSIX_C_SOURCE=200112 -D_ISOC99_SOURCE -D_REENTRANT -D_BSD_SOURCE -D_DEFAULT_SOURCE -D_DARWIN_C_SOURCE -DVERSION=\"'$(VER)'\"
 CFLAGS	+= -Wall -Wextra -pedantic -Wshadow -Wcast-qual -Wbad-function-cast -Wstrict-prototypes -Wno-overlength-strings
 CFLAGS	+= -D_FORTIFY_SOURCE=1
 #CFLAGS  += -ftrapv
 #CFLAGS  += -fsanitize=undefined -fsanitize-undefined-trap-on-error
+
+ifeq ($(CC),gcc)
 ifeq "$(GCC_GTEQ_430)" "1"
 	CFLAGS += -Wlogical-op
 endif
@@ -49,31 +59,35 @@ endif
 ifeq "$(GCC_GTEQ_700)" "1"
 	CFLAGS += -Wduplicated-branches
 endif
+endif
+
 #CFLAGS	+= -fstack-protector-strong
-CFLAGS	+= -v
+#CFLAGS	+= -v
 ifeq ($(COVERAGE),1)
 	# COVERAGE REPORT
 	CFLAGS  += -g --coverage
+else ifeq ($(DEBUG),1)
+	# DEBUG
+	CFLAGS	+= -g -O0
 else
-	ifeq ($(DEBUG),1)
-		# DEBUG
-		CFLAGS	+= -g -O0
-	else
-		# RELEASE
-		CFLAGS	+= -O3
-	endif
+	# RELEASE
+	CFLAGS	+= -O3
 endif
 
-ifneq ($(findstring CYGWIN,$(OS)),)
-	OBJS=utils.o ntlm.o xcrypt.o config.o socket.o acl.o auth.o http.o forward.o direct.o scanner.o pages.o proxy.o pac.o duktape.o main.o sspi.o win/resources.o
-else
-	OBJS=utils.o ntlm.o xcrypt.o config.o socket.o acl.o auth.o http.o forward.o direct.o scanner.o pages.o proxy.o pac.o duktape.o main.o
-endif
+OBJS=main.o utils.o ntlm.o xcrypt.o config.o socket.o acl.o auth.o http.o forward.o direct.o scanner.o pages.o proxy.o pac.o duktape.o
 
 ENABLE_KERBEROS=$(shell grep -c ENABLE_KERBEROS config/config.h)
 ifeq ($(ENABLE_KERBEROS),1)
 	OBJS+=kerberos.o
+ifeq ($(OS),Darwin)
+	LDFLAGS+=-framework GSS
+else
 	LDFLAGS+=-lgssapi_krb5
+endif
+endif
+
+ifneq ($(findstring CYGWIN,$(OS)),)
+	OBJS+=sspi.o win/resources.o
 endif
 
 ENABLE_STATIC=$(shell grep -c ENABLE_STATIC config/config.h)
@@ -81,9 +95,14 @@ ifeq ($(ENABLE_STATIC),1)
         LDFLAGS+=-static
 endif
 
+CFLAGS_DUKTAPE := -Wno-bad-function-cast -Wno-null-dereference -Wno-format-nonliteral -Wno-unused-but-set-variable
+ifeq ($(CC),gcc)
+	CFLAGS_DUKTAPE += -Wno-format-overflow 
+endif
+
 all: $(NAME)
 
-$(NAME): configure-stamp $(OBJS)
+$(NAME): $(OBJS)
 	@echo "Linking $@"
 	@$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
@@ -101,10 +120,7 @@ main.o: main.c
 
 duktape.o: duktape/duktape.c
 	@echo "Compiling $<"
-	@$(CC) $(CFLAGS) -Wno-bad-function-cast -Wno-null-dereference -Wno-format-nonliteral -Wno-format-overflow -c -o $@ $<
-
-configure-stamp:
-	./configure
+	@$(CC) $(CFLAGS) $(CFLAGS_DUKTAPE) -c -o $@ $<
 
 win/resources.o: win/resources.rc
 	@echo Win64: adding ICON resource
@@ -216,8 +232,7 @@ uninstall:
 clean:
 	@rm -f config/endian config/gethostname config/strdup config/socklen_t config/arc4random_buf config/strlcat config/strlcpy config/*.exe
 	@rm -f *.o cntlm cntlm.exe configure-stamp build-stamp config/config.h
-	rm -f $(patsubst %, win/%, $(CYGWIN_REQS) cntlm.exe cntlm.ini LICENSE.txt resources.o setup.iss cntlm_manual.pdf)
-	@if [ -h Makefile ]; then rm -f Makefile; mv Makefile.gcc Makefile; fi
+	@rm -f $(patsubst %, win/%, $(CYGWIN_REQS) cntlm.exe cntlm.ini LICENSE.txt resources.o setup.iss cntlm_manual.pdf)
 
 distclean: clean
 ifeq ($(findstring CYGWIN,$(OS)),)

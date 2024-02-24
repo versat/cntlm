@@ -1,19 +1,15 @@
 #!/bin/sh
 #
-# Search for GCC or XL C/C++, former if both exist
+# Search for XL C/C++, CLANG or GCC, with this priority
 #
-# To add another compiler, just create Makefile.XXX and add XXX to $CCS
-#
-# To prevent ugly Makefile extensions, underscore and chars following it
-# in the name XXX are automatically removed before locating relevant
-# Makefile. This is why compiler "xlc_r" has Makefile extension "xlc".
-# This can be disabled if necessary.
+# In the Makefile check the value of $(CC) (e.g. "ifeq ($(CC),gcc)")
+# to define specific compiler configurations
 #
 #set -x
 
 if [ -n "$CC" ]; then
 	# If compiler is specified look for the path
-	CCPATH=$(which $CC 2>&1)
+	CCPATH=$(which "$CC" 2>&1)
 	if [ -n "${CCPATH%%/*}" ]; then
 		echo "Unable to find $CC, will search for a compatible compiler ..."
 		CC=
@@ -27,12 +23,15 @@ if [ -z "$CC" ]; then
 	# Look for supported compilers
 	#
 	for c in $CCS; do
-		if CCPATH=$(which $c 2>&1) && [ -z "${CCPATH%%/*}" ] && $(echo "#include <sys/socket.h>" | $c -fsyntax-only -x c -); then
+		if CCPATH=$(which "$c" 2>&1) && [ -z "${CCPATH%%/*}" ] && (echo "#include <sys/socket.h>" | $c -fsyntax-only -x c - > /dev/null 2>&1); then
 			CC="$c"
 			break
 		fi
 	done
 fi
+
+STAMP=configure-stamp
+#[ -f $STAMP ] && exit 0
 
 #
 # Make a link to a proper Makefile.*
@@ -42,63 +41,36 @@ if [ -z "$CC" ]; then
 	exit 1
 else
 	echo "Using $CCPATH to compile Cntlm"
-	[ -h Makefile ] && rm -f Makefile 2>/dev/null
-	case "$CC" in
-		gcc)
-			# default Makefile is for GCC; just revert back to
-			# GCC if Makefile is linked to other compiler version
-			if [ ! -f Makefile ]; then
-				mv Makefile.gcc Makefile
-			fi
-			;;
-		*)
-			EXT=$(echo "$CC" | sed 's/_.*//')
-			if [ ! -f "Makefile.$EXT" ]; then
-				echo "There must be a file 'Makefile.$EXT' to compile it with $CC"
-				exit 1
-			else
-				# backup default GCC Makefile and create a link to other
-				if [ -f Makefile ]; then
-					mv Makefile Makefile.gcc
-				fi
-
-				ln -s Makefile.$EXT Makefile
-			fi
-			;;
-	esac
+	echo "$CC" > $STAMP
 fi
 
-STAMP=configure-stamp
 CONFIG=config/config.h
 TESTS="endian strdup socklen_t gethostname arc4random_buf strlcat strlcpy"
-
-#[ -f $STAMP ] && exit 0
-touch $STAMP
 
 rm -f $CONFIG
 echo "#ifndef CONFIGURE_CONFIG_H" > $CONFIG
 echo "#define CONFIGURE_CONFIG_H" >> $CONFIG
 echo "" >> $CONFIG
 for i in $TESTS; do
-	printf "Checking $i... "
-	printf "#define config_$i " >> $CONFIG
-	$CC -std=c99 -D__BSD_VISIBLE -D_ALL_SOURCE -D_XOPEN_SOURCE=600 -D_POSIX_C_SOURCE=200112 -D_ISOC99_SOURCE -D_REENTRANT -D_BSD_SOURCE -D_DEFAULT_SOURCE -D_DARWIN_C_SOURCE -o config/$i config/$i.c 2> /dev/null
+	printf "Checking %s... " "$i"
+	printf "#define config_%s " "$i" >> $CONFIG
+	$CC -std=c99 -D__BSD_VISIBLE -D_ALL_SOURCE -D_XOPEN_SOURCE=600 -D_POSIX_C_SOURCE=200112 -D_ISOC99_SOURCE -D_REENTRANT -D_BSD_SOURCE -D_DEFAULT_SOURCE -D_DARWIN_C_SOURCE -o config/"$i" config/"$i".c 2> /dev/null
 	rc=$?
 
 	if [ $rc -ne 0 ]; then # -o -n "$OUT" ]; then
 		rc=0
 		RET=no
 	else
-		RET=$(./config/$i)
+		RET=$(./config/"$i")
 		rc=$?
 		[ -z "$RET" ] && if [ $rc -eq 0 ]; then RET="no"; else RET=yes; fi
 	fi
 
 	echo $rc >> $CONFIG
-	echo $RET
+	echo "$RET"
 done
 
-while [ $1 ]
+while [ "$1" ]
 do
 	case $1 in
 		--enable-kerberos)
