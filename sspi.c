@@ -96,6 +96,9 @@ HMODULE LoadSecurityDll(void) {
 	if (!hModule)
 		return NULL;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+
 	do {
 		_AcceptSecurityContext = (ACCEPT_SECURITY_CONTEXT_FN)
 				GetProcAddress(hModule, "AcceptSecurityContext");
@@ -161,6 +164,8 @@ HMODULE LoadSecurityDll(void) {
 
 	} while (NULL);
 
+#pragma GCC diagnostic pop
+
 	if (!fAllFunctionsLoaded) {
 		UnloadSecurityDll(hModule);
 		hModule = NULL;
@@ -223,7 +228,7 @@ int sspi_request(char **dst, struct sspi_handle *sspi)
 
 	SecBufferDesc   tokenDesc;
 	SecBuffer       token;
-	unsigned long attrs;
+	unsigned int attrs;
 
 	tokenDesc.ulVersion = SECBUFFER_VERSION;
 	tokenDesc.cBuffers  = 1;
@@ -265,7 +270,7 @@ int sspi_response(char **dst, char *challengeBuf, int challen, struct sspi_handl
 	SecBufferDesc challengeDesc;
 	SecBufferDesc answerDesc;
 	SECURITY_STATUS status;
-	unsigned long attrs;
+	unsigned int attrs;
 	TimeStamp expiry;
 
 	challengeDesc.ulVersion = answerDesc.ulVersion  = SECBUFFER_VERSION;

@@ -48,7 +48,7 @@ int so_resolv(struct addrinfo **addresses, const char *hostname, const int port)
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_socktype = SOCK_STREAM;
 
-	snprintf(buf, sizeof(buf), "%d", port);
+	snprintf(buf, sizeof(buf), "%d", (uint16_t)port);
 	int rc = getaddrinfo(hostname, buf, &hints, addresses);
 	if (rc != 0) {
 		if (debug)
@@ -78,7 +78,7 @@ int so_resolv_wildcard(struct addrinfo **addresses, const int port, int gateway)
 	struct addrinfo hints;
 	char buf[6];
 
-	snprintf(buf, sizeof(buf), "%d", port);
+	snprintf(buf, sizeof(buf), "%d", (uint16_t)port);
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_socktype = SOCK_STREAM;

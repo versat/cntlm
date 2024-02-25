@@ -680,7 +680,7 @@ char *trimr(char * const buf) {
 
 	assert(buf != NULL);
 
-	for (i = strlen(buf)-1; i >= 0 && isspace(buf[i]); --i);
+	for (i = strlen(buf)-1; i >= 0 && isspace((u_char)buf[i]); --i);
 	buf[i+1] = 0;
 
 	return buf;
@@ -841,7 +841,7 @@ char *urlencode(const char * const str) {
 	const size_t tmp_length = str_length * 3 + 1;
 	tmp = zmalloc(tmp_length);
 	for (pos = 0, i = 0; i < str_length; ++i) {
-		if (isdigit(str[i]) || (tolower(str[i]) >= 'a' && tolower(str[i]) <= 'z') || str[i] == '.' || str[i] == '-' || str[i] == '_' || str[i] == '~') {
+		if (isdigit((u_char)str[i]) || (tolower(str[i]) >= 'a' && tolower(str[i]) <= 'z') || str[i] == '.' || str[i] == '-' || str[i] == '_' || str[i] == '~') {
 			tmp[pos] = str[i];
 			++pos;
 		} else {
