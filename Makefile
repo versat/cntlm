@@ -36,7 +36,7 @@ endif
 
 CFLAGS	+= -std=c99 -D__BSD_VISIBLE -D_ALL_SOURCE -D_XOPEN_SOURCE=600 -D_POSIX_C_SOURCE=200112 -D_ISOC99_SOURCE -D_REENTRANT -D_BSD_SOURCE -D_DEFAULT_SOURCE -D_DARWIN_C_SOURCE -DVERSION=\"'$(VER)'\"
 CFLAGS	+= -Wall -Wextra -pedantic -Wshadow -Wcast-qual -Wbad-function-cast -Wstrict-prototypes -Wno-overlength-strings
-CFLAGS	+= -D_FORTIFY_SOURCE=1
+CFLAGS	+= -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1
 #CFLAGS  += -ftrapv
 #CFLAGS  += -fsanitize=undefined -fsanitize-undefined-trap-on-error
 
