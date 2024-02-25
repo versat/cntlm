@@ -1586,7 +1586,7 @@ int main(int argc, char **argv) {
 		if (getuid() && geteuid()) {
 			syslog(LOG_WARNING, "No root privileges; keeping identity %d:%d\n", getuid(), getgid());
 		} else {
-			if (isdigit(cuid[0])) {
+			if (isdigit((u_char)cuid[0])) {
 				nuid = atoi(cuid);
 				ngid = nuid;
 				if (nuid <= 0) {

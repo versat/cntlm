@@ -137,10 +137,10 @@ int scanner_hook(rr_data_const_t request, rr_data_t response, struct auth_s *cre
 					int update_page = 0;
 					int download_finished = 0;
 
-					if ((pos = strstr(line, "UpdatePage(")) && isdigit(pos[11])) {
+					if ((pos = strstr(line, "UpdatePage(")) && isdigit((u_char)pos[11])) {
 						update_page = 1;
 					}
-					else if ((pos = strstr(line, "DownloadFinished(")) && isdigit(pos[17])) {
+					else if ((pos = strstr(line, "DownloadFinished(")) && isdigit((u_char)pos[17])) {
 						download_finished = 1;
 					}
 
@@ -259,9 +259,10 @@ int scanner_hook(rr_data_const_t request, rr_data_t response, struct auth_s *cre
 					 * The clients progress bar doesn't work without it and it stinks!
 					 */
 					if (filesize || progress) {
-						tmp = zmalloc(20);
-						snprintf(tmp, 20, "%ld", filesize ? filesize : progress);
+						tmp = zmalloc(22);
+						snprintf(tmp, 22, "%ld", filesize ? filesize : progress);
 						newres->headers = hlist_mod(newres->headers, "Content-Length", tmp, 1);
+						free(tmp);
 					}
 
 					/*

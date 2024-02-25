@@ -31,7 +31,7 @@
 #include "config/config.h"
 
 #define BUFSIZE			4096
-#define MINIBUF_SIZE		50
+#define MINIBUF_SIZE		64
 /*
 * Longest password that appears to be supported in a Microsoft authn/authz implementation is 256 characters;
 * therefore support passwords up to 256 characters plus null terminator.

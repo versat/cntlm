@@ -123,7 +123,7 @@ int headers_recv(int fd, rr_data_t data) {
 		 * Let's find out the numeric version of the HTTP version: 09, 10, 11.
 		 * Set to -1 if header is misformatted.
 		 */
-		if (is_http && (tok = strchr(data->http, '/')) && strlen(tok) >= 4 && isdigit(tok[1]) && isdigit(tok[3])) {
+		if (is_http && (tok = strchr(data->http, '/')) && strlen(tok) >= 4 && isdigit((u_char)tok[1]) && isdigit((u_char)tok[3])) {
 			data->http_version = (tok[1] - 0x30) * 10 + (tok[3] - 0x30);
 		} else {
 			data->http_version = -1;
@@ -175,7 +175,7 @@ int headers_recv(int fd, rr_data_t data) {
 		 * Let's find out the numeric version of the HTTP version: 09, 10, 11.
 		 * Set to -1 if header is misformatted.
 		 */
-		if ((tok = strchr(data->http, '/')) && strlen(tok) >= 4 && isdigit(tok[1]) && isdigit(tok[3])) {
+		if ((tok = strchr(data->http, '/')) && strlen(tok) >= 4 && isdigit((u_char)tok[1]) && isdigit((u_char)tok[3])) {
 			data->http_version = (tok[1] - 0x30) * 10 + (tok[3] - 0x30);
 		} else {
 			data->http_version = -1;
@@ -429,7 +429,7 @@ int chunked_data_send(int dst, int src) {
 
 		csize = strtol(buf, &err, 16);
 
-		if (!isspace(*err) && *err != ';') {
+		if (!isspace((u_char)*err) && *err != ';') {
 			if (debug)
 				printf("chunked_data_send: aborting, chunk size format error\n");
 			free(buf);
