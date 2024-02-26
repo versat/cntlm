@@ -76,8 +76,8 @@ endif
 
 OBJS=main.o utils.o ntlm.o xcrypt.o config.o socket.o acl.o auth.o http.o forward.o direct.o scanner.o pages.o proxy.o pac.o duktape.o
 
-ENABLE_KERBEROS=$(shell grep -c ENABLE_KERBEROS config/config.h)
-ifeq ($(ENABLE_KERBEROS),1)
+CONFIG_GSS=$(shell grep -c "config_gss 1" config/config.h)
+ifeq ($(CONFIG_GSS),1)
 	OBJS+=kerberos.o
 ifeq ($(OS),Darwin)
 	LDFLAGS+=-framework GSS
@@ -230,7 +230,7 @@ uninstall:
 	rm -f $(BINDIR)/$(NAME) $(MANDIR)/man1/$(NAME).1 2>/dev/null || true
 
 clean:
-	@rm -f config/endian config/gethostname config/strdup config/socklen_t config/arc4random_buf config/strlcat config/strlcpy config/*.exe
+	@rm -f config/endian config/gethostname config/strdup config/socklen_t config/arc4random_buf config/strlcat config/strlcpy config/gss config/*.exe
 	@rm -f *.o cntlm cntlm.exe configure-stamp build-stamp config/config.h
 	@rm -f $(patsubst %, win/%, $(CYGWIN_REQS) cntlm.exe cntlm.ini LICENSE.txt resources.o setup.iss cntlm_manual.pdf)
 

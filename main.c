@@ -70,7 +70,7 @@
 #include "sspi.h"				/* code for SSPI management */
 #endif
 
-#ifdef ENABLE_KERBEROS
+#if config_gss == 1
 #include "kerberos.h"
 #endif
 
@@ -957,7 +957,7 @@ int main(int argc, char **argv) {
 		fprintf(stream, "\t-A  <address>[/<net>]\n"
 				"\t    ACL allow rule. IP or hostname, net must be a number (CIDR notation)\n");
 		fprintf(stream, "\t-a  ntlm | nt | lm"
-#ifdef ENABLE_KERBEROS
+#if config_gss == 1
 				" | gss\n"
 				"\t    Authentication type - combined NTLM, just LM, just NT, or GSS. Default NTLM.\n"
 				"\t    GSS activates kerberos auth: you need a cached credential.\n"
@@ -1364,7 +1364,7 @@ int main(int argc, char **argv) {
 			g_creds->hashnt = 2;
 			g_creds->hashlm = 0;
 			g_creds->hashntlm2 = 0;
-#ifdef ENABLE_KERBEROS
+#if config_gss == 1
 		} else if (!strcasecmp("gss", cauth)) {
 			g_creds->haskrb = KRB_FORCE_USE_KRB;
 			syslog(LOG_INFO, "Forcing GSS auth.\n");
@@ -1507,7 +1507,7 @@ int main(int argc, char **argv) {
 	 * If we're going to need a password, check we really have it.
 	 */
 	if (!ntlmbasic &&
-#ifdef ENABLE_KERBEROS
+#if config_gss == 1
 			!g_creds->haskrb &&
 #endif
 #ifdef __CYGWIN__
@@ -1571,7 +1571,7 @@ int main(int argc, char **argv) {
 		setlogmask(LOG_UPTO(LOG_INFO));
 	}
 
-#ifdef ENABLE_KERBEROS
+#if config_gss == 1
 	if (g_creds->haskrb & KRB_FORCE_USE_KRB) {
 		g_creds->haskrb |= check_credential();
 		if(g_creds->haskrb & KRB_CREDENTIAL_AVAILABLE)

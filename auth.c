@@ -46,7 +46,7 @@ struct auth_s *new_auth(void) {
 	tmp->hashnt = 0;
 	tmp->hashlm = 0;
 	tmp->flags = 0;
-#ifdef ENABLE_KERBEROS
+#if config_gss == 1
 	tmp->haskrb = 0;
 #endif
 
@@ -58,7 +58,7 @@ struct auth_s *copy_auth(struct auth_s *dst, const struct auth_s *src, int fullc
 	dst->hashnt = src->hashnt;
 	dst->hashlm = src->hashlm;
 	dst->flags = src->flags;
-#ifdef ENABLE_KERBEROS
+#if config_gss == 1
 	dst->haskrb = src->haskrb;
 #endif
 

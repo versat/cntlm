@@ -45,7 +45,7 @@ else
 fi
 
 CONFIG=config/config.h
-TESTS="endian strdup socklen_t gethostname arc4random_buf strlcat strlcpy"
+TESTS="endian strdup socklen_t gethostname arc4random_buf strlcat strlcpy gss"
 
 rm -f $CONFIG
 echo "#ifndef CONFIGURE_CONFIG_H" > $CONFIG
@@ -73,10 +73,6 @@ done
 while [ "$1" ]
 do
 	case $1 in
-		--enable-kerberos)
-			printf "#define ENABLE_KERBEROS" >> $CONFIG
-			echo "" >> $CONFIG
-			;;
 		--enable-static)
 			printf "#define ENABLE_STATIC" >> $CONFIG
 			echo "" >> $CONFIG
