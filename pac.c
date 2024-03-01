@@ -21,6 +21,7 @@
 
 #include <netdb.h>
 #include <ifaddrs.h>
+
 #include "duktape/duktape.h"
 #include "pac_utils_js.h"
 #include "pac.h"

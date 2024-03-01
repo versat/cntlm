@@ -23,7 +23,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "utils.h"
 #include "auth.h"
 
 struct auth_s *copy_auth(struct auth_s *dst, const struct auth_s *src, int fullcopy) {

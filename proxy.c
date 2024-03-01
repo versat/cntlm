@@ -19,24 +19,22 @@
  *
  */
 
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <syslog.h>
 
+#include "proxy.h"
 #include "globals.h"
 #include "socket.h"
 #include "http.h"
 #include "ntlm.h"
-#include "proxy.h"
+#include "pac.h"
 
 #if config_gss == 1
 #include "kerberos.h"
 #endif
-
-#include "pac.h"
 
 /*
  * Proxy types defined by PAC specification. Used in proxy_t to

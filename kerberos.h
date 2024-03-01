@@ -27,7 +27,6 @@
 #ifndef KERBEROS_H_
 #define KERBEROS_H_
 
-#include "globals.h"
 #include "auth.h"
 
 //used in global auth flag
