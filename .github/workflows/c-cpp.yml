@@ -29,12 +29,6 @@ jobs:
         make
         ./cntlm -h
         make distclean
-    - name: Unicode build
-      run: |
-        ./configure
-        CFLAGS=-DUNICODE make
-        ./cntlm -h
-        make distclean
     - name: Verify debug build
       run: |
         ./configure

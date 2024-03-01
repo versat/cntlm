@@ -7,7 +7,9 @@ build_script:
 - cmd: >-
     C:\cygwin64\setup-x86_64.exe -qgnO -l C:\cygwin64\var\cache\setup -R c:\cygwin64 -s http://cygwin.mirror.constant.com -P ghostscript -P dos2unix -P zip
 
-    C:\cygwin64\bin\bash -e -l -c "cd /cygdrive/c/projects/cntlm && make distclean && ./configure && make DEBUG=1 && make win"
+    C:\cygwin64\bin\bash -e -l -c "cd /cygdrive/c/projects/cntlm && make distclean && ./configure && make DEBUG=1"
+
+    C:\cygwin64\bin\bash -e -l -c "cd /cygdrive/c/projects/cntlm && make distclean && ./configure && CFLAGS=-DUNICODE make"
 
     C:\cygwin64\bin\bash -e -l -c "cd /cygdrive/c/projects/cntlm && make distclean && ./configure && make && make win"
 
