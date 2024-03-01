@@ -24,10 +24,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "globals.h"
 #include "config.h"
-#include "utils.h"
-
+#include "globals.h"
 
 config_t config_open(const char *fname) {
 	config_t rc;

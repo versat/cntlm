@@ -25,8 +25,6 @@
 #define __STDC_WANT_LIB_EXT1__ 1
 #endif
 
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
@@ -41,8 +39,8 @@
 #include <wincrypt.h>
 #endif
 
-#include "swap.h"
 #include "utils.h"
+#include "swap.h"
 #include "socket.h"
 #include "globals.h"
 

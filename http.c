@@ -32,10 +32,9 @@
 #include <assert.h>
 #include <syslog.h>
 
-#include "utils.h"
+#include "http.h"
 #include "socket.h"
 #include "ntlm.h"
-#include "http.h"
 
 #define BLOCK		2048
 
