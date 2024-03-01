@@ -41,8 +41,8 @@
 #include <wincrypt.h>
 #endif
 
-#include "swap.h"
 #include "utils.h"
+#include "swap.h"
 #include "socket.h"
 #include "globals.h"
 

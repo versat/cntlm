@@ -29,13 +29,11 @@
 #include <strings.h>
 #include <assert.h>
 
+#include "forward.h"
 #include "direct.h"
-#include "utils.h"
 #include "globals.h"
-#include "auth.h"
 #include "http.h"
 #include "socket.h"
-#include "forward.h"
 #include "scanner.h"
 #include "pages.h"
 #include "proxy.h"

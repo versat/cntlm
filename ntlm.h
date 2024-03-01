@@ -22,7 +22,6 @@
 #ifndef _NTLM_H
 #define _NTLM_H
 
-#include "xcrypt.h"
 #include "auth.h"
 
 #define NTLM_BUFSIZE		1024

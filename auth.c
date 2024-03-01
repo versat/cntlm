@@ -23,7 +23,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "utils.h"
 #include "auth.h"
 
 struct auth_s *new_auth(void) {

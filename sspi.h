@@ -25,8 +25,6 @@
 
 #ifdef __CYGWIN__
 
-#include "utils.h"
-
 #define SECURITY_WIN32
 
 #include <windows.h>
