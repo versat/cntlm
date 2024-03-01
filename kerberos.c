@@ -40,10 +40,6 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "globals.h"
-#include "auth.h"
-#include "kerberos.h"
-
 #include <string.h>
 #include <stdio.h>
 #ifdef __APPLE__
@@ -52,6 +48,9 @@
 #include <gssapi/gssapi.h>
 #endif
 #include <stdlib.h>
+
+#include "kerberos.h"
+#include "globals.h"
 
 /*
  * Function: display_ctx_flags

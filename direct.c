@@ -17,27 +17,21 @@
  *
  */
 
-#include <sys/types.h>
-#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
 #include <syslog.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
+#include <string.h>
 #include <strings.h>
 #include <errno.h>
-#include <netdb.h>
-#include <sys/socket.h>
 
-#include "utils.h"
+#include "direct.h"
 #include "globals.h"
 #include "auth.h"
 #include "http.h"
 #include "socket.h"
 #include "ntlm.h"
-#include "direct.h"
 #include "pages.h"
 
 int host_connect(const char *hostname, int port) {

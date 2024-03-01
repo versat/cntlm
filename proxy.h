@@ -22,6 +22,9 @@
 #ifndef PROXY_H
 #define PROXY_H
 
+#include "utils.h"
+#include "auth.h"
+
 extern int proxy_connect(struct auth_s *credentials, const char* url, const char* hostname);
 extern int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct auth_s *creds);
 

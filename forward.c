@@ -17,25 +17,20 @@
  *
  */
 
-#include <sys/types.h>
-#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
 #include <syslog.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
+#include <string.h>
 #include <strings.h>
 #include <assert.h>
 
+#include "forward.h"
 #include "direct.h"
-#include "utils.h"
 #include "globals.h"
-#include "auth.h"
 #include "http.h"
 #include "socket.h"
-#include "forward.h"
 #include "scanner.h"
 #include "pages.h"
 #include "proxy.h"

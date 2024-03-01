@@ -17,8 +17,6 @@
  *
  */
 
-#include <sys/types.h>
-#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -27,12 +25,11 @@
 #include <strings.h>
 #include <fnmatch.h>
 
-#include "utils.h"
+#include "scanner.h"
 #include "socket.h"
 #include "http.h"
 #include "globals.h"
 #include "forward.h"
-#include "scanner.h"
 #include "proxy.h"
 
 /*

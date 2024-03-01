@@ -109,7 +109,7 @@ $(NAME): $(OBJS)
 	@echo "Linking $@"
 	@$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
-main.o: main.c
+main.o: main.c *.h config/config.h
 	@echo "Compiling $<"
 	@if [ -z "$(SYSCONFDIR)" ]; then \
 		$(CC) $(CFLAGS) -c main.c -o $@; \
@@ -117,7 +117,7 @@ main.o: main.c
 		$(CC) $(CFLAGS) -DSYSCONFDIR=\"$(SYSCONFDIR)\" -c main.c -o $@; \
 	fi
 
-%.o: %.c
+%.o: %.c *.h config/config.h
 	@echo "Compiling $<"
 	@$(CC) $(CFLAGS) -c -o $@ $<
 

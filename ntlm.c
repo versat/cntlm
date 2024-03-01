@@ -19,17 +19,14 @@
  *
  */
 
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <inttypes.h>
 
 #include "ntlm.h"
 #include "swap.h"
 #include "xcrypt.h"
 #include "utils.h"
-#include "auth.h"
 #ifdef __CYGWIN__
 #include "sspi.h"
 #endif
