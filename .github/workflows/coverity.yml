@@ -12,6 +12,7 @@ jobs:
   coverity:
     runs-on: ubuntu-latest
     steps:
+    - run: sudo apt install -y libkrb5-dev
     - uses: actions/checkout@v4
     - run: ./configure
     - uses: vapier/coverity-scan-action@v1
