@@ -702,7 +702,7 @@ int http_parse_basic(hlist_const_t headers, const char *header, struct auth_s *t
 			free(tmp);
 		}
 
-		compat_memset_s(buf, header_bufsize, 0, strlen(buf));
+		compat_memset_s(buf, header_bufsize, 0, header_bufsize);
 		free(buf);
 	}
 
