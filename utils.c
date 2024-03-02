@@ -19,6 +19,12 @@
  *
  */
 
+#include "config/config.h"
+
+#if config_memset_s == 1
+#define __STDC_WANT_LIB_EXT1__ 1
+#endif
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <string.h>
@@ -35,7 +41,6 @@
 #include <wincrypt.h>
 #endif
 
-#include "config/config.h"
 #include "swap.h"
 #include "utils.h"
 #include "socket.h"
@@ -1128,10 +1133,20 @@ ssize_t write_wrapper(int fildes, const void *buf, const size_t nbyte)
 	return retval;
 }
 
+/**
+ * Use memset_s for zeroing buffers. This function is not optimized by the compiler,
+ * so it can be used for clearing passwords.
+ * Prefer using the standard library version if available, otherwise use a custom
+ * implementation such that the compiler does not optimize it.
+ */
 void compat_memset_s( void *dest, size_t destsz, char ch, size_t count ){
+#if config_memset_s == 1
+	memset_s(dest, destsz, ch, count);
+#else
 	count = MIN(count, destsz);
 	volatile unsigned char *p = dest;
 	while (count--){
 		*p++ = ch;
 	}
+#endif
 }

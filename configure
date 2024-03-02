@@ -45,7 +45,7 @@ else
 fi
 
 CONFIG=config/config.h
-TESTS="endian strdup socklen_t gethostname arc4random_buf strlcat strlcpy gss"
+TESTS="endian gethostname socklen_t strdup arc4random_buf strlcat strlcpy memset_s gss"
 
 rm -f $CONFIG
 echo "#ifndef CONFIGURE_CONFIG_H" > $CONFIG

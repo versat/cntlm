@@ -14,6 +14,7 @@ cntlm*.tar.gz
 /config/arc4random_buf
 /config/strlcat
 /config/strlcpy
+/config/memset_s
 /config/gss
 /config/*.exe
 /win/*.exe
