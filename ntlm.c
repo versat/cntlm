@@ -175,7 +175,7 @@ char *ntlm_hash_lm_password(const char *password) {
 	gl_des_ecb_encrypt(&context, magic, keys+8);
 
 	memset(keys+16, 0, 5);
-	memset(pass, 0, 14);
+	compat_memset_s(pass, 15, 0, 14);
 	free(pass);
 
 	return keys;
@@ -191,7 +191,7 @@ char *ntlm_hash_nt_password(const char *password) {
 	md4_buffer(u16, len, keys);
 
 	memset(keys+16, 0, 5);
-	memset(u16, 0, len);
+	compat_memset_s(u16, len, 0, len);
 	free(u16);
 
 	return keys;

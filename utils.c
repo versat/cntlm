@@ -672,7 +672,7 @@ void free_rr_data(rr_data_t * pdata) {
 	if (data->http) free(data->http);
 	if (data->msg) free(data->msg);
 	if (data->body) free(data->body);
-	memset(data, 0, sizeof(struct rr_data_s));
+
 	free(data);
 	data = NULL;
 }
