@@ -10,7 +10,7 @@ MANDIR     	:= $(DESTDIR)$(PREFIX)/share/man
 
 STAMP	:= configure-stamp
 ifeq ($(wildcard $(STAMP)),)
-_ := $(shell ./configure)
+	_ := $(shell ./configure)
 endif
 
 #
@@ -27,11 +27,11 @@ LDFLAGS		:= -lpthread -lm $(OSLDFLAGS)
 CYGWIN_REQS	:= cygwin1.dll cygrunsrv.exe
 
 ifeq ($(CC),gcc)
-GCC_VER := $(shell ${CC} -dumpfullversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/')
-GCC_GTEQ_430 := $(shell expr ${GCC_VER} \>= 40300)
-GCC_GTEQ_450 := $(shell expr ${GCC_VER} \>= 40500)
-GCC_GTEQ_600 := $(shell expr ${GCC_VER} \>= 60000)
-GCC_GTEQ_700 := $(shell expr ${GCC_VER} \>= 70000)
+	GCC_VER := $(shell ${CC} -dumpfullversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/')
+	GCC_GTEQ_430 := $(shell expr ${GCC_VER} \>= 40300)
+	GCC_GTEQ_450 := $(shell expr ${GCC_VER} \>= 40500)
+	GCC_GTEQ_600 := $(shell expr ${GCC_VER} \>= 60000)
+	GCC_GTEQ_700 := $(shell expr ${GCC_VER} \>= 70000)
 endif
 
 CFLAGS	+= -std=c99 -D__BSD_VISIBLE -D_ALL_SOURCE -D_XOPEN_SOURCE=600 -D_POSIX_C_SOURCE=200112 -D_ISOC99_SOURCE -D_REENTRANT -D_BSD_SOURCE -D_DEFAULT_SOURCE -D_DARWIN_C_SOURCE -DVERSION=\"'$(VER)'\"
@@ -41,24 +41,24 @@ CFLAGS	+= -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1
 #CFLAGS  += -fsanitize=undefined -fsanitize-undefined-trap-on-error
 
 ifeq ($(CC),gcc)
-ifeq "$(GCC_GTEQ_430)" "1"
-	CFLAGS += -Wlogical-op
-endif
-ifeq "$(GCC_GTEQ_450)" "1"
-	CFLAGS += -Wjump-misses-init
-endif
-ifeq "$(GCC_GTEQ_600)" "1"
-	CFLAGS += -Wduplicated-cond
-	CFLAGS += -Wnull-dereference
-	CFLAGS += -Werror=uninitialized
-	CFLAGS += -Wformat=2
-	CFLAGS += -Wformat-overflow=2
-	CFLAGS += -Wformat-truncation=2
-	CFLAGS += -Wformat-security
-endif
-ifeq "$(GCC_GTEQ_700)" "1"
-	CFLAGS += -Wduplicated-branches
-endif
+	ifeq "$(GCC_GTEQ_430)" "1"
+		CFLAGS += -Wlogical-op
+	endif
+	ifeq "$(GCC_GTEQ_450)" "1"
+		CFLAGS += -Wjump-misses-init
+	endif
+	ifeq "$(GCC_GTEQ_600)" "1"
+		CFLAGS += -Wduplicated-cond
+		CFLAGS += -Wnull-dereference
+		CFLAGS += -Werror=uninitialized
+		CFLAGS += -Wformat=2
+		CFLAGS += -Wformat-overflow=2
+		CFLAGS += -Wformat-truncation=2
+		CFLAGS += -Wformat-security
+	endif
+	ifeq "$(GCC_GTEQ_700)" "1"
+		CFLAGS += -Wduplicated-branches
+	endif
 endif
 
 #CFLAGS	+= -fstack-protector-strong
@@ -79,20 +79,23 @@ OBJS=main.o utils.o ntlm.o xcrypt.o config.o socket.o acl.o auth.o http.o forwar
 CONFIG_GSS=$(shell grep -c "config_gss 1" config/config.h)
 ifeq ($(CONFIG_GSS),1)
 	OBJS+=kerberos.o
-ifeq ($(OS),Darwin)
-	LDFLAGS+=-framework GSS
-else
-	LDFLAGS+=-lgssapi_krb5
-endif
+	ifeq ($(OS),Darwin)
+		LDFLAGS+=-framework GSS
+	else
+		LDFLAGS+=-lgssapi_krb5
+	endif
 endif
 
 ifneq ($(findstring CYGWIN,$(OS)),)
 	OBJS+=sspi.o win/resources.o
 endif
 
-ENABLE_STATIC=$(shell grep -c ENABLE_STATIC config/config.h)
+# Static linking is not available on macOS
+ENABLE_STATIC=$(shell grep -c ENABLE_STATIC $(STAMP))
 ifeq ($(ENABLE_STATIC),1)
-        LDFLAGS+=-static
+	ifneq ($(OS),Darwin)
+		LDFLAGS+=-static
+	endif
 endif
 
 CFLAGS_DUKTAPE := -Wno-bad-function-cast -Wno-null-dereference -Wno-format-nonliteral -Wno-unused-but-set-variable
