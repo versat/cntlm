@@ -63,28 +63,24 @@ for i in $TESTS; do
 	else
 		RET=$(./config/"$i")
 		rc=$?
-		[ -z "$RET" ] && if [ $rc -eq 0 ]; then RET="no"; else RET=yes; fi
+		[ -z "$RET" ] && if [ $rc -eq 0 ]; then RET="no"; else RET="yes"; fi
 	fi
 
 	echo $rc >> $CONFIG
 	echo "$RET"
 done
+echo "" >> $CONFIG
+echo "#endif // CONFIGURE_CONFIG_H" >> $CONFIG
 
 while [ "$1" ]
 do
 	case $1 in
 		--enable-static)
-			printf "#define ENABLE_STATIC" >> $CONFIG
-			echo "" >> $CONFIG
+			echo "ENABLE_STATIC" >> $STAMP
 			;;
 		*)
 			echo "Unknown flag $1"
-			rm -f $CONFIG
 			;;
 	esac
 	shift
 done
-if [ -f $CONFIG ]; then
-	echo "" >> $CONFIG
-	echo "#endif // CONFIGURE_CONFIG_H" >> $CONFIG
-fi
