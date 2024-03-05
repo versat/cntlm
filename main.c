@@ -287,7 +287,6 @@ void *proxy_thread(void *thread_data) {
 
 	do {
 		ret = NULL;
-		keep_alive = 0;
 
 		if (debug) {
 			printf("\n******* Round 1 C: %d *******\n", cd);
