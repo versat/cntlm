@@ -41,7 +41,7 @@ jobs:
 
     - name: Create or Update Release
       id: create_or_update_release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v0.1.15
       with:
         files: |
           cntlm*.rpm
