@@ -1,0 +1,50 @@
+name: Windows Release
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+    
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      CC: gcc
+    steps:
+      
+      - uses: cygwin/cygwin-install-action@master
+        with:
+          platform: x86_64
+          packages: gcc-core make ghostscript dos2unix zip cygrunsrv
+
+      - run: git config --global core.autocrlf input
+
+      - uses: actions/checkout@v4
+
+      - name: Build artifacts
+        run: >-
+          cd ${GITHUB_WORKSPACE} &&
+          export CC=gcc &&
+          ./configure &&
+          make &&
+          make win
+        shell: C:\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'   
+      
+      - name: Extract and format version
+        id: format_version
+        run: |
+          version=$(echo "${{ github.ref }}" | sed 's/refs\/tags\///')
+          echo "::set-output name=VERSION::$version"
+        shell: bash
+
+      - name: Create or Update Release
+        id: create_or_update_release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            cntlm-*-win64.exe
+            cntlm-*-win64.zip
+            cntlm.exe
+          tag_name: ${{ steps.format_version.outputs.VERSION }} 
+          name: Release ${{ steps.format_version.outputs.VERSION }} 
