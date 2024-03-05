@@ -450,7 +450,7 @@ int chunked_data_send(int dst, int src) {
 	} while (csize != 0);
 
 	/* Take care of possible trailer */
-	w = len = i = 0;
+	w = len = 0;
 	do {
 		i = so_recvln(src, &buf, &bsize);
 		if (dst >= 0 && i > 0) {
