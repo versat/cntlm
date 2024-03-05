@@ -45,6 +45,5 @@ jobs:
           files: |
             cntlm-*-win64.exe
             cntlm-*-win64.zip
-            cntlm.exe
           tag_name: ${{ steps.format_version.outputs.VERSION }} 
           name: Release ${{ steps.format_version.outputs.VERSION }} 
