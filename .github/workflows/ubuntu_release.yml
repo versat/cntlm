@@ -21,9 +21,6 @@ jobs:
     - name: Install packages required for optional configurations of cntlm
       run: sudo apt install -y libkrb5-dev
 
-    - name: Install further tools (clang-tools for scan-build)
-      run: sudo apt install -y clang-tools
-
     - name: Build artifact
       run: |
         ./configure
