@@ -100,7 +100,7 @@ rr_data_t forward_request(void *thread_data, rr_data_t request) {
 
 beginning:
 	sd = 0;
-	was_cached = noauth = authok = conn_alive = proxy_alive = 0;
+	was_cached = noauth = authok = proxy_alive = 0;
 
 	rsocket[0] = wsocket[1] = &cd;
 	rsocket[1] = wsocket[0] = &sd;
