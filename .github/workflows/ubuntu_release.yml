@@ -35,7 +35,8 @@ jobs:
       id: format_version
       run: |
         version=$(echo "${{ github.ref }}" | sed 's/refs\/tags\///')
-        echo "::set-output name=VERSION::$version"
+        echo "VERSION=$version" >> $GITHUB_OUTPUT
+
       shell: bash
 
     - name: Create or Update Release
