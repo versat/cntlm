@@ -9,12 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        compiler: [gcc, clang]
-    env:
-      CC: ${{ matrix.compiler }}
     steps:
     - uses: actions/checkout@v4
     - name: Install stuff for creating packages
@@ -23,9 +17,15 @@ jobs:
       run: sudo apt install -y libkrb5-dev
     - name: Install further tools (clang-tools for scan-build)
       run: sudo apt install -y clang-tools
-    - name: Normal build
+    - name: Normal build (gcc)
       run: |
-        ./configure
+        CC=gcc ./configure
+        make
+        ./cntlm -h
+        make distclean
+    - name: Normal build (clang)
+      run: |
+        CC=clang ./configure
         make
         ./cntlm -h
         make distclean
@@ -44,7 +44,8 @@ jobs:
         sudo make install
         sudo make uninstall
         make distclean
-    - name: Build via scan-build
+    - name: Build via scan-build (exclude duktape)
       run: |
         ./configure
+        make duktape.o
         scan-build --force-analyze-debug-code make
