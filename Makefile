@@ -239,9 +239,9 @@ clean:
 
 distclean: clean
 ifeq ($(findstring CYGWIN,$(OS)),)
-	if [ `id -u` = 0 ]; then \
+	if command -v dh_testdir && [ `id -u` = 0 ]; then \
 		debian/rules clean; \
-	else \
+	elif command -v dh_testdir; then \
 		fakeroot debian/rules clean; \
 	fi
 endif
