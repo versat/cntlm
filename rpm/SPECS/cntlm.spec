@@ -12,7 +12,6 @@ Source1:          cntlm.tmpfiles
 Source2:          cntlm.sysconfig
 Source3:          cntlm.service
 Source4:          cntlm-user.service
-Source5:          cntlm-user
 
 Requires:         systemd
 BuildRequires:    systemd
@@ -42,13 +41,12 @@ CC=gcc ./configure
 make NOSTRIP=1 %{?_smp_mflags} SYSCONFDIR=%{_sysconfdir}
 
 %install
-make BINDIR=%{buildroot}%{_sbindir} MANDIR=%{buildroot}%{_mandir} SYSCONFDIR=%{buildroot}%{_sysconfdir} NOSTRIP=1 install
+make BINDIR=%{buildroot}%{_sbindir} MANDIR=%{buildroot}%{_mandir} SYSCONFDIR=%{buildroot}%{_sysconfdir} LIBEXECDIR=%{buildroot}%{_libexecdir} NOSTRIP=1 install
 
 install -D -m 0644 %{SOURCE1} %{buildroot}%{_tmpfilesdir}/%{name}.conf
 install -D -m 0644 %{SOURCE2} %{buildroot}%{_sysconfdir}/sysconfig/cntlmd
 install -D -m 0644 %{SOURCE3} %{buildroot}%{_unitdir}/%{name}.service
 install -D -m 0644 %{SOURCE4} %{buildroot}%{_userunitdir}/%{name}.service
-install -D -m 0755 %{SOURCE5} %{buildroot}%{_libexecdir}/%{name}-user
 
 install -D -d -m 0755 %{buildroot}/run/%{name}/
 

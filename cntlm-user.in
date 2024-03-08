@@ -10,4 +10,4 @@ if [ ! -e "${CNTLM_CONFIG_LOC}" ] ; then
   exit 0
 fi
 
-exec /usr/sbin/cntlm -f -c "${CNTLM_CONFIG_LOC}" "$@"
+exec %BINDIR%/cntlm -f -c "${CNTLM_CONFIG_LOC}" "$@"

@@ -6,6 +6,7 @@ DESTDIR    	:=
 PREFIX     	:= /usr/local
 SYSCONFDIR 	:= $(DESTDIR)/etc
 BINDIR     	:= $(DESTDIR)$(PREFIX)/sbin
+LIBEXECDIR  := $(DESTDIR)$(PREFIX)/libexec
 MANDIR     	:= $(DESTDIR)$(PREFIX)/share/man
 
 STAMP	:= configure-stamp
@@ -153,6 +154,8 @@ install: $(NAME)
 			   install -m 600 doc/$(NAME).conf $(SYSCONFDIR)/$(NAME).conf; \
 	else \
 		install -D -m 755 $(STRIP) $(NAME) $(BINDIR)/$(NAME); \
+		sed "s#%BINDIR%#$(BINDIR)#g" cntlm-user.in > cntlm-user; \
+		install -D -m 755 $(NAME)-user $(LIBEXECDIR)/$(NAME)-user; \
 		install -D -m 644 doc/$(NAME).1 $(MANDIR)/man1/$(NAME).1; \
 		[ -f $(SYSCONFDIR)/$(NAME).conf -o -z "$(SYSCONFDIR)" ] \
 			|| install -D -m 600 doc/$(NAME).conf $(SYSCONFDIR)/$(NAME).conf; \
@@ -238,7 +241,7 @@ uninstall:
 
 clean:
 	@rm -f config/endian config/gethostname config/socklen_t config/strdup config/arc4random_buf config/strlcat config/strlcpy config/memset_s config/gss config/*.exe
-	@rm -f *.o cntlm cntlm.exe configure-stamp build-stamp config/config.h
+	@rm -f *.o cntlm cntlm.exe configure-stamp build-stamp config/config.h cntlm-user
 	@rm -f $(patsubst %, win/%, $(CYGWIN_REQS) cntlm.exe cntlm.ini LICENSE.txt resources.o setup.iss cntlm_manual.pdf)
 
 distclean: clean
