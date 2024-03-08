@@ -69,6 +69,10 @@ ifeq ($(COVERAGE),1)
 else ifeq ($(DEBUG),1)
 	# DEBUG
 	CFLAGS	+= -g -O0
+else ifeq ($(NOSTRIP),1)
+	# Packaging, therefore optimization enabled but build with debug symbols
+	# as RPM will strip these out into a -debuginfo package that can be optionally installed
+	CFLAGS	+= -g -O3
 else
 	# RELEASE
 	CFLAGS	+= -O3

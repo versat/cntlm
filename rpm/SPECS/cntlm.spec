@@ -39,7 +39,7 @@ contains detailed information.
 
 %build
 CC=gcc ./configure
-make %{?_smp_mflags} SYSCONFDIR=%{_sysconfdir}
+make NOSTRIP=1 %{?_smp_mflags} SYSCONFDIR=%{_sysconfdir}
 
 %install
 make BINDIR=%{buildroot}%{_sbindir} MANDIR=%{buildroot}%{_mandir} SYSCONFDIR=%{buildroot}%{_sysconfdir} NOSTRIP=1 install
