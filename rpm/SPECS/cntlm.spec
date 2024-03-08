@@ -41,7 +41,7 @@ CC=gcc ./configure
 make NOSTRIP=1 %{?_smp_mflags} SYSCONFDIR=%{_sysconfdir}
 
 %install
-make BINDIR=%{buildroot}%{_sbindir} MANDIR=%{buildroot}%{_mandir} SYSCONFDIR=%{buildroot}%{_sysconfdir} LIBEXECDIR=%{buildroot}%{_libexecdir} NOSTRIP=1 install
+make BINDIR=%{buildroot}%{_sbindir} INST_BINDIR=%{_sbindir} MANDIR=%{buildroot}%{_mandir} SYSCONFDIR=%{buildroot}%{_sysconfdir} LIBEXECDIR=%{buildroot}%{_libexecdir} NOSTRIP=1 install
 
 install -D -m 0644 %{SOURCE1} %{buildroot}%{_tmpfilesdir}/%{name}.conf
 install -D -m 0644 %{SOURCE2} %{buildroot}%{_sysconfdir}/sysconfig/cntlmd

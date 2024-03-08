@@ -6,6 +6,7 @@ DESTDIR    	:=
 PREFIX     	:= /usr/local
 SYSCONFDIR 	:= $(DESTDIR)/etc
 BINDIR     	:= $(DESTDIR)$(PREFIX)/sbin
+INST_BINDIR := $(PREFIX)/sbin
 LIBEXECDIR  := $(DESTDIR)$(PREFIX)/libexec
 MANDIR     	:= $(DESTDIR)$(PREFIX)/share/man
 
@@ -154,7 +155,7 @@ install: $(NAME)
 			   install -m 600 doc/$(NAME).conf $(SYSCONFDIR)/$(NAME).conf; \
 	else \
 		install -D -m 755 $(STRIP) $(NAME) $(BINDIR)/$(NAME); \
-		sed "s#%BINDIR%#$(BINDIR)#g" cntlm-user.in > cntlm-user; \
+		sed "s#%BINDIR%#$(INST_BINDIR)#g" cntlm-user.in > cntlm-user; \
 		install -D -m 755 $(NAME)-user $(LIBEXECDIR)/$(NAME)-user; \
 		install -D -m 644 doc/$(NAME).1 $(MANDIR)/man1/$(NAME).1; \
 		[ -f $(SYSCONFDIR)/$(NAME).conf -o -z "$(SYSCONFDIR)" ] \
