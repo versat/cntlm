@@ -1,4 +1,5 @@
 ## Path:        Network/Proxy/Cntlm
+## Configuration for the system-wide instance of cNTLM
 
 ## Type:        string
 ## Default:     cntlm

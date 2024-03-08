@@ -11,7 +11,7 @@ Source0:          %{name}-%{version}.tar.bz2
 Source1:          cntlm.tmpfiles
 Source2:          cntlm.sysconfig
 Source3:          cntlm.service
-Source4:          cntlm@.service
+Source4:          cntlm-user.service
 Source5:          cntlm-user
 
 Requires:         systemd
@@ -47,7 +47,7 @@ make BINDIR=%{buildroot}%{_sbindir} MANDIR=%{buildroot}%{_mandir} SYSCONFDIR=%{b
 install -D -m 0644 %{SOURCE1} %{buildroot}%{_tmpfilesdir}/%{name}.conf
 install -D -m 0644 %{SOURCE2} %{buildroot}%{_sysconfdir}/sysconfig/cntlmd
 install -D -m 0644 %{SOURCE3} %{buildroot}%{_unitdir}/%{name}.service
-install -D -m 0644 %{SOURCE4} %{buildroot}%{_unitdir}/%{name}@.service
+install -D -m 0644 %{SOURCE4} %{buildroot}%{_userunitdir}/%{name}.service
 install -D -m 0755 %{SOURCE5} %{buildroot}%{_libexecdir}/%{name}-user
 
 install -D -d -m 0755 %{buildroot}/run/%{name}/
@@ -83,7 +83,7 @@ exit 0
 %config(noreplace) %{_sysconfdir}/sysconfig/cntlmd
 %{_tmpfilesdir}/%{name}.conf
 %{_unitdir}/%{name}.service
-%{_unitdir}/%{name}@.service
+%{_userunitdir}/%{name}.service
 %attr(755, %{name}, %{name}) %dir /run/%{name}/
 
 
