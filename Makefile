@@ -29,7 +29,7 @@ LDFLAGS		:= -lpthread -lm $(OSLDFLAGS)
 CYGWIN_REQS	:= cygwin1.dll cygrunsrv.exe
 
 ifeq ($(CC),gcc)
-GCC_VER := $(shell ${CC} -dumpfullversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/')
+GCC_VER := $(shell ${CC} -dumpfullversion -dumpversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/')
 GCC_GTEQ_430 := $(shell expr ${GCC_VER} \>= 40300)
 GCC_GTEQ_450 := $(shell expr ${GCC_VER} \>= 40500)
 GCC_GTEQ_600 := $(shell expr ${GCC_VER} \>= 60000)
