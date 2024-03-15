@@ -58,12 +58,14 @@ jobs:
           image: registry.access.redhat.com/ubi9/ubi:latest
         - os: sles
           image: registry.suse.com/suse/sle15:latest
+        - os: fedora
+          image: docker.io/fedora:latest
     container:
       image: ${{ matrix.image }}
     steps:
-      - name: Install build dependencies (RHEL)
+      - name: Install build dependencies (RHEL / Fedora)
         run: dnf install -y make gcc systemd rpm-build git shadow-utils && dnf clean all
-        if: ${{ matrix.os == 'rhel' }}
+        if: ${{ matrix.os == 'rhel' || matrix.os == 'fedora' }}
       - name: Install build dependencies (SLES)
         run: zypper install -y make gcc systemd rpm-build git shadow && zypper clean -a
         if: ${{ matrix.os == 'sles' }}
@@ -79,3 +81,5 @@ jobs:
         run: 'rpm -iv cntlm*.rpm'
       - name: Invoke cNTLM to ensure it is installed properly
         run: cntlm -h
+      - name: Enforce that the debug symbols have been stripped in the packaged binary
+        run: file /usr/sbin/cntlm | egrep ', stripped$'
