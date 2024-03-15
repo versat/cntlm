@@ -82,4 +82,4 @@ jobs:
       - name: Invoke cNTLM to ensure it is installed properly
         run: cntlm -h
       - name: Enforce that the debug symbols have been stripped in the packaged binary
-        run: file /usr/sbin/cntlm | egrep ', stripped$'
+        run: file /usr/sbin/cntlm | grep -E ', stripped$'
