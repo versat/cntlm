@@ -64,10 +64,10 @@ jobs:
       image: ${{ matrix.image }}
     steps:
       - name: Install build dependencies (RHEL / Fedora)
-        run: dnf install -y make gcc systemd rpm-build git shadow-utils && dnf clean all
+        run: dnf install -y make gcc systemd rpm-build git shadow-utils which && dnf clean all
         if: ${{ matrix.os == 'rhel' || matrix.os == 'fedora' }}
       - name: Install build dependencies (SLES)
-        run: zypper install -y make gcc systemd rpm-build git shadow && zypper clean -a
+        run: zypper install -y make gcc systemd rpm-build git shadow which && zypper clean -a
         if: ${{ matrix.os == 'sles' }}
       - name: Checkout repo
         uses: actions/checkout@v4

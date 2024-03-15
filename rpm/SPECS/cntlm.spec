@@ -1,5 +1,9 @@
 %global _hardened_build 1
 
+# Do not override CFLAGS, LDFLAGS, and the like with the distribution defaults
+# see https://src.fedoraproject.org/rpms/redhat-rpm-config/blob/rawhide/f/buildflags.md#using-rpm-build-flags
+%undefine _auto_set_build_flags
+
 Summary:          Fast NTLM authentication proxy with tunneling
 Name:             cntlm
 Version:          0.95.0beta1
