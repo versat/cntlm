@@ -32,6 +32,10 @@ and much more. It has up to ten times faster responses than similar NTLM
 proxies, while using by orders or magnitude less RAM and CPU. Manual page
 contains detailed information.
 
+# SuSE requires explicit inclusion of this macro to build a -debuginfo + -debugsource RPM
+%if 0%{?suse_version}
+%debug_package
+%endif
 
 %prep
 %setup
