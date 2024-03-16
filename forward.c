@@ -160,13 +160,14 @@ beginning:
 		 *   - read proxy response
 		 *   - forward it to the client with HTTP body, if present
 		 *
-		 * There two goto's:
-		 *   - beginning: jump here to retry request (when cached connection timed out
+		 * There is one goto to "beginning":
+		 *   - jump here to retry request (when cached connection timed out
 		 *     or we thought proxy was notauth, but got 407)
-		 *   - shortcut: jump here from 1st iter. of inner loop, when we detect
-		 *     that auth isn't required by proxy. We do loop++, make the jump and
-		 *     the reply to our auth attempt (containing valid response) is sent to
-		 *     client directly without us making a request a second time.
+		 *
+		 * During 1st iter. of inner loop (loop == 0), when we detect
+		 * that auth isn't required by proxy, we set loop = 1 and
+		 * the reply to our auth attempt (containing valid response) is sent to
+		 * client directly without us making a request a second time.
 		 */
 		if (request) {
 			if (retry)
@@ -230,7 +231,6 @@ beginning:
 				syslog(LOG_DEBUG, "%s %s %s", saddr, data[0]->method, data[0]->url);
 			}
 
-shortcut:
 			/*
 			 * Modify request headers.
 			 *
@@ -304,7 +304,7 @@ shortcut:
 				 * !!! that's why we reset data[1] below             !!!
 				 *
 				 * Reply to auth request wasn't 407? Then auth is not required,
-				 * let's jump into the next loop and forward it to client
+				 * let's set loop = 1 so that we forward reply to client
 				 * Also just forward if proxy doesn't reply with keep-alive,
 				 * because without it, NTLM auth wouldn't work anyway.
 				 *
@@ -317,14 +317,13 @@ shortcut:
 					if (data[1]->code < 400)
 						noauth = 1;
 					loop = 1;
-					goto shortcut;
+				} else {
+					/*
+					* If we're continuing normally, we have to free possible
+					* auth response from proxy_authenticate() in data[1]
+					*/
+					reset_rr_data(data[1]);
 				}
-
-				/*
-				 * If we're continuing normally, we have to free possible
-				 * auth response from proxy_authenticate() in data[1]
-				 */
-				reset_rr_data(data[1]);
 			}
 
 			/*
