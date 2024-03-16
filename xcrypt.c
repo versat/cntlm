@@ -44,7 +44,7 @@
 #include "xcrypt.h"
 #include "swap.h"
 
-#define SWAP(n)	U32LE(n)
+#define SWAP(n) U32LE(n)
 
 #define BLOCKSIZE 4096
 #if BLOCKSIZE % 64 != 0
@@ -232,70 +232,70 @@ static const unsigned char encrypt_rotate_tab[16] = {
  * bits cleared.
  */
 static const unsigned char weak_keys[64][8] = {
-  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},	/*w */
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},     /*w */
   {0x00, 0x00, 0x1e, 0x1e, 0x00, 0x00, 0x0e, 0x0e},
   {0x00, 0x00, 0xe0, 0xe0, 0x00, 0x00, 0xf0, 0xf0},
   {0x00, 0x00, 0xfe, 0xfe, 0x00, 0x00, 0xfe, 0xfe},
-  {0x00, 0x1e, 0x00, 0x1e, 0x00, 0x0e, 0x00, 0x0e},	/*sw */
+  {0x00, 0x1e, 0x00, 0x1e, 0x00, 0x0e, 0x00, 0x0e},     /*sw */
   {0x00, 0x1e, 0x1e, 0x00, 0x00, 0x0e, 0x0e, 0x00},
   {0x00, 0x1e, 0xe0, 0xfe, 0x00, 0x0e, 0xf0, 0xfe},
   {0x00, 0x1e, 0xfe, 0xe0, 0x00, 0x0e, 0xfe, 0xf0},
-  {0x00, 0xe0, 0x00, 0xe0, 0x00, 0xf0, 0x00, 0xf0},	/*sw */
+  {0x00, 0xe0, 0x00, 0xe0, 0x00, 0xf0, 0x00, 0xf0},     /*sw */
   {0x00, 0xe0, 0x1e, 0xfe, 0x00, 0xf0, 0x0e, 0xfe},
   {0x00, 0xe0, 0xe0, 0x00, 0x00, 0xf0, 0xf0, 0x00},
   {0x00, 0xe0, 0xfe, 0x1e, 0x00, 0xf0, 0xfe, 0x0e},
-  {0x00, 0xfe, 0x00, 0xfe, 0x00, 0xfe, 0x00, 0xfe},	/*sw */
+  {0x00, 0xfe, 0x00, 0xfe, 0x00, 0xfe, 0x00, 0xfe},     /*sw */
   {0x00, 0xfe, 0x1e, 0xe0, 0x00, 0xfe, 0x0e, 0xf0},
   {0x00, 0xfe, 0xe0, 0x1e, 0x00, 0xfe, 0xf0, 0x0e},
   {0x00, 0xfe, 0xfe, 0x00, 0x00, 0xfe, 0xfe, 0x00},
   {0x1e, 0x00, 0x00, 0x1e, 0x0e, 0x00, 0x00, 0x0e},
-  {0x1e, 0x00, 0x1e, 0x00, 0x0e, 0x00, 0x0e, 0x00},	/*sw */
+  {0x1e, 0x00, 0x1e, 0x00, 0x0e, 0x00, 0x0e, 0x00},     /*sw */
   {0x1e, 0x00, 0xe0, 0xfe, 0x0e, 0x00, 0xf0, 0xfe},
   {0x1e, 0x00, 0xfe, 0xe0, 0x0e, 0x00, 0xfe, 0xf0},
   {0x1e, 0x1e, 0x00, 0x00, 0x0e, 0x0e, 0x00, 0x00},
-  {0x1e, 0x1e, 0x1e, 0x1e, 0x0e, 0x0e, 0x0e, 0x0e},	/*w */
+  {0x1e, 0x1e, 0x1e, 0x1e, 0x0e, 0x0e, 0x0e, 0x0e},     /*w */
   {0x1e, 0x1e, 0xe0, 0xe0, 0x0e, 0x0e, 0xf0, 0xf0},
   {0x1e, 0x1e, 0xfe, 0xfe, 0x0e, 0x0e, 0xfe, 0xfe},
   {0x1e, 0xe0, 0x00, 0xfe, 0x0e, 0xf0, 0x00, 0xfe},
-  {0x1e, 0xe0, 0x1e, 0xe0, 0x0e, 0xf0, 0x0e, 0xf0},	/*sw */
+  {0x1e, 0xe0, 0x1e, 0xe0, 0x0e, 0xf0, 0x0e, 0xf0},     /*sw */
   {0x1e, 0xe0, 0xe0, 0x1e, 0x0e, 0xf0, 0xf0, 0x0e},
   {0x1e, 0xe0, 0xfe, 0x00, 0x0e, 0xf0, 0xfe, 0x00},
   {0x1e, 0xfe, 0x00, 0xe0, 0x0e, 0xfe, 0x00, 0xf0},
-  {0x1e, 0xfe, 0x1e, 0xfe, 0x0e, 0xfe, 0x0e, 0xfe},	/*sw */
+  {0x1e, 0xfe, 0x1e, 0xfe, 0x0e, 0xfe, 0x0e, 0xfe},     /*sw */
   {0x1e, 0xfe, 0xe0, 0x00, 0x0e, 0xfe, 0xf0, 0x00},
   {0x1e, 0xfe, 0xfe, 0x1e, 0x0e, 0xfe, 0xfe, 0x0e},
   {0xe0, 0x00, 0x00, 0xe0, 0xf0, 0x00, 0x00, 0xf0},
   {0xe0, 0x00, 0x1e, 0xfe, 0xf0, 0x00, 0x0e, 0xfe},
-  {0xe0, 0x00, 0xe0, 0x00, 0xf0, 0x00, 0xf0, 0x00},	/*sw */
+  {0xe0, 0x00, 0xe0, 0x00, 0xf0, 0x00, 0xf0, 0x00},     /*sw */
   {0xe0, 0x00, 0xfe, 0x1e, 0xf0, 0x00, 0xfe, 0x0e},
   {0xe0, 0x1e, 0x00, 0xfe, 0xf0, 0x0e, 0x00, 0xfe},
   {0xe0, 0x1e, 0x1e, 0xe0, 0xf0, 0x0e, 0x0e, 0xf0},
-  {0xe0, 0x1e, 0xe0, 0x1e, 0xf0, 0x0e, 0xf0, 0x0e},	/*sw */
+  {0xe0, 0x1e, 0xe0, 0x1e, 0xf0, 0x0e, 0xf0, 0x0e},     /*sw */
   {0xe0, 0x1e, 0xfe, 0x00, 0xf0, 0x0e, 0xfe, 0x00},
   {0xe0, 0xe0, 0x00, 0x00, 0xf0, 0xf0, 0x00, 0x00},
   {0xe0, 0xe0, 0x1e, 0x1e, 0xf0, 0xf0, 0x0e, 0x0e},
-  {0xe0, 0xe0, 0xe0, 0xe0, 0xf0, 0xf0, 0xf0, 0xf0},	/*w */
+  {0xe0, 0xe0, 0xe0, 0xe0, 0xf0, 0xf0, 0xf0, 0xf0},     /*w */
   {0xe0, 0xe0, 0xfe, 0xfe, 0xf0, 0xf0, 0xfe, 0xfe},
   {0xe0, 0xfe, 0x00, 0x1e, 0xf0, 0xfe, 0x00, 0x0e},
   {0xe0, 0xfe, 0x1e, 0x00, 0xf0, 0xfe, 0x0e, 0x00},
-  {0xe0, 0xfe, 0xe0, 0xfe, 0xf0, 0xfe, 0xf0, 0xfe},	/*sw */
+  {0xe0, 0xfe, 0xe0, 0xfe, 0xf0, 0xfe, 0xf0, 0xfe},     /*sw */
   {0xe0, 0xfe, 0xfe, 0xe0, 0xf0, 0xfe, 0xfe, 0xf0},
   {0xfe, 0x00, 0x00, 0xfe, 0xfe, 0x00, 0x00, 0xfe},
   {0xfe, 0x00, 0x1e, 0xe0, 0xfe, 0x00, 0x0e, 0xf0},
   {0xfe, 0x00, 0xe0, 0x1e, 0xfe, 0x00, 0xf0, 0x0e},
-  {0xfe, 0x00, 0xfe, 0x00, 0xfe, 0x00, 0xfe, 0x00},	/*sw */
+  {0xfe, 0x00, 0xfe, 0x00, 0xfe, 0x00, 0xfe, 0x00},     /*sw */
   {0xfe, 0x1e, 0x00, 0xe0, 0xfe, 0x0e, 0x00, 0xf0},
   {0xfe, 0x1e, 0x1e, 0xfe, 0xfe, 0x0e, 0x0e, 0xfe},
   {0xfe, 0x1e, 0xe0, 0x00, 0xfe, 0x0e, 0xf0, 0x00},
-  {0xfe, 0x1e, 0xfe, 0x1e, 0xfe, 0x0e, 0xfe, 0x0e},	/*sw */
+  {0xfe, 0x1e, 0xfe, 0x1e, 0xfe, 0x0e, 0xfe, 0x0e},     /*sw */
   {0xfe, 0xe0, 0x00, 0x1e, 0xfe, 0xf0, 0x00, 0x0e},
   {0xfe, 0xe0, 0x1e, 0x00, 0xfe, 0xf0, 0x0e, 0x00},
   {0xfe, 0xe0, 0xe0, 0xfe, 0xfe, 0xf0, 0xf0, 0xfe},
-  {0xfe, 0xe0, 0xfe, 0xe0, 0xfe, 0xf0, 0xfe, 0xf0},	/*sw */
+  {0xfe, 0xe0, 0xfe, 0xe0, 0xfe, 0xf0, 0xfe, 0xf0},     /*sw */
   {0xfe, 0xfe, 0x00, 0x00, 0xfe, 0xfe, 0x00, 0x00},
   {0xfe, 0xfe, 0x1e, 0x1e, 0xfe, 0xfe, 0x0e, 0x0e},
   {0xfe, 0xfe, 0xe0, 0xe0, 0xfe, 0xfe, 0xf0, 0xf0},
-  {0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe}	/*w */
+  {0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe}      /*w */
 };
 
 
@@ -315,12 +315,12 @@ bool gl_des_is_weak_key (const char * key) {
       middle = (left + right) / 2;
 
       if (!(cmp_result = memcmp (work, weak_keys[middle], 8)))
-	return -1;
+        return -1;
 
       if (cmp_result > 0)
-	left = middle + 1;
+        left = middle + 1;
       else
-	right = middle - 1;
+        right = middle - 1;
     }
 
   return 0;
@@ -329,9 +329,9 @@ bool gl_des_is_weak_key (const char * key) {
 /*
  * Macro to swap bits across two words.
  */
-#define DO_PERMUTATION(a, temp, b, offset, mask)	\
-    temp = ((a>>offset) ^ b) & mask;			\
-    b ^= temp;						\
+#define DO_PERMUTATION(a, temp, b, offset, mask)        \
+    temp = ((a>>offset) ^ b) & mask;                    \
+    b ^= temp;                                          \
     a ^= temp<<offset;
 
 
@@ -340,29 +340,29 @@ bool gl_des_is_weak_key (const char * key) {
  * or decrypted. Additionally the resulting two words are rotated one bit
  * to the left.
  */
-#define INITIAL_PERMUTATION(left, temp, right)		\
-    DO_PERMUTATION(left, temp, right, 4, 0x0f0f0f0f)	\
-    DO_PERMUTATION(left, temp, right, 16, 0x0000ffff)	\
-    DO_PERMUTATION(right, temp, left, 2, 0x33333333)	\
-    DO_PERMUTATION(right, temp, left, 8, 0x00ff00ff)	\
-    right =  (right << 1) | (right >> 31);		\
-    temp  =  (left ^ right) & 0xaaaaaaaa;		\
-    right ^= temp;					\
-    left  ^= temp;					\
+#define INITIAL_PERMUTATION(left, temp, right)          \
+    DO_PERMUTATION(left, temp, right, 4, 0x0f0f0f0f)    \
+    DO_PERMUTATION(left, temp, right, 16, 0x0000ffff)   \
+    DO_PERMUTATION(right, temp, left, 2, 0x33333333)    \
+    DO_PERMUTATION(right, temp, left, 8, 0x00ff00ff)    \
+    right =  (right << 1) | (right >> 31);              \
+    temp  =  (left ^ right) & 0xaaaaaaaa;               \
+    right ^= temp;                                      \
+    left  ^= temp;                                      \
     left  =  (left << 1) | (left >> 31);
 
 /*
  * The 'inverse initial permutation'.
  */
-#define FINAL_PERMUTATION(left, temp, right)		\
-    left  =  (left << 31) | (left >> 1);		\
-    temp  =  (left ^ right) & 0xaaaaaaaa;		\
-    left  ^= temp;					\
-    right ^= temp;					\
-    right  =  (right << 31) | (right >> 1);		\
-    DO_PERMUTATION(right, temp, left, 8, 0x00ff00ff)	\
-    DO_PERMUTATION(right, temp, left, 2, 0x33333333)	\
-    DO_PERMUTATION(left, temp, right, 16, 0x0000ffff)	\
+#define FINAL_PERMUTATION(left, temp, right)            \
+    left  =  (left << 31) | (left >> 1);                \
+    temp  =  (left ^ right) & 0xaaaaaaaa;               \
+    left  ^= temp;                                      \
+    right ^= temp;                                      \
+    right  =  (right << 31) | (right >> 1);             \
+    DO_PERMUTATION(right, temp, left, 8, 0x00ff00ff)    \
+    DO_PERMUTATION(right, temp, left, 2, 0x33333333)    \
+    DO_PERMUTATION(left, temp, right, 16, 0x0000ffff)   \
     DO_PERMUTATION(left, temp, right, 4, 0x0f0f0f0f)
 
 
@@ -372,40 +372,40 @@ bool gl_des_is_weak_key (const char * key) {
  * Please note: The data in 'from' and 'to' is already rotated one bit to
  * the left, done in the initial permutation.
  */
-#define DES_ROUND(from, to, work, subkey)		\
-    work = from ^ *subkey++;				\
-    to ^= sbox8[  work	    & 0x3f ];			\
-    to ^= sbox6[ (work>>8)  & 0x3f ];			\
-    to ^= sbox4[ (work>>16) & 0x3f ];			\
-    to ^= sbox2[ (work>>24) & 0x3f ];			\
-    work = ((from << 28) | (from >> 4)) ^ *subkey++;	\
-    to ^= sbox7[  work	    & 0x3f ];			\
-    to ^= sbox5[ (work>>8)  & 0x3f ];			\
-    to ^= sbox3[ (work>>16) & 0x3f ];			\
+#define DES_ROUND(from, to, work, subkey)               \
+    work = from ^ *subkey++;                            \
+    to ^= sbox8[  work      & 0x3f ];                   \
+    to ^= sbox6[ (work>>8)  & 0x3f ];                   \
+    to ^= sbox4[ (work>>16) & 0x3f ];                   \
+    to ^= sbox2[ (work>>24) & 0x3f ];                   \
+    work = ((from << 28) | (from >> 4)) ^ *subkey++;    \
+    to ^= sbox7[  work      & 0x3f ];                   \
+    to ^= sbox5[ (work>>8)  & 0x3f ];                   \
+    to ^= sbox3[ (work>>16) & 0x3f ];                   \
     to ^= sbox1[ (work>>24) & 0x3f ];
 
 /*
  * Macros to convert 8 bytes from/to 32bit words.
  */
-#define READ_64BIT_DATA(data, left, right)				   \
+#define READ_64BIT_DATA(data, left, right)                                 \
     left  = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];  \
     right = (data[4] << 24) | (data[5] << 16) | (data[6] << 8) | data[7];
 
-#define WRITE_64BIT_DATA(data, left, right)				   \
-    data[0] = (left >> 24) &0xff; data[1] = (left >> 16) &0xff;	   \
-    data[2] = (left >> 8) &0xff; data[3] = left &0xff;			   \
-    data[4] = (right >> 24) &0xff; data[5] = (right >> 16) &0xff;	   \
+#define WRITE_64BIT_DATA(data, left, right)                                \
+    data[0] = (left >> 24) &0xff; data[1] = (left >> 16) &0xff;            \
+    data[2] = (left >> 8) &0xff; data[3] = left &0xff;                     \
+    data[4] = (right >> 24) &0xff; data[5] = (right >> 16) &0xff;          \
     data[6] = (right >> 8) &0xff; data[7] = right &0xff;
 
 /*
- * des_key_schedule():	  Calculate 16 subkeys pairs (even/odd) for
- *			  16 encryption rounds.
- *			  To calculate subkeys for decryption the caller
- *			  have to reorder the generated subkeys.
+ * des_key_schedule():    Calculate 16 subkeys pairs (even/odd) for
+ *                        16 encryption rounds.
+ *                        To calculate subkeys for decryption the caller
+ *                        have to reorder the generated subkeys.
  *
- *    rawkey:	    8 Bytes of key data
- *    subkey:	    Array of at least 32 uint32_ts. Will be filled
- *		    with calculated subkeys.
+ *    rawkey:       8 Bytes of key data
+ *    subkey:       Array of at least 32 uint32_ts. Will be filled
+ *                  with calculated subkeys.
  *
  */
 static void des_key_schedule (const char * _rawkey, uint32_t * subkey) {
@@ -417,79 +417,79 @@ static void des_key_schedule (const char * _rawkey, uint32_t * subkey) {
     DO_PERMUTATION (right, work, left, 4, 0x0f0f0f0f)
     DO_PERMUTATION (right, work, left, 0, 0x10101010)
     left = ((leftkey_swap[(left >> 0) & 0xf] << 3)
-	    | (leftkey_swap[(left >> 8) & 0xf] << 2)
-	    | (leftkey_swap[(left >> 16) & 0xf] << 1)
-	    | (leftkey_swap[(left >> 24) & 0xf])
-	    | (leftkey_swap[(left >> 5) & 0xf] << 7)
-	    | (leftkey_swap[(left >> 13) & 0xf] << 6)
-	    | (leftkey_swap[(left >> 21) & 0xf] << 5)
-	    | (leftkey_swap[(left >> 29) & 0xf] << 4));
+            | (leftkey_swap[(left >> 8) & 0xf] << 2)
+            | (leftkey_swap[(left >> 16) & 0xf] << 1)
+            | (leftkey_swap[(left >> 24) & 0xf])
+            | (leftkey_swap[(left >> 5) & 0xf] << 7)
+            | (leftkey_swap[(left >> 13) & 0xf] << 6)
+            | (leftkey_swap[(left >> 21) & 0xf] << 5)
+            | (leftkey_swap[(left >> 29) & 0xf] << 4));
 
   left &= 0x0fffffff;
 
   right = ((rightkey_swap[(right >> 1) & 0xf] << 3)
-	   | (rightkey_swap[(right >> 9) & 0xf] << 2)
-	   | (rightkey_swap[(right >> 17) & 0xf] << 1)
-	   | (rightkey_swap[(right >> 25) & 0xf])
-	   | (rightkey_swap[(right >> 4) & 0xf] << 7)
-	   | (rightkey_swap[(right >> 12) & 0xf] << 6)
-	   | (rightkey_swap[(right >> 20) & 0xf] << 5)
-	   | (rightkey_swap[(right >> 28) & 0xf] << 4));
+           | (rightkey_swap[(right >> 9) & 0xf] << 2)
+           | (rightkey_swap[(right >> 17) & 0xf] << 1)
+           | (rightkey_swap[(right >> 25) & 0xf])
+           | (rightkey_swap[(right >> 4) & 0xf] << 7)
+           | (rightkey_swap[(right >> 12) & 0xf] << 6)
+           | (rightkey_swap[(right >> 20) & 0xf] << 5)
+           | (rightkey_swap[(right >> 28) & 0xf] << 4));
 
   right &= 0x0fffffff;
 
   for (round = 0; round < 16; ++round)
     {
       left = ((left << encrypt_rotate_tab[round])
-	      | (left >> (28 - encrypt_rotate_tab[round]))) & 0x0fffffff;
+              | (left >> (28 - encrypt_rotate_tab[round]))) & 0x0fffffff;
       right = ((right << encrypt_rotate_tab[round])
-	       | (right >> (28 - encrypt_rotate_tab[round]))) & 0x0fffffff;
+               | (right >> (28 - encrypt_rotate_tab[round]))) & 0x0fffffff;
 
       *subkey++ = (((left << 4) & 0x24000000)
-		   | ((left << 28) & 0x10000000)
-		   | ((left << 14) & 0x08000000)
-		   | ((left << 18) & 0x02080000)
-		   | ((left << 6) & 0x01000000)
-		   | ((left << 9) & 0x00200000)
-		   | ((left >> 1) & 0x00100000)
-		   | ((left << 10) & 0x00040000)
-		   | ((left << 2) & 0x00020000)
-		   | ((left >> 10) & 0x00010000)
-		   | ((right >> 13) & 0x00002000)
-		   | ((right >> 4) & 0x00001000)
-		   | ((right << 6) & 0x00000800)
-		   | ((right >> 1) & 0x00000400)
-		   | ((right >> 14) & 0x00000200)
-		   | (right & 0x00000100)
-		   | ((right >> 5) & 0x00000020)
-		   | ((right >> 10) & 0x00000010)
-		   | ((right >> 3) & 0x00000008)
-		   | ((right >> 18) & 0x00000004)
-		   | ((right >> 26) & 0x00000002)
-		   | ((right >> 24) & 0x00000001));
+                   | ((left << 28) & 0x10000000)
+                   | ((left << 14) & 0x08000000)
+                   | ((left << 18) & 0x02080000)
+                   | ((left << 6) & 0x01000000)
+                   | ((left << 9) & 0x00200000)
+                   | ((left >> 1) & 0x00100000)
+                   | ((left << 10) & 0x00040000)
+                   | ((left << 2) & 0x00020000)
+                   | ((left >> 10) & 0x00010000)
+                   | ((right >> 13) & 0x00002000)
+                   | ((right >> 4) & 0x00001000)
+                   | ((right << 6) & 0x00000800)
+                   | ((right >> 1) & 0x00000400)
+                   | ((right >> 14) & 0x00000200)
+                   | (right & 0x00000100)
+                   | ((right >> 5) & 0x00000020)
+                   | ((right >> 10) & 0x00000010)
+                   | ((right >> 3) & 0x00000008)
+                   | ((right >> 18) & 0x00000004)
+                   | ((right >> 26) & 0x00000002)
+                   | ((right >> 24) & 0x00000001));
 
       *subkey++ = (((left << 15) & 0x20000000)
-		   | ((left << 17) & 0x10000000)
-		   | ((left << 10) & 0x08000000)
-		   | ((left << 22) & 0x04000000)
-		   | ((left >> 2) & 0x02000000)
-		   | ((left << 1) & 0x01000000)
-		   | ((left << 16) & 0x00200000)
-		   | ((left << 11) & 0x00100000)
-		   | ((left << 3) & 0x00080000)
-		   | ((left >> 6) & 0x00040000)
-		   | ((left << 15) & 0x00020000)
-		   | ((left >> 4) & 0x00010000)
-		   | ((right >> 2) & 0x00002000)
-		   | ((right << 8) & 0x00001000)
-		   | ((right >> 14) & 0x00000808)
-		   | ((right >> 9) & 0x00000400)
-		   | ((right) & 0x00000200)
-		   | ((right << 7) & 0x00000100)
-		   | ((right >> 7) & 0x00000020)
-		   | ((right >> 3) & 0x00000011)
-		   | ((right << 2) & 0x00000004)
-		   | ((right >> 21) & 0x00000002));
+                   | ((left << 17) & 0x10000000)
+                   | ((left << 10) & 0x08000000)
+                   | ((left << 22) & 0x04000000)
+                   | ((left >> 2) & 0x02000000)
+                   | ((left << 1) & 0x01000000)
+                   | ((left << 16) & 0x00200000)
+                   | ((left << 11) & 0x00100000)
+                   | ((left << 3) & 0x00080000)
+                   | ((left >> 6) & 0x00040000)
+                   | ((left << 15) & 0x00020000)
+                   | ((left >> 4) & 0x00010000)
+                   | ((right >> 2) & 0x00002000)
+                   | ((right << 8) & 0x00001000)
+                   | ((right >> 14) & 0x00000808)
+                   | ((right >> 9) & 0x00000400)
+                   | ((right) & 0x00000200)
+                   | ((right << 7) & 0x00000100)
+                   | ((right >> 7) & 0x00000020)
+                   | ((right >> 3) & 0x00000011)
+                   | ((right << 2) & 0x00000004)
+                   | ((right >> 21) & 0x00000002));
     }
 }
 
@@ -561,10 +561,10 @@ void md4_process_block (const void *buffer, size_t len, struct md4_ctx *ctx) {
     {
       int t;
       for (t = 0; t < 16; t++)
-	{
-	  x[t] = SWAP (*words);
-	  words++;
-	}
+        {
+          x[t] = SWAP (*words);
+          words++;
+        }
 
       /* Round 1.  */
       R1 (A, B, C, D, 0, 3);
@@ -674,7 +674,7 @@ void * md4_finish_ctx (struct md4_ctx *ctx, void *resbuf) {
   /* Put the 64-bit file length in *bits* at the end of the buffer.  */
   ctx->buffer[(bytes + pad) / 4] = SWAP (ctx->total[0] << 3);
   ctx->buffer[(bytes + pad) / 4 + 1] = SWAP ((ctx->total[1] << 3) |
-					     (ctx->total[0] >> 29));
+                                             (ctx->total[0] >> 29));
 
   /* Process last bytes.  */
   md4_process_block (ctx->buffer, bytes + pad + 8, ctx);
@@ -694,14 +694,14 @@ void md4_process_bytes (const void *buffer, size_t len, struct md4_ctx *ctx) {
       ctx->buflen += add;
 
       if (ctx->buflen > 64)
-	{
-	  md4_process_block (ctx->buffer, ctx->buflen & ~63, ctx);
+        {
+          md4_process_block (ctx->buffer, ctx->buflen & ~63, ctx);
 
-	  ctx->buflen &= 63;
-	  /* The regions in the following copy operation cannot overlap.  */
-	  memcpy (ctx->buffer, &((char*)ctx->buffer)[(left_over + add) & ~63],
-		  ctx->buflen);
-	}
+          ctx->buflen &= 63;
+          /* The regions in the following copy operation cannot overlap.  */
+          memcpy (ctx->buffer, &((char*)ctx->buffer)[(left_over + add) & ~63],
+                  ctx->buflen);
+        }
 
       buffer = (const char *) buffer + add;
       len -= add;
@@ -712,19 +712,19 @@ void md4_process_bytes (const void *buffer, size_t len, struct md4_ctx *ctx) {
     {
 #if !_STRING_ARCH_unaligned
       if (UNALIGNED_P (buffer))
-	while (len > 64)
-	  {
-	    md4_process_block (memcpy (ctx->buffer, buffer, 64), 64, ctx);
-	    buffer = (const char *) buffer + 64;
-	    len -= 64;
-	  }
+        while (len > 64)
+          {
+            md4_process_block (memcpy (ctx->buffer, buffer, 64), 64, ctx);
+            buffer = (const char *) buffer + 64;
+            len -= 64;
+          }
       else
 #endif
-	{
-	  md4_process_block (buffer, len & ~63, ctx);
-	  buffer = (const char *) buffer + (len & ~63);
-	  len &= 63;
-	}
+        {
+          md4_process_block (buffer, len & ~63, ctx);
+          buffer = (const char *) buffer + (len & ~63);
+          len &= 63;
+        }
     }
 
   /* Move remaining bytes in internal buffer.  */
@@ -735,11 +735,11 @@ void md4_process_bytes (const void *buffer, size_t len, struct md4_ctx *ctx) {
       memcpy (&((char*)ctx->buffer)[left_over], buffer, len);
       left_over += len;
       if (left_over >= 64)
-	{
-	  md4_process_block (ctx->buffer, 64, ctx);
-	  left_over -= 64;
-	  memcpy (ctx->buffer, &ctx->buffer[16], left_over);
-	}
+        {
+          md4_process_block (ctx->buffer, 64, ctx);
+          left_over -= 64;
+          memcpy (ctx->buffer, &ctx->buffer[16], left_over);
+        }
       ctx->buflen = left_over;
     }
 }
@@ -766,30 +766,30 @@ int md4_stream (FILE * stream, void *resblock) {
 
       /* Read block.  Take care for partial reads.  */
       while (1)
-	{
-	  n = fread (buffer + sum, 1, BLOCKSIZE - sum, stream);
+        {
+          n = fread (buffer + sum, 1, BLOCKSIZE - sum, stream);
 
-	  sum += n;
+          sum += n;
 
-	  if (sum == BLOCKSIZE)
-	    break;
+          if (sum == BLOCKSIZE)
+            break;
 
-	  if (n == 0)
-	    {
-	      /* Check for the error flag IFF N == 0, so that we don't
-	         exit the loop after a partial read due to e.g., EAGAIN
-	         or EWOULDBLOCK.  */
-	      if (ferror (stream))
-		return 1;
-	      goto process_partial_block;
-	    }
+          if (n == 0)
+            {
+              /* Check for the error flag IFF N == 0, so that we don't
+                 exit the loop after a partial read due to e.g., EAGAIN
+                 or EWOULDBLOCK.  */
+              if (ferror (stream))
+                return 1;
+              goto process_partial_block;
+            }
 
-	  /* We've read at least one byte, so ignore errors.  But always
-	     check for EOF, since feof may be true even though N > 0.
-	     Otherwise, we could end up calling fread after EOF.  */
-	  if (feof (stream))
-	    goto process_partial_block;
-	}
+          /* We've read at least one byte, so ignore errors.  But always
+             check for EOF, since feof may be true even though N > 0.
+             Otherwise, we could end up calling fread after EOF.  */
+          if (feof (stream))
+            goto process_partial_block;
+        }
 
       /* Process buffer with BLOCKSIZE bytes.  Note that
          BLOCKSIZE % 64 == 0
@@ -976,30 +976,30 @@ md5_stream (FILE *stream, void *resblock)
 
       /* Read block.  Take care for partial reads.  */
       while (1)
-	{
-	  n = fread (buffer + sum, 1, BLOCKSIZE - sum, stream);
+        {
+          n = fread (buffer + sum, 1, BLOCKSIZE - sum, stream);
 
-	  sum += n;
+          sum += n;
 
-	  if (sum == BLOCKSIZE)
-	    break;
+          if (sum == BLOCKSIZE)
+            break;
 
-	  if (n == 0)
-	    {
-	      /* Check for the error flag IFF N == 0, so that we don't
-	         exit the loop after a partial read due to e.g., EAGAIN
-	         or EWOULDBLOCK.  */
-	      if (ferror (stream))
-		return 1;
-	      goto process_partial_block;
-	    }
+          if (n == 0)
+            {
+              /* Check for the error flag IFF N == 0, so that we don't
+                 exit the loop after a partial read due to e.g., EAGAIN
+                 or EWOULDBLOCK.  */
+              if (ferror (stream))
+                return 1;
+              goto process_partial_block;
+            }
 
-	  /* We've read at least one byte, so ignore errors.  But always
-	     check for EOF, since feof may be true even though N > 0.
-	     Otherwise, we could end up calling fread after EOF.  */
-	  if (feof (stream))
-	    goto process_partial_block;
-	}
+          /* We've read at least one byte, so ignore errors.  But always
+             check for EOF, since feof may be true even though N > 0.
+             Otherwise, we could end up calling fread after EOF.  */
+          if (feof (stream))
+            goto process_partial_block;
+        }
 
       /* Process buffer with BLOCKSIZE bytes.  Note that
          BLOCKSIZE % 64 == 0
@@ -1052,15 +1052,15 @@ md5_process_bytes (const void *buffer, size_t len, struct md5_ctx *ctx)
       ctx->buflen += add;
 
       if (ctx->buflen > 64)
-	{
-	  md5_process_block (ctx->buffer, ctx->buflen & ~63, ctx);
+        {
+          md5_process_block (ctx->buffer, ctx->buflen & ~63, ctx);
 
-	  ctx->buflen &= 63;
-	  /* The regions in the following copy operation cannot overlap.  */
-	  memcpy (ctx->buffer,
-		  &((char *) ctx->buffer)[(left_over + add) & ~63],
-		  ctx->buflen);
-	}
+          ctx->buflen &= 63;
+          /* The regions in the following copy operation cannot overlap.  */
+          memcpy (ctx->buffer,
+                  &((char *) ctx->buffer)[(left_over + add) & ~63],
+                  ctx->buflen);
+        }
 
       buffer = (const char *) buffer + add;
       len -= add;
@@ -1071,19 +1071,19 @@ md5_process_bytes (const void *buffer, size_t len, struct md5_ctx *ctx)
     {
 #if !_STRING_ARCH_unaligned
       if (UNALIGNED_P (buffer))
-	while (len > 64)
-	  {
-	    md5_process_block (memcpy (ctx->buffer, buffer, 64), 64, ctx);
-	    buffer = (const char *) buffer + 64;
-	    len -= 64;
-	  }
+        while (len > 64)
+          {
+            md5_process_block (memcpy (ctx->buffer, buffer, 64), 64, ctx);
+            buffer = (const char *) buffer + 64;
+            len -= 64;
+          }
       else
 #endif
-	{
-	  md5_process_block (buffer, len & ~63, ctx);
-	  buffer = (const char *) buffer + (len & ~63);
-	  len &= 63;
-	}
+        {
+          md5_process_block (buffer, len & ~63, ctx);
+          buffer = (const char *) buffer + (len & ~63);
+          len &= 63;
+        }
     }
 
   /* Move remaining bytes in internal buffer.  */
@@ -1094,11 +1094,11 @@ md5_process_bytes (const void *buffer, size_t len, struct md5_ctx *ctx)
       memcpy (&((char *) ctx->buffer)[left_over], buffer, len);
       left_over += len;
       if (left_over >= 64)
-	{
-	  md5_process_block (ctx->buffer, 64, ctx);
-	  left_over -= 64;
-	  memcpy (ctx->buffer, &ctx->buffer[16], left_over);
-	}
+        {
+          md5_process_block (ctx->buffer, 64, ctx);
+          left_over -= 64;
+          memcpy (ctx->buffer, &ctx->buffer[16], left_over);
+        }
       ctx->buflen = left_over;
     }
 }
@@ -1152,14 +1152,14 @@ md5_process_block (const void *buffer, size_t len, struct md5_ctx *ctx)
          before the computation.  To reduce the work for the next steps
          we store the swapped words in the array CORRECT_WORDS.  */
 
-#define OP(a, b, c, d, s, T)						\
-      do								\
-        {								\
-	  a += FF (b, c, d) + (*cwp++ = SWAP (*words)) + T;		\
-	  ++words;							\
-	  CYCLIC (a, s);						\
-	  a += b;							\
-        }								\
+#define OP(a, b, c, d, s, T)                                            \
+      do                                                                \
+        {                                                               \
+          a += FF (b, c, d) + (*cwp++ = SWAP (*words)) + T;             \
+          ++words;                                                      \
+          CYCLIC (a, s);                                                \
+          a += b;                                                       \
+        }                                                               \
       while (0)
 
       /* It is unfortunate that C does not provide an operator for
@@ -1198,13 +1198,13 @@ md5_process_block (const void *buffer, size_t len, struct md5_ctx *ctx)
          in CORRECT_WORDS.  Redefine the macro to take an additional first
          argument specifying the function to use.  */
 #undef OP
-#define OP(f, a, b, c, d, k, s, T)					\
-      do								\
-	{								\
-	  a += f (b, c, d) + correct_words[k] + T;			\
-	  CYCLIC (a, s);						\
-	  a += b;							\
-	}								\
+#define OP(f, a, b, c, d, k, s, T)                                      \
+      do                                                                \
+        {                                                               \
+          a += f (b, c, d) + correct_words[k] + T;                      \
+          CYCLIC (a, s);                                                \
+          a += b;                                                       \
+        }                                                               \
       while (0)
 
       /* Round 2.  */
@@ -1274,4 +1274,3 @@ md5_process_block (const void *buffer, size_t len, struct md5_ctx *ctx)
   ctx->C = C;
   ctx->D = D;
 }
-
