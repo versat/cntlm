@@ -26,6 +26,13 @@ OSLDFLAGS	:= $(shell [ $(OS) = "SunOS" ] && echo "-lrt -lsocket -lnsl")
 LDFLAGS		:= -lpthread -lm $(OSLDFLAGS)
 CYGWIN_REQS	:= cygwin1.dll cygrunsrv.exe
 
+ifeq ($(OS),Darwin)
+	ifndef ARCH
+		ARCH := $(shell uname -m)
+	endif
+	CFLAGS := -arch $(ARCH)
+endif
+
 ifeq ($(CC),gcc)
 GCC_VER := $(shell ${CC} -dumpfullversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/')
 GCC_GTEQ_430 := $(shell expr ${GCC_VER} \>= 40300)
@@ -185,6 +192,15 @@ rpm:
 		fakeroot rpm/rules clean; \
 	fi
 
+mac: $(NAME) $(NAME)-$(VER)-apple-darwin-$(ARCH).zip
+
+$(NAME)-$(VER)-apple-darwin-$(ARCH).zip:
+	@echo macOS: creating ZIP release for manual installs
+	@mkdir -p $(NAME)-$(VER)
+	@cp $(NAME) doc/$(NAME).conf doc/$(NAME).1 LICENSE $(NAME)-$(VER)/
+	@zip -9 $@ $(NAME)-$(VER)/*
+	@rm -rf $(NAME)-$(VER)
+
 win: win/setup.iss $(NAME) win/cntlm_manual.pdf win/cntlm.ini win/LICENSE.txt $(NAME)-$(VER)-win64.exe $(NAME)-$(VER)-win64.zip
 
 $(NAME)-$(VER)-win64.exe:
@@ -203,7 +219,7 @@ endif
 $(NAME)-$(VER)-win64.zip:
 	@echo Win64: creating ZIP release for manual installs
 	@ln -s win $(NAME)-$(VER)
-	zip -9 $@ $(patsubst %, $(NAME)-$(VER)/%, cntlm.exe $(CYGWIN_REQS) cntlm.ini LICENSE.txt cntlm_manual.pdf)
+	@zip -9 $@ $(patsubst %, $(NAME)-$(VER)/%, cntlm.exe $(CYGWIN_REQS) cntlm.ini LICENSE.txt cntlm_manual.pdf)
 	@rm -f $(NAME)-$(VER)
 
 win/cntlm.ini: doc/cntlm.conf
@@ -235,7 +251,7 @@ clean:
 	@rm -f $(patsubst %, win/%, $(CYGWIN_REQS) cntlm.exe cntlm.ini LICENSE.txt resources.o setup.iss cntlm_manual.pdf)
 
 distclean: clean
-ifeq ($(findstring CYGWIN,$(OS)),)
+ifeq ($(OS),Linux)
 	if [ `id -u` = 0 ]; then \
 		debian/rules clean; \
 		rpm/rules clean; \
