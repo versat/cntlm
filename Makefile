@@ -248,11 +248,14 @@ clean:
 distclean: clean
 ifeq ($(findstring CYGWIN,$(OS)),)
 	if command -v dh_testdir && [ `id -u` = 0 ]; then \
-		debian/rules clean; \
+		linux/debian/rules clean; \
 	elif command -v dh_testdir; then \
-		fakeroot debian/rules clean; \
+		fakeroot linux/debian/rules clean; \
 	fi
 endif
-	@rm -f *.exe *.deb *.rpm *.tgz *.tar.gz *.tar.bz2 *.zip *.exe tags ctags pid 2>/dev/null
+	@rm -f *.exe *.deb *.rpm *.tgz *.tar.gz *.tar.bz2 *.zip *.exe \
+	  linux/rpm/specs/cntlm.spec linux/cntlm-user linux/debian/changelog tags ctags pid 2>/dev/null
+	@rm -rf linux/rpm/BUILD linux/rpm/BUILDROOT 2>/dev/null
+
 
 .PHONY: all install tgz tbz2 deb rpm win uninstall clean distclean
