@@ -155,8 +155,8 @@ install: $(NAME)
 			   install -m 600 doc/$(NAME).conf $(SYSCONFDIR)/$(NAME).conf; \
 	else \
 		install -D -m 755 $(STRIP) $(NAME) $(BINDIR)/$(NAME); \
-		sed "s#%BINDIR%#$(INST_BINDIR)#g" cntlm-user.in > cntlm-user; \
-		install -D -m 755 $(NAME)-user $(LIBEXECDIR)/$(NAME)-user; \
+		sed "s#%BINDIR%#$(INST_BINDIR)#g" linux/cntlm-user.in > linux/cntlm-user; \
+		install -D -m 755 linux/$(NAME)-user $(LIBEXECDIR)/$(NAME)-user; \
 		install -D -m 644 doc/$(NAME).1 $(MANDIR)/man1/$(NAME).1; \
 		[ -f $(SYSCONFDIR)/$(NAME).conf -o -z "$(SYSCONFDIR)" ] \
 			|| install -D -m 600 doc/$(NAME).conf $(SYSCONFDIR)/$(NAME).conf; \
@@ -180,21 +180,21 @@ tbz2:
 	rmdir tmp 2>/dev/null || true
 
 deb:
-	sed -i "s/^\(cntlm *\)([^)]*)/\1($(VER))/g" debian/changelog
+	sed "s/^\(cntlm *\)([^)]*)/\1($(VER))/g" linux/debian/changelog.in > linux/debian/changelog
 	if [ `id -u` = 0 ]; then \
-		debian/rules binary; \
-		debian/rules clean; \
+		linux/debian/rules binary; \
+		linux/debian/rules clean; \
 	else \
-		fakeroot debian/rules binary; \
-		fakeroot debian/rules clean; \
+		fakeroot linux/debian/rules binary; \
+		fakeroot linux/debian/rules clean; \
 	fi
 	mv ../cntlm_$(VER)*.deb .
 
 rpm: tbz2
-	sed -i "s/^\(Version:[\t ]*\)\(.*\)/\1$(VER)/g" rpm/SPECS/cntlm.spec
-	@cp $(NAME)-$(VER).tar.bz2 rpm/SOURCES/
-	rpmbuild --define '_topdir $(CURDIR)/rpm' -ba rpm/SPECS/cntlm.spec
-	mv rpm/RPMS/**/*.rpm .
+	sed "s/^\(Version:[\t ]*\)\(.*\)/\1$(VER)/g" linux/rpm/SPECS/cntlm.spec.in > linux/rpm/SPECS/cntlm.spec
+	@cp $(NAME)-$(VER).tar.bz2 linux/rpm/SOURCES/
+	rpmbuild --define '_topdir $(CURDIR)/linux/rpm' -ba linux/rpm/SPECS/cntlm.spec
+	mv linux/rpm/RPMS/**/*.rpm .
 
 win: win/setup.iss $(NAME) win/cntlm_manual.pdf win/cntlm.ini win/LICENSE.txt $(NAME)-$(VER)-win64.exe $(NAME)-$(VER)-win64.zip
 
