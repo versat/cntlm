@@ -248,10 +248,12 @@ clean:
 
 distclean: clean
 ifeq ($(findstring CYGWIN,$(OS)),)
-	if command -v dh_testdir && [ `id -u` = 0 ]; then \
-		linux/debian/rules clean; \
-	elif command -v dh_testdir; then \
-		fakeroot linux/debian/rules clean; \
+	if [ -L debian ]; then \
+	    if command -v dh_testdir && [ `id -u` = 0 ]; then \
+		    debian/rules clean; \
+	    elif command -v dh_testdir; then \
+		    fakeroot debian/rules clean; \
+	    fi \
 	fi
 endif
 	@rm -f *.exe *.deb *.rpm *.tgz *.tar.gz *.tar.bz2 *.zip *.exe \
