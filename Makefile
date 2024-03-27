@@ -180,11 +180,12 @@ tbz2:
 	rmdir tmp 2>/dev/null || true
 
 deb:
+	ln -sf linux/debian
 	sed "s/^\(cntlm *\)([^)]*)/\1($(VER))/g" linux/debian/changelog.in > linux/debian/changelog
-	if [ `id -u` = 0 ]; then \
+	if [ `id -u` = 0 ] && [ -L debian ]; then \
 		linux/debian/rules binary; \
 		linux/debian/rules clean; \
-	else \
+	elif [ -L debian ]; then \
 		fakeroot linux/debian/rules binary; \
 		fakeroot linux/debian/rules clean; \
 	fi
@@ -254,7 +255,7 @@ ifeq ($(findstring CYGWIN,$(OS)),)
 	fi
 endif
 	@rm -f *.exe *.deb *.rpm *.tgz *.tar.gz *.tar.bz2 *.zip *.exe \
-	  linux/rpm/specs/cntlm.spec linux/cntlm-user linux/debian/changelog tags ctags pid 2>/dev/null
+	  debian linux/rpm/specs/cntlm.spec linux/cntlm-user linux/debian/changelog tags ctags pid 2>/dev/null
 	@rm -rf linux/rpm/BUILD linux/rpm/BUILDROOT 2>/dev/null
 
 
