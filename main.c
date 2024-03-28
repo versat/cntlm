@@ -83,7 +83,8 @@
  */
 int debug = 0;					/* all debug printf's and possibly external modules */
 
-struct auth_s *g_creds = NULL;			/* throughout the whole module */
+struct auth_s g_creds_s;
+struct auth_s *g_creds = &g_creds_s;		/* throughout the whole module */
 
 int quit = 0;					/* sighandler() */
 int ntlmbasic = 0;				/* forward_request() */
@@ -287,7 +288,6 @@ void *proxy_thread(void *thread_data) {
 
 	do {
 		ret = NULL;
-		keep_alive = 0;
 
 		if (debug) {
 			printf("\n******* Round 1 C: %d *******\n", cd);
@@ -736,7 +736,7 @@ int main(int argc, char **argv) {
 	char *pac_file;
 
 	pac_file = zmalloc(PATH_MAX);
-	g_creds = new_auth();
+
 	cuser = zmalloc(MINIBUF_SIZE);
 	cdomain = zmalloc(MINIBUF_SIZE);
 	cpassword = zmalloc(PASSWORD_BUFSIZE);
@@ -747,6 +747,8 @@ int main(int argc, char **argv) {
 	cpidfile = zmalloc(MINIBUF_SIZE);
 	cuid = zmalloc(MINIBUF_SIZE);
 	cauth = zmalloc(MINIBUF_SIZE);
+
+	init_auth(g_creds);
 
 	int syslog_debug = 0;
 	openlog("cntlm", LOG_CONS | LOG_PERROR, LOG_DAEMON);
@@ -1845,7 +1847,6 @@ bailout:
 	free(cuid);
 	free(cpidfile);
 	free(magic_detect);
-	free(g_creds);
 
 	parent_free();
 
