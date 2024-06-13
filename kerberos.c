@@ -40,10 +40,6 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "globals.h"
-#include "auth.h"
-#include "kerberos.h"
-
 #include <string.h>
 #include <stdio.h>
 #ifdef __APPLE__
@@ -52,6 +48,9 @@
 #include <gssapi/gssapi.h>
 #endif
 #include <stdlib.h>
+
+#include "kerberos.h"
+#include "globals.h"
 
 /*
  * Function: display_ctx_flags
@@ -85,7 +84,8 @@ void display_ctx_flags(OM_uint32 flags) {
 }
 
 static void display_status_1(char *m, OM_uint32 code, int type) {
-	OM_uint32 maj_stat, min_stat;
+	OM_uint32 maj_stat;
+	OM_uint32 min_stat;
 	gss_buffer_desc msg;
 	OM_uint32 msg_ctx;
 
@@ -150,7 +150,8 @@ void display_name(char* txt, gss_name_t *name) {
 
 int acquire_name(gss_name_t *target_name, char *service_name, gss_OID oid) {
 	gss_buffer_desc tmp_tok;
-	OM_uint32 maj_stat, min_stat;
+	OM_uint32 maj_stat;
+	OM_uint32 min_stat;
 
 	tmp_tok.value = service_name;
 	tmp_tok.length = strlen(service_name) + 1;
@@ -197,7 +198,9 @@ int client_establish_context(char *service_name,
 		OM_uint32 *ret_flags, gss_buffer_desc* send_tok) {
 	gss_name_t target_name;
 	gss_ctx_id_t gss_context = GSS_C_NO_CONTEXT;
-	OM_uint32 maj_stat, min_stat, init_min_stat;
+	OM_uint32 maj_stat;
+	OM_uint32 min_stat;
+	OM_uint32 init_min_stat;
 
 	if ((maj_stat = acquire_name(&target_name, service_name,
 			GSS_C_NT_HOSTBASED_SERVICE)) != GSS_S_COMPLETE)
@@ -240,7 +243,7 @@ int client_establish_context(char *service_name,
 	if (maj_stat != GSS_S_COMPLETE && debug) {
 		display_status("Deleting context", maj_stat, min_stat);
 	}
-	return GSS_S_COMPLETE;//maj_stat;
+	return GSS_S_COMPLETE;
 }
 
 
@@ -251,7 +254,8 @@ int client_establish_context(char *service_name,
 int acquire_kerberos_token(const char* hostname, struct auth_s *credentials,
 		char** buf, size_t *bufsize) {
 	char service_name[BUFSIZE];
-	OM_uint32 ret_flags, min_stat;
+	OM_uint32 ret_flags;
+	OM_uint32 min_stat;
 
 	if (credentials->haskrb == KRB_KO) {
 		if (debug)

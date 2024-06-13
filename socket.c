@@ -33,7 +33,7 @@
 #include <netdb.h>
 #include <syslog.h>
 
-#include "utils.h"
+#include "socket.h"
 
 extern int debug;
 

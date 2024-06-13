@@ -21,6 +21,7 @@
 #define _SCANNER_H
 
 #include "utils.h"
+#include "auth.h"
 
 /*
  * ISA plugin flags

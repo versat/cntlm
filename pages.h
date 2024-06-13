@@ -20,10 +20,6 @@
 #ifndef _PAGES_H
 #define _PAGES_H
 
-#include "utils.h"
-#include "string.h"
-#include "stdio.h"
-
 extern char *gen_407_page(const char *http);
 extern char *gen_401_page(const char *http, const char *host, int port);
 extern char *gen_denied_page(const char *ip);

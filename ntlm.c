@@ -29,7 +29,6 @@
 #include "swap.h"
 #include "xcrypt.h"
 #include "utils.h"
-#include "auth.h"
 #ifdef __CYGWIN__
 #include "sspi.h"
 #endif

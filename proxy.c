@@ -26,17 +26,16 @@
 #include <string.h>
 #include <syslog.h>
 
+#include "proxy.h"
 #include "globals.h"
 #include "socket.h"
 #include "http.h"
 #include "ntlm.h"
-#include "proxy.h"
+#include "pac.h"
 
 #if config_gss == 1
 #include "kerberos.h"
 #endif
-
-#include "pac.h"
 
 /*
  * Proxy types defined by PAC specification. Used in proxy_t to
@@ -474,7 +473,7 @@ int proxy_connect(struct auth_s *credentials, const char* url, const char* hostn
 		 */
 		if (i < 0) {
 			p = proxylist_get_next(proxylist, proxycurr);
-			if (p) {
+			if (p && p->proxy) {
 				proxycurr = p->key;
 				proxy = p->proxy;
 				syslog(LOG_ERR, "Proxy connect failed, will try %s:%d\n", proxy->hostname, proxy->port);
@@ -654,7 +653,6 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 					printf("Using Negotiation ...\n");
 
 				request->headers = hlist_mod(request->headers, "Proxy-Authorization", buf, 1);
-				free(tmp);
 			}
 			else {
 #endif
