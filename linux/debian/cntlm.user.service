@@ -1,0 +1,12 @@
+[Unit]
+Description=cNTLM authentication proxy - per user instance
+After=network.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/default/cntlm
+ExecStart=/usr/libexec/cntlm-user $OPTARGS
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

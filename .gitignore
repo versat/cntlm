@@ -5,6 +5,7 @@ cntlm*.zip
 cntlm*.rpm
 cntlm*.deb
 cntlm*.tar.gz
+cntlm*.tar.bz2
 /configure-stamp
 /config/config.h
 /config/endian
@@ -17,6 +18,9 @@ cntlm*.tar.gz
 /config/memset_s
 /config/gss
 /config/*.exe
+/linux/debian/changelog
+/linux/rpm/BUILD*
+/linux/rpm/SPECS/cntlm.spec
 /win/*.exe
 /win/*.dll
 /win/setup.iss
@@ -27,3 +31,4 @@ cntlm*.tar.gz
 .cproject
 .project
 .settings/
+rpm/BUILD*

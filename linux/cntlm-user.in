@@ -1,0 +1,13 @@
+#!/bin/bash
+# cNTLM per user launcher script
+USER_CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}"
+CNTLM_CONFIG_LOC="${USER_CONFIG_DIR}/cntlm/cntlm.conf"
+
+if [ ! -e "${CNTLM_CONFIG_LOC}" ] ; then
+  echo "${CNTLM_CONFIG_LOC} does not exist! Unable to run cNTLM for user ${USER}."
+  # Prevent systemd from restarting
+  # we are never going to succeed until the user adds a config
+  exit 0
+fi
+
+exec %BINDIR%/cntlm -f -c "${CNTLM_CONFIG_LOC}" "$@"
