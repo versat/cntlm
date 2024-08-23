@@ -4,8 +4,8 @@ Priority: optional
 Maintainer: David Watson <dwatson@debian.org>
 Build-Depends: debhelper (>= 5), krb5-multidev
 Standards-Version: 3.8.0
-Vcs-Git: git://planetwatson.co.uk/cntlm
-Vcs-Browser: http://projects.planetwatson.co.uk/repositories/show/cntlm
+Vcs-Git: git+https://github.com/versat/cntlm.git
+Vcs-Browser: https://github.com/versat/cntlm
 Homepage: http://cntlm.sourceforge.net/
 
 Package: cntlm

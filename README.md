@@ -53,7 +53,7 @@ Compile:
     dpkg-buildpackage -b -rfakeroot
 
 Upon installation, the package takes care of creating a dedicated user for
-cntlm, init script integration, manages eventual configuration file updates
+cntlm, systemd unit integration, manages eventual configuration file updates
 with new upstream versions, things like restart of the daemon after future
 updates, etc. You can later revert all these changes with one command, should
 you decide to remove cntlm from your system.
@@ -62,12 +62,14 @@ you decide to remove cntlm from your system.
 
 ### 1) Quick way to create RPM
 
-    make rpm    # you'll need root privs. or fakeroot utility
+    make rpm
 
 ### 2) Detailed howto (or if make rpm doesn't work for you)
 
-To build an RPM package from scratch, as root change to
-/usr/src/[redhat|rpm|whatever]/SOURCES
+To build an RPM package from scratch:
+* Ensure that the rpmdevtools package is present
+* Execute `rpmdev-setuptree`
+* Change to `~/rpmbuild/SOURCES`
 
 Copy there all files from cntlm's rpm/ directory plus appropriate version of
 the source tar.bz2 (see Creating a SOURCE TARBALL section above) and type:
@@ -162,29 +164,28 @@ whenever you run cntlm, it looks into a hardcoded path (SYSCONFDIR) and tries
 to load cntml.conf. You cannot make it not to do so, unless you use -c with an
 alternative file or /dev/null. This is standard behavior and probably what you
 want. On the other hand, some of you might not want to use cntlm as a daemon
-started by init scripts and you would prefer setting up everything on the
+started by systemd units and you would prefer setting up everything on the
 command line. This is possible, just comment out SYSCONFDIR variable definition
 in the Makefile before you compile cntlm and it will remove this feature.
 
 Installation includes the main binary, the man page (see "man cntlm") and if
 the default config feature was not removed, it also installs a configuration
 template. Please note that unlike bin and man targets, existing configuration
-is never overwritten during installation. In the doc/ directory you can find
-among other things a file called "cntlmd". It can be used as an init.d script.
+is never overwritten during installation. In the linux/ directory you can find
+among other things a files with a suffix of ".service" which implement systemd
+unit files that can be used to manage cntlm, as either a system scoped or user
+scoped service.
 
 ## Architectures
 
 The build system now has an autodetection of the build arch endianness. Every
-common CPU and OS out there is supported, including Windows, MacOS X, Linux,
+common CPU and OS out there is supported, including Windows, MacOS, Linux,
 *BSD, AIX.
 
 ## Compilers
 
 Cntlm is tested against GCC, Clang and IBM XL C/C++, other C compilers will work
 for you too. There are no compiler specific directives and options AFAIK.
-compilers might work for you (then again, they might not). Specific
-Makefiles for different compilers are supported by the ./configure script
-(e.g. Makefile.xlc)
 
 ## Contact
 
