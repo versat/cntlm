@@ -1,0 +1,181 @@
+%global _hardened_build 1
+
+# Do not override CFLAGS, LDFLAGS, and the like with the distribution defaults
+# see https://src.fedoraproject.org/rpms/redhat-rpm-config/blob/rawhide/f/buildflags.md#using-rpm-build-flags
+%undefine _auto_set_build_flags
+
+Summary:          Fast NTLM authentication proxy with tunneling
+Name:             cntlm
+Version:          snapshot
+Release:          1%{?dist}
+License:          GPLv2+
+
+URL:              https://github.com/versat/cntlm
+Source0:          %{name}-%{version}.tar.bz2
+Source1:          cntlm.tmpfiles
+Source2:          cntlm.sysconfig
+Source3:          cntlm.service
+Source4:          cntlm-user.service
+
+Requires:         systemd
+BuildRequires:    systemd
+%if 0%{?suse_version}
+Requires(pre):    shadow
+%else
+Requires(pre):    shadow-utils
+%endif
+Requires(post):   systemd
+Requires(preun):  systemd
+Requires(postun): systemd
+
+
+%description
+Cntlm is a fast and efficient NTLM proxy, with support for TCP/IP tunneling,
+authenticated connection caching, ACLs, proper daemon logging and behavior
+and much more. It has up to ten times faster responses than similar NTLM
+proxies, while using by orders or magnitude less RAM and CPU. Manual page
+contains detailed information.
+
+# SuSE requires explicit inclusion of this macro to build a -debuginfo + -debugsource RPM
+%if 0%{?suse_version}
+%debug_package
+%endif
+
+%prep
+%setup
+
+%build
+CC=gcc ./configure
+make NOSTRIP=1 %{?_smp_mflags} SYSCONFDIR=%{_sysconfdir}
+
+%install
+make BINDIR=%{buildroot}%{_sbindir} INST_BINDIR=%{_sbindir} MANDIR=%{buildroot}%{_mandir} SYSCONFDIR=%{buildroot}%{_sysconfdir} LIBEXECDIR=%{buildroot}%{_libexecdir} NOSTRIP=1 install
+
+install -D -m 0644 %{SOURCE1} %{buildroot}%{_tmpfilesdir}/%{name}.conf
+install -D -m 0644 %{SOURCE2} %{buildroot}%{_sysconfdir}/sysconfig/cntlmd
+install -D -m 0644 %{SOURCE3} %{buildroot}%{_unitdir}/%{name}.service
+install -D -m 0644 %{SOURCE4} %{buildroot}%{_userunitdir}/%{name}.service
+
+install -D -d -m 0755 %{buildroot}/run/%{name}/
+
+
+%pre
+getent group %{name} > /dev/null || groupadd -r %{name}
+getent passwd %{name} > /dev/null || \
+  useradd -r -g %{name} -d %{_localstatedir}/run/%{name} -s /sbin/nologin \
+    -c "%{name} daemon" %{name}
+exit 0
+
+
+%post
+%systemd_post %{name}.service
+
+
+%preun
+%systemd_preun %{name}.service
+
+
+%postun
+%systemd_postun_with_restart %{name}.service
+
+
+%files
+%doc README COPYRIGHT
+%license LICENSE
+%{_sbindir}/%{name}
+%{_libexecdir}/%{name}-user
+%{_mandir}/man1/%{name}.1*
+%config(noreplace) %{_sysconfdir}/%{name}.conf
+%config(noreplace) %{_sysconfdir}/sysconfig/cntlmd
+%{_tmpfilesdir}/%{name}.conf
+%{_unitdir}/%{name}.service
+%{_userunitdir}/%{name}.service
+%attr(755, %{name}, %{name}) %dir /run/%{name}/
+
+
+%changelog
+* Wed Jan 31 2024 Nash Kaminski <Nash.Kaminski@gs.com> - 0.95.0-1
+- New specfile based on the Fedora EPEL7 specfile with backported compatibility with OpenSuSE
+- systemd service management
+
+* Fri Feb 10 2017 Fedora Release Engineering <releng@fedoraproject.org> - 0.92.3-10
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_26_Mass_Rebuild
+
+* Wed Feb 03 2016 Fedora Release Engineering <releng@fedoraproject.org> - 0.92.3-9
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
+
+* Wed Jun 17 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.92.3-8
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_23_Mass_Rebuild
+
+* Sat Aug 16 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.92.3-7
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_22_Mass_Rebuild
+
+* Sat Jun 07 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.92.3-6
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
+
+* Fri Dec 13 2013 Sandro Mani <manisandro@gmail.com> - 0.92.3-5
+- Set correct permissions on /run/cntlm/
+
+* Thu Dec 12 2013 Sandro Mani <manisandro@gmail.com> - 0.92.3-4
+- Really create /run/cntlm/ on install
+
+* Wed Oct 23 2013 Sandro Mani <manisandro@gmail.com> - 0.92.3-3
+- Install /run/cntlm, change /var/run -> /run
+
+* Mon Aug 26 2013 Sandro Mani <manisandro@gmail.com> - 0.92.3-2
+- Fix debuginfo package empty (rhbz#1001302)
+
+* Thu Aug 22 2013 Sandro Mani <manisandro@gmail.com> - 0.92.3-1
+- Update to 0.92.3
+
+* Sat Aug 03 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.92-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
+
+* Wed Feb 13 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.92-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
+
+* Wed Jul 18 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.92-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
+
+* Wed Jan  4 2012 Matt Domsch <mdomsch@fedoraproject.org> - 0.92-2
+- convert to systemd (BZ771504), with unit file by J├│hann B. Gu├░mundsson
+
+* Mon Dec  5 2011 Matt Domsch <mdomsch@fedoraproject.org> - 0.92-1
+- update to new bugfix release (BZ760164)
+
+* Tue Feb 08 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.35.1-9
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
+
+* Wed Nov 24 2010 Matt Domsch <mdomsch@fedoraproject.org> - 0.35.1-8
+- add /etc/tmpfiles.d/cntlm.conf to create /var/run/cntlm/ (BZ656561)
+
+* Mon Nov  8 2010 Matt Domsch <mdomsch@fedoraproject.org> - 0.35.1-7
+- install NetworkManager dispatcher script, fixes BZ650079
+
+* Mon Sep 27 2010 Matt Domsch <mdomsch@fedoraproject.org> - 0.35.1-6
+- set SYSCONFDIR during build.  Fixes BZ637767
+
+* Wed Sep  1 2010 Matt Domsch <mdomsch@fedoraproject.org> - 0.35.1-5
+- add define for _initddir, needed on el5
+
+* Thu Aug 26 2010 Matt Domsch <mdomsch@fedoraproject.org> - 0.35.1-4
+- initscript: use pidfile to killproc
+
+* Wed Aug 25 2010 Matt Domsch <mdomsch@fedoraproject.org> - 0.35.1-3
+- additional fixes per package review
+
+* Tue Aug 24 2010 Matt Domsch <mdomsch@fedoraproject.org> - 0.35.1-2
+- updated spec to match Fedora packaging guidelines
+
+* Fri Jul 27 2007 Radislav Vrnata <vrnata at gedas.cz>
+- added support for SuSE Linux
+
+* Fri Jul 27 2007 Radislav Vrnata <vrnata at gedas.cz>
+- fixed pre, post, preun, postun macros bugs affecting upgrade process
+
+* Wed May 30 2007 Since 0.28 maintained by <dave@awk.cz>
+
+
+* Mon May 28 2007 Radislav Vrnata <vrnata at gedas.cz>
+- Version 0.27
+- First release

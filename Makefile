@@ -6,6 +6,8 @@ DESTDIR    	:=
 PREFIX     	:= /usr/local
 SYSCONFDIR 	:= $(DESTDIR)/etc
 BINDIR     	:= $(DESTDIR)$(PREFIX)/sbin
+INST_BINDIR := $(PREFIX)/sbin
+LIBEXECDIR  := $(DESTDIR)$(PREFIX)/libexec
 MANDIR     	:= $(DESTDIR)$(PREFIX)/share/man
 
 STAMP	:= configure-stamp
@@ -27,7 +29,7 @@ LDFLAGS		:= -lpthread -lm $(OSLDFLAGS)
 CYGWIN_REQS	:= cygwin1.dll cygrunsrv.exe
 
 ifeq ($(CC),gcc)
-GCC_VER := $(shell ${CC} -dumpfullversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/')
+GCC_VER := $(shell ${CC} -dumpfullversion -dumpversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/')
 GCC_GTEQ_430 := $(shell expr ${GCC_VER} \>= 40300)
 GCC_GTEQ_450 := $(shell expr ${GCC_VER} \>= 40500)
 GCC_GTEQ_600 := $(shell expr ${GCC_VER} \>= 60000)
@@ -69,6 +71,10 @@ ifeq ($(COVERAGE),1)
 else ifeq ($(DEBUG),1)
 	# DEBUG
 	CFLAGS	+= -g -O0
+else ifeq ($(NOSTRIP),1)
+	# Packaging, therefore optimization enabled but build with debug symbols
+	# as RPM will strip these out into a -debuginfo package that can be optionally installed
+	CFLAGS	+= -g -O3
 else
 	# RELEASE
 	CFLAGS	+= -O3
@@ -126,22 +132,31 @@ win/resources.o: win/resources.rc
 	@echo Win64: adding ICON resource
 	@windres $^ -o $@
 
+ifneq ($(NOSTRIP),1)
+	STRIP="-s"
+	STRIPAIX="-S"
+else
+	STRIP=""
+	STRIPAIX="-S"
+endif
 install: $(NAME)
 	# Special handling for install(1)
 	if [ "`uname -s`" = "AIX" ]; then \
-		install -M 755 -S -f $(BINDIR) $(NAME); \
+		install -M 755 $(STRIPAIX) -f $(BINDIR) $(NAME); \
 		install -M 644 -f $(MANDIR)/man1 doc/$(NAME).1; \
 		install -M 600 -c $(SYSCONFDIR) doc/$(NAME).conf; \
 	elif [ "`uname -s`" = "Darwin" ]; then \
 		install -d $(BINDIR)/; \
-		install -m 755 -s $(NAME) $(BINDIR)/$(NAME); \
+		install -m 755 $(STRIP) $(NAME) $(BINDIR)/$(NAME); \
 		install -d $(MANDIR)/man1/; \
 		install -m 644 doc/$(NAME).1 $(MANDIR)/man1/$(NAME).1; \
 		[ -f $(SYSCONFDIR)/$(NAME).conf -o -z "$(SYSCONFDIR)" ] \
 			|| install -d $(SYSCONFDIR)/; \
 			   install -m 600 doc/$(NAME).conf $(SYSCONFDIR)/$(NAME).conf; \
 	else \
-		install -D -m 755 -s $(NAME) $(BINDIR)/$(NAME); \
+		install -D -m 755 $(STRIP) $(NAME) $(BINDIR)/$(NAME); \
+		sed "s#%BINDIR%#$(INST_BINDIR)#g" linux/cntlm-user.in > linux/cntlm-user; \
+		install -D -m 755 linux/$(NAME)-user $(LIBEXECDIR)/$(NAME)-user; \
 		install -D -m 644 doc/$(NAME).1 $(MANDIR)/man1/$(NAME).1; \
 		[ -f $(SYSCONFDIR)/$(NAME).conf -o -z "$(SYSCONFDIR)" ] \
 			|| install -D -m 600 doc/$(NAME).conf $(SYSCONFDIR)/$(NAME).conf; \
@@ -165,25 +180,22 @@ tbz2:
 	rmdir tmp 2>/dev/null || true
 
 deb:
-	sed -i "s/^\(cntlm *\)([^)]*)/\1($(VER))/g" debian/changelog
-	if [ `id -u` = 0 ]; then \
-		debian/rules binary; \
-		debian/rules clean; \
-	else \
-		fakeroot debian/rules binary; \
-		fakeroot debian/rules clean; \
+	ln -sf linux/debian
+	sed "s/^\(cntlm *\)([^)]*)/\1($(VER))/g" linux/debian/changelog.in > linux/debian/changelog
+	if [ `id -u` = 0 ] && [ -L debian ]; then \
+		linux/debian/rules binary; \
+		linux/debian/rules clean; \
+	elif [ -L debian ]; then \
+		fakeroot linux/debian/rules binary; \
+		fakeroot linux/debian/rules clean; \
 	fi
 	mv ../cntlm_$(VER)*.deb .
 
-rpm:
-	sed -i "s/^\(Version:[\t ]*\)\(.*\)/\1$(VER)/g" rpm/cntlm.spec
-	if [ `id -u` = 0 ]; then \
-		rpm/rules binary; \
-		rpm/rules clean; \
-	else \
-		fakeroot rpm/rules binary; \
-		fakeroot rpm/rules clean; \
-	fi
+rpm: tbz2
+	sed "s/^\(Version:[\t ]*\)\(.*\)/\1$(VER)/g" linux/rpm/SPECS/cntlm.spec.in > linux/rpm/SPECS/cntlm.spec
+	@cp $(NAME)-$(VER).tar.bz2 linux/rpm/SOURCES/
+	rpmbuild --define '_topdir $(CURDIR)/linux/rpm' -ba linux/rpm/SPECS/cntlm.spec
+	mv linux/rpm/RPMS/**/*.rpm .
 
 win: win/setup.iss $(NAME) win/cntlm_manual.pdf win/cntlm.ini win/LICENSE.txt $(NAME)-$(VER)-win64.exe $(NAME)-$(VER)-win64.zip
 
@@ -231,19 +243,22 @@ uninstall:
 
 clean:
 	@rm -f config/endian config/gethostname config/socklen_t config/strdup config/arc4random_buf config/strlcat config/strlcpy config/memset_s config/gss config/*.exe
-	@rm -f *.o cntlm cntlm.exe configure-stamp build-stamp config/config.h
+	@rm -f *.o cntlm cntlm.exe configure-stamp build-stamp config/config.h cntlm-user
 	@rm -f $(patsubst %, win/%, $(CYGWIN_REQS) cntlm.exe cntlm.ini LICENSE.txt resources.o setup.iss cntlm_manual.pdf)
 
 distclean: clean
 ifeq ($(findstring CYGWIN,$(OS)),)
-	if [ `id -u` = 0 ]; then \
-		debian/rules clean; \
-		rpm/rules clean; \
-	else \
-		fakeroot debian/rules clean; \
-		fakeroot rpm/rules clean; \
+	if [ -L debian ]; then \
+	    if command -v dh_testdir && [ `id -u` = 0 ]; then \
+		    debian/rules clean; \
+	    elif command -v dh_testdir; then \
+		    fakeroot debian/rules clean; \
+	    fi \
 	fi
 endif
-	@rm -f *.exe *.deb *.rpm *.tgz *.tar.gz *.tar.bz2 *.zip *.exe tags ctags pid 2>/dev/null
+	@rm -f *.exe *.deb *.rpm *.tgz *.tar.gz *.tar.bz2 *.zip *.exe \
+	  linux/rpm/specs/cntlm.spec linux/cntlm-user linux/debian/changelog tags ctags pid 2>/dev/null
+	@rm -rf linux/rpm/BUILD linux/rpm/BUILDROOT 2>/dev/null
+
 
 .PHONY: all install tgz tbz2 deb rpm win uninstall clean distclean

@@ -11,8 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - name: Update repo metadata
+      run: sudo apt update -y
     - name: Install stuff for creating packages
-      run: sudo apt install -y fakeroot rpm dpkg debhelper
+      run: sudo apt install -y fakeroot rpm dpkg debhelper systemd
     - name: Install packages required for optional configurations of cntlm
       run: sudo apt install -y libkrb5-dev
     - name: Install further tools (clang-tools for scan-build)
@@ -35,10 +37,10 @@ jobs:
         make DEBUG=1
         ./cntlm -h
         make distclean
-    - name: Verify package creation and installation
+        git diff-files --quiet || ( echo "Changes detected in working tree after make distclean" ; git status ; exit 1 )
+    - name: Verify debian package creation and installation
       run: |
         ./configure
-        make rpm
         make deb
         make clean
         sudo make install
@@ -49,3 +51,42 @@ jobs:
         ./configure
         make duktape.o
         scan-build --force-analyze-debug-code make
+
+  package:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+        - os: rhel
+          image: registry.access.redhat.com/ubi9/ubi:latest
+        - os: sles
+          image: registry.suse.com/suse/sle15:latest
+        - os: fedora
+          image: docker.io/fedora:latest
+    container:
+      image: ${{ matrix.image }}
+    steps:
+      - name: Install build dependencies (RHEL / Fedora)
+        run: dnf install -y make gcc systemd rpm-build git shadow-utils which && dnf clean all
+        if: ${{ matrix.os == 'rhel' || matrix.os == 'fedora' }}
+      - name: Install build dependencies (SLES)
+        run: zypper install -y make gcc systemd rpm-build git shadow which && zypper clean -a
+        if: ${{ matrix.os == 'sles' }}
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Set working directory as safe
+        run: git config --global --add safe.directory ${GITHUB_WORKSPACE}
+      - name: Build the source
+        run: |
+          ./configure
+          make rpm
+      - name: Install the RPM
+        run: 'rpm -iv cntlm*.rpm'
+      - name: Invoke cNTLM to ensure it is installed properly
+        run: cntlm -h
+      - name: Enforce that the debug symbols have been stripped in the packaged binary
+        run: |
+          du -h /usr/sbin/cntlm
+          file /usr/sbin/cntlm | grep -E ', stripped$'
+      - name: Enforce that the make distclean target removes all changes to the source tree
+        run: git diff-files --quiet || ( echo "Changes detected in working tree after make distclean while packaging:" ; git status ; exit 1 )
