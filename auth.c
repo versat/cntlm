@@ -23,7 +23,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "utils.h"
 #include "auth.h"
 
 struct auth_s *new_auth(void) {
@@ -33,24 +32,28 @@ struct auth_s *new_auth(void) {
 	if (tmp == NULL)
 		return NULL;
 
-	memset(tmp->user, 0, MINIBUF_SIZE);
-	memset(tmp->domain, 0, MINIBUF_SIZE);
-	memset(tmp->workstation, 0, MINIBUF_SIZE);
-	memset(tmp->passntlm2, 0, MINIBUF_SIZE);
-	memset(tmp->passnt, 0, MINIBUF_SIZE);
-	memset(tmp->passlm, 0, MINIBUF_SIZE);
+	return init_auth(tmp);
+}
+
+struct auth_s *init_auth(struct auth_s *creds) {
+	memset(creds->user, 0, MINIBUF_SIZE);
+	memset(creds->domain, 0, MINIBUF_SIZE);
+	memset(creds->workstation, 0, MINIBUF_SIZE);
+	memset(creds->passntlm2, 0, MINIBUF_SIZE);
+	memset(creds->passnt, 0, MINIBUF_SIZE);
+	memset(creds->passlm, 0, MINIBUF_SIZE);
 #ifdef __CYGWIN__
-	memset(&tmp->sspi, 0, sizeof(struct sspi_handle));
+	memset(&creds->sspi, 0, sizeof(struct sspi_handle));
 #endif
-	tmp->hashntlm2 = 1;
-	tmp->hashnt = 0;
-	tmp->hashlm = 0;
-	tmp->flags = 0;
+	creds->hashntlm2 = 1;
+	creds->hashnt = 0;
+	creds->hashlm = 0;
+	creds->flags = 0;
 #if config_gss == 1
-	tmp->haskrb = 0;
+	creds->haskrb = 0;
 #endif
 
-	return tmp;
+	return creds;
 }
 
 struct auth_s *copy_auth(struct auth_s *dst, const struct auth_s *src, int fullcopy) {

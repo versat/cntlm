@@ -24,10 +24,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "globals.h"
 #include "config.h"
-#include "utils.h"
-
+#include "globals.h"
 
 config_t config_open(const char *fname) {
 	config_t rc;
@@ -59,7 +57,7 @@ config_t config_open(const char *fname) {
 		/*
 		 * Find first non-empty character
 		 */
-		for (i = j = 0; j < len && isspace((u_char)buf[j]); ++j);
+		for (j = 0; j < len && isspace((u_char)buf[j]); ++j);
 
 		/*
 		 * Comment?
@@ -98,7 +96,7 @@ config_t config_open(const char *fname) {
 		/*
 		 * Find next non-empty character
 		 */
-		for (i = j; j < len && isspace((u_char)buf[j]); ++j);
+		for (; j < len && isspace((u_char)buf[j]); ++j);
 		if (j >= len || buf[j] == '#' || buf[j] == ';') {
 			free(key);
 			continue;

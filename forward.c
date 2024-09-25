@@ -29,13 +29,11 @@
 #include <strings.h>
 #include <assert.h>
 
+#include "forward.h"
 #include "direct.h"
-#include "utils.h"
 #include "globals.h"
-#include "auth.h"
 #include "http.h"
 #include "socket.h"
-#include "forward.h"
 #include "scanner.h"
 #include "pages.h"
 #include "proxy.h"
@@ -100,7 +98,7 @@ rr_data_t forward_request(void *thread_data, rr_data_t request) {
 
 beginning:
 	sd = 0;
-	was_cached = noauth = authok = conn_alive = proxy_alive = 0;
+	was_cached = noauth = authok = proxy_alive = 0;
 
 	rsocket[0] = wsocket[1] = &cd;
 	rsocket[1] = wsocket[0] = &sd;
@@ -165,13 +163,14 @@ beginning:
 		 *   - read proxy response
 		 *   - forward it to the client with HTTP body, if present
 		 *
-		 * There two goto's:
-		 *   - beginning: jump here to retry request (when cached connection timed out
+		 * There is one goto to "beginning":
+		 *   - jump here to retry request (when cached connection timed out
 		 *     or we thought proxy was notauth, but got 407)
-		 *   - shortcut: jump here from 1st iter. of inner loop, when we detect
-		 *     that auth isn't required by proxy. We do loop++, make the jump and
-		 *     the reply to our auth attempt (containing valid response) is sent to
-		 *     client directly without us making a request a second time.
+		 *
+		 * During 1st iter. of inner loop (loop == 0), when we detect
+		 * that auth isn't required by proxy, we set loop = 1 and
+		 * the reply to our auth attempt (containing valid response) is sent to
+		 * client directly without us making a request a second time.
 		 */
 		if (request) {
 			if (retry)
@@ -187,8 +186,9 @@ beginning:
 		retry = 0;
 		proxy_alive = 0;
 		conn_alive = 0;
+		loop = 0; // 0 = request from client; 1 = response from server
 
-		for (loop = 0; loop < 2; ++loop) {
+		while (loop < 2) {
 			if (data[loop]->empty) {				// Isn't this the first loop with request supplied by caller?
 				if (debug) {
 					printf("\n******* Round %d C: %d, S: %d (authok=%d, noauth=%d) *******\n", loop+1, cd, sd, authok, noauth);
@@ -234,7 +234,6 @@ beginning:
 				syslog(LOG_DEBUG, "%s %s %s", saddr, data[0]->method, data[0]->url);
 			}
 
-shortcut:
 			/*
 			 * Modify request headers.
 			 *
@@ -308,7 +307,7 @@ shortcut:
 				 * !!! that's why we reset data[1] below             !!!
 				 *
 				 * Reply to auth request wasn't 407? Then auth is not required,
-				 * let's jump into the next loop and forward it to client
+				 * let's set loop = 1 so that we forward reply to client
 				 * Also just forward if proxy doesn't reply with keep-alive,
 				 * because without it, NTLM auth wouldn't work anyway.
 				 *
@@ -321,14 +320,13 @@ shortcut:
 					if (data[1]->code < 400)
 						noauth = 1;
 					loop = 1;
-					goto shortcut;
+				} else {
+					/*
+					* If we're continuing normally, we have to free possible
+					* auth response from proxy_authenticate() in data[1]
+					*/
+					reset_rr_data(data[1]);
 				}
-
-				/*
-				 * If we're continuing normally, we have to free possible
-				 * auth response from proxy_authenticate() in data[1]
-				 */
-				reset_rr_data(data[1]);
 			}
 
 			/*
@@ -462,6 +460,8 @@ shortcut:
 					rc = (void *)-1;
 				}
 			}
+
+			++loop;
 		}
 
 		free_rr_data(&data[0]);
