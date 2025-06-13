@@ -27,12 +27,11 @@
 #include <strings.h>
 #include <fnmatch.h>
 
-#include "utils.h"
+#include "scanner.h"
 #include "socket.h"
 #include "http.h"
 #include "globals.h"
 #include "forward.h"
-#include "scanner.h"
 #include "proxy.h"
 
 /*
