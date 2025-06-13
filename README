@@ -115,11 +115,12 @@ $ ./configure
 $ make
 $ make install
 
-Cntlm does not require any dynamic libraries and there are no dependencies you
-have to satisfy before compilation, except for libpthreads. This library is
-required for all threaded applications and is very likely to be part of your
-system already, because it comes with libc. Next, install cntlm onto your
-system like so:
+Cntlm does not require any dynamic libraries unless kerberos support is enabled,
+and there are no dependencies you have to satisfy before compilation,
+except for libpthreads. This library is required for all threaded applications
+and is very likely to be part of your system already, because it comes with libc.
+
+Next, install cntlm onto your system like so:
 
 Default installation directories are /usr/local/sbin, /usr/local/share/man and /etc.
 Should you want to install cntlm into a different location, change the DESTDIR
@@ -132,7 +133,7 @@ $ make install SYSCONFDIR=/etc BINDIR=/usr/bin MANDIR=/usr/share/man
 
 Cntlm is compiled with system-wide configuration file by default. That means
 whenever you run cntlm, it looks into a hardcoded path (SYSCONFDIR) and tries
-to load cntml.conf. You cannot make it not to do so, unless you use -c with an
+to load cntlm.conf. You cannot make it not to do so, unless you use -c with an
 alternative file or /dev/null. This is standard behaviour and probably what you
 want. On the other hand, some of you might not want to use cntlm as a daemon
 started by init scripts and you would prefer setting up everything on the
@@ -149,17 +150,14 @@ among other things a file called "cntlmd". It can be used as an init.d script.
 Architectures
 ~~~~~~~~~~~~~
 The build system now has an autodetection of the build arch endianness. Every
-common CPU and OS out there is supported, including Windows, MacOS X, Linux,
+common CPU and OS out there is supported, including Windows, MacOS, Linux,
 *BSD, AIX.
 
 
 Compilers
 ~~~~~~~~~
-Cntlm is tested against GCC and IBM XL C/C++, other C compilers will work
+Cntlm is tested against GCC, Clang and IBM XL C/C++, other C compilers will work
 for you too. There are no compiler specific directives and options AFAIK.
-compilers might work for you (then again, they might not). Specific
-Makefiles for different compilers are supported by the ./configure script
-(e.g. Makefile.xlc)
 
 
 Contact

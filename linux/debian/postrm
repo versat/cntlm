@@ -24,9 +24,3 @@ if [ "$1" = "purge" ]; then
 fi
 
 #DEBHELPER#
-
-# Automatically added by dh_installinit
-if [ "$1" = "purge" ] ; then
-	update-rc.d cntlm remove >/dev/null || exit $?
-fi
-# End automatically added section

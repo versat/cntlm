@@ -38,7 +38,9 @@ jobs:
           unzip -o $HOME/.sonar/build-wrapper-linux-x86.zip -d $HOME/.sonar/
           echo "$HOME/.sonar/build-wrapper-linux-x86" >> $GITHUB_PATH
       - name: Install packages required for optional configurations of cntlm
-        run: sudo apt install -y libkrb5-dev
+        run: |
+          sudo apt -y update
+          sudo apt install -y libkrb5-dev
       - name: Run build-wrapper
         run: |
           ./configure

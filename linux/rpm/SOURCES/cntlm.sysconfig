@@ -1,0 +1,14 @@
+## Path:        Network/Proxy/Cntlm
+## Configuration for the system-wide instance of cNTLM
+
+## Type:        string
+## Default:     cntlm
+# Name or number of the non-privileged account to run as
+RUNAS=cntlm
+
+## Type:        string
+## Default:     ""
+# List o optional arguments one would specify on the command line.
+# See the cntlm man page for list of available arguments
+# with their description.
+OPTARGS=""
