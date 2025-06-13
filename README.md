@@ -12,6 +12,8 @@ SonarCloud:
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=versat_cntlm&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=versat_cntlm)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=versat_cntlm&metric=security_rating)](https://sonarcloud.io/dashboard?id=versat_cntlm)
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/versat/cntlm)
+
 ## Installation using packages
 
 Most of the popular distros contain cntlm packages in their repositories.
