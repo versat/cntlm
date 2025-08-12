@@ -13,7 +13,7 @@ jobs:
     env:
       CC: gcc
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Install stuff for creating packages
       run: sudo apt install -y fakeroot rpm dpkg debhelper
