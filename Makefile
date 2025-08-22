@@ -8,8 +8,7 @@ SYSCONFDIR 	:= $(DESTDIR)/etc
 BINDIR     	:= $(DESTDIR)$(PREFIX)/sbin
 MANDIR     	:= $(DESTDIR)$(PREFIX)/share/man
 
-STAMP	:= configure-stamp
-ifeq ($(wildcard $(STAMP)),)
+ifeq ($(wildcard configure-stamp),)
 _ := $(shell ./configure)
 endif
 
@@ -18,8 +17,7 @@ endif
 # __BSD_VISIBLE is for FreeBSD AF_* constants
 # _ALL_SOURCE is for AIX 5.3 LOG_PERROR constant
 #
-NAME		:= cntlm
-CC		:= $(shell head -n 1 $(STAMP))
+CC		:= $(shell head -n 1 configure-stamp)
 VER		:= $(shell cat VERSION)
 OS		:= $(shell uname -s)
 OSLDFLAGS	:= $(shell [ $(OS) = "SunOS" ] && echo "-lrt -lsocket -lnsl")
@@ -31,6 +29,8 @@ ifeq ($(OS),Darwin)
 		ARCH := $(shell uname -m)
 	endif
 	CFLAGS := -arch $(ARCH)
+# Change binary directory for macOS
+	BINDIR := $(DESTDIR)$(PREFIX)/bin
 endif
 
 ifeq ($(CC),gcc)
@@ -99,7 +99,7 @@ endif
 
 ENABLE_STATIC=$(shell grep -c ENABLE_STATIC config/config.h)
 ifeq ($(ENABLE_STATIC),1)
-        LDFLAGS+=-static
+	LDFLAGS+=-static
 endif
 
 CFLAGS_DUKTAPE := -Wno-bad-function-cast -Wno-null-dereference -Wno-format-nonliteral -Wno-unused-but-set-variable
@@ -107,9 +107,9 @@ ifeq ($(CC),gcc)
 	CFLAGS_DUKTAPE += -Wno-format-overflow 
 endif
 
-all: $(NAME)
+all: cntlm
 
-$(NAME): $(OBJS)
+cntlm: $(OBJS)
 	@echo "Linking $@"
 	@$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
@@ -133,42 +133,42 @@ win/resources.o: win/resources.rc
 	@echo Win64: adding ICON resource
 	@windres $^ -o $@
 
-install: $(NAME)
+install: cntlm
 	# Special handling for install(1)
 	if [ "`uname -s`" = "AIX" ]; then \
-		install -M 755 -S -f $(BINDIR) $(NAME); \
-		install -M 644 -f $(MANDIR)/man1 doc/$(NAME).1; \
-		install -M 600 -c $(SYSCONFDIR) doc/$(NAME).conf; \
+		install -M 755 -S -f $(BINDIR) cntlm; \
+		install -M 644 -f $(MANDIR)/man1 doc/cntlm.1; \
+		install -M 600 -c $(SYSCONFDIR) doc/cntlm.conf; \
 	elif [ "`uname -s`" = "Darwin" ]; then \
 		install -d $(BINDIR)/; \
-		install -m 755 -s $(NAME) $(BINDIR)/$(NAME); \
+		install -m 755 -s cntlm $(BINDIR)/cntlm; \
 		install -d $(MANDIR)/man1/; \
-		install -m 644 doc/$(NAME).1 $(MANDIR)/man1/$(NAME).1; \
-		[ -f $(SYSCONFDIR)/$(NAME).conf -o -z "$(SYSCONFDIR)" ] \
+		install -m 644 doc/cntlm.1 $(MANDIR)/man1/cntlm.1; \
+		[ -f $(SYSCONFDIR)/cntlm.conf -o -z "$(SYSCONFDIR)" ] \
 			|| install -d $(SYSCONFDIR)/; \
-			   install -m 600 doc/$(NAME).conf $(SYSCONFDIR)/$(NAME).conf; \
+			   install -m 600 doc/cntlm.conf $(SYSCONFDIR)/cntlm.conf; \
 	else \
-		install -D -m 755 -s $(NAME) $(BINDIR)/$(NAME); \
-		install -D -m 644 doc/$(NAME).1 $(MANDIR)/man1/$(NAME).1; \
-		[ -f $(SYSCONFDIR)/$(NAME).conf -o -z "$(SYSCONFDIR)" ] \
-			|| install -D -m 600 doc/$(NAME).conf $(SYSCONFDIR)/$(NAME).conf; \
+		install -D -m 755 -s cntlm $(BINDIR)/cntlm; \
+		install -D -m 644 doc/cntlm.1 $(MANDIR)/man1/cntlm.1; \
+		[ -f $(SYSCONFDIR)/cntlm.conf -o -z "$(SYSCONFDIR)" ] \
+			|| install -D -m 600 doc/cntlm.conf $(SYSCONFDIR)/cntlm.conf; \
 	fi
-	@echo; echo "Cntlm will look for configuration in $(SYSCONFDIR)/$(NAME).conf"
+	@echo; echo "Cntlm will look for configuration in $(SYSCONFDIR)/cntlm.conf"
 
 tgz:
 	mkdir -p tmp
-	rm -rf tmp/$(NAME)-$(VER)
-	git checkout-index -a -f --prefix=./tmp/$(NAME)-$(VER)/
-	tar zcvf $(NAME)-$(VER).tar.gz -C tmp/ $(NAME)-$(VER)
-	rm -rf tmp/$(NAME)-$(VER)
+	rm -rf tmp/cntlm-$(VER)
+	git checkout-index -a -f --prefix=./tmp/cntlm-$(VER)/
+	tar zcvf cntlm-$(VER).tar.gz -C tmp/ cntlm-$(VER)
+	rm -rf tmp/cntlm-$(VER)
 	rmdir tmp 2>/dev/null || true
 
 tbz2:
 	mkdir -p tmp
-	rm -rf tmp/$(NAME)-$(VER)
-	git checkout-index -a -f --prefix=./tmp/$(NAME)-$(VER)/
-	tar jcvf $(NAME)-$(VER).tar.bz2 -C tmp/ $(NAME)-$(VER)
-	rm -rf tmp/$(NAME)-$(VER)
+	rm -rf tmp/cntlm-$(VER)
+	git checkout-index -a -f --prefix=./tmp/cntlm-$(VER)/
+	tar jcvf cntlm-$(VER).tar.bz2 -C tmp/ cntlm-$(VER)
+	rm -rf tmp/cntlm-$(VER)
 	rmdir tmp 2>/dev/null || true
 
 deb:
@@ -192,18 +192,45 @@ rpm:
 		fakeroot rpm/rules clean; \
 	fi
 
-mac: $(NAME) $(NAME)-$(VER)-apple-darwin-$(ARCH).zip
+mac: cntlm cntlm-$(VER)-macos-$(ARCH).zip cntlm-$(VER)-macos-$(ARCH).pkg
 
-$(NAME)-$(VER)-apple-darwin-$(ARCH).zip:
+cntlm-$(VER)-macos-$(ARCH).zip:
 	@echo macOS: creating ZIP release for manual installs
-	@mkdir -p $(NAME)-$(VER)
-	@cp $(NAME) doc/$(NAME).conf doc/$(NAME).1 LICENSE $(NAME)-$(VER)/
-	@zip -9 $@ $(NAME)-$(VER)/*
-	@rm -rf $(NAME)-$(VER)
+	@mkdir -p cntlm-$(VER)
+	@cp cntlm doc/cntlm.conf doc/cntlm.1 LICENSE cntlm-$(VER)/
+	@zip -9 $@ cntlm-$(VER)/*
+	@rm -rf cntlm-$(VER)
+	@echo "Created $@"
 
-win: win/setup.iss $(NAME) win/cntlm_manual.pdf win/cntlm.ini win/LICENSE.txt $(NAME)-$(VER)-win64.exe $(NAME)-$(VER)-win64.zip
+cntlm-$(VER)-macos-$(ARCH).pkg:
+	@echo macOS: preparing binaries for PKG installer
+	@rm -rf pkgroot
+	@mkdir -p pkgroot/$(BINDIR)
+	@cp cntlm pkgroot/$(BINDIR)/cntlm
+	@chmod 755 pkgroot/$(BINDIR)/cntlm
+	@mkdir -p pkgroot/$(SYSCONFDIR)
+	@cp doc/cntlm.conf pkgroot/$(SYSCONFDIR)/cntlm.conf
+	@chmod 600 pkgroot/$(SYSCONFDIR)/cntlm.conf
+	@mkdir -p pkgroot/$(MANDIR)/man1
+	@cp doc/cntlm.1 pkgroot/$(MANDIR)/man1/cntlm.1
+	@chmod 644 pkgroot/$(MANDIR)/man1/cntlm.1
+	@pkgbuild --root pkgroot --identifier com.cntlm.proxy.$(ARCH) --version $(VER) --install-location / pkgbuild-cntlm-$(ARCH).pkg
+	@echo '<?xml version="1.0" encoding="utf-8"?>' > distribution.xml
+	@echo '<installer-gui-script minSpecVersion="1">' >> distribution.xml
+	@echo '<title>cntlm $(VER) ($(ARCH))</title>' >> distribution.xml
+	@echo '<options customize="never" require-scripts="false"/>' >> distribution.xml
+	@echo '<domains enable_anywhere="true"/>' >> distribution.xml
+	@echo '<choices-outline><line choice="default"/></choices-outline>' >> distribution.xml
+	@echo '<choice id="default"><pkg-ref id="com.cntlm.proxy.$(ARCH)"/></choice>' >> distribution.xml
+	@echo '<pkg-ref id="com.cntlm.proxy.$(ARCH)" version="$(VER)" onConclusion="none">pkgbuild-cntlm-$(ARCH).pkg</pkg-ref>' >> distribution.xml
+	@echo '</installer-gui-script>' >> distribution.xml
+	@productbuild --distribution distribution.xml --package-path . --resources . --version $(VER) cntlm-$(VER)-macos-$(ARCH).pkg
+	@rm -rf pkgroot pkgbuild-cntlm-$(ARCH).pkg distribution.xml
+	@echo "Created $@"
 
-$(NAME)-$(VER)-win64.exe:
+win: win/setup.iss cntlm win/cntlm_manual.pdf win/cntlm.ini win/LICENSE.txt cntlm-$(VER)-win64.exe cntlm-$(VER)-win64.zip
+
+cntlm-$(VER)-win64.exe:
 	@echo Win64: preparing binaries for GUI installer
 	@cp $(patsubst %, /bin/%, $(CYGWIN_REQS)) win/
 ifeq ($(DEBUG),1)
@@ -215,12 +242,14 @@ else
 endif
 	@echo Win64: generating GUI installer
 	@win/Inno5/ISCC.exe /Q win/setup.iss #/Q win/setup.iss
+	@echo "Created $@"
 
-$(NAME)-$(VER)-win64.zip:
+cntlm-$(VER)-win64.zip:
 	@echo Win64: creating ZIP release for manual installs
-	@ln -s win $(NAME)-$(VER)
-	@zip -9 $@ $(patsubst %, $(NAME)-$(VER)/%, cntlm.exe $(CYGWIN_REQS) cntlm.ini LICENSE.txt cntlm_manual.pdf)
-	@rm -f $(NAME)-$(VER)
+	@ln -s win cntlm-$(VER)
+	@zip -9 $@ $(patsubst %, cntlm-$(VER)/%, cntlm.exe $(CYGWIN_REQS) cntlm.ini LICENSE.txt cntlm_manual.pdf)
+	@rm -f cntlm-$(VER)
+	@echo "Created $@"
 
 win/cntlm.ini: doc/cntlm.conf
 	@cat doc/cntlm.conf | unix2dos > $@
@@ -243,11 +272,11 @@ endif
 	@sed "s/\$$VERSION/$(VER)/g" $^ > $@
 
 uninstall:
-	rm -f $(BINDIR)/$(NAME) $(MANDIR)/man1/$(NAME).1 2>/dev/null || true
+	@rm -f $(BINDIR)/cntlm $(MANDIR)/man1/cntlm.1 $(SYSCONFDIR)/cntlm.conf 2>/dev/null || true
 
 clean:
-	@rm -f config/endian config/gethostname config/socklen_t config/strdup config/arc4random_buf config/strlcat config/strlcpy config/memset_s config/gss config/*.exe
-	@rm -f *.o cntlm cntlm.exe configure-stamp build-stamp config/config.h
+	@rm -f $(patsubst %, config/%, endian gethostname socklen_t strdup arc4random_buf strlcat strlcpy memset_s gss) config/*.exe
+	@rm -f *.o cntlm cntlm.exe configure-stamp config/config.h
 	@rm -f $(patsubst %, win/%, $(CYGWIN_REQS) cntlm.exe cntlm.ini LICENSE.txt resources.o setup.iss cntlm_manual.pdf)
 
 distclean: clean
@@ -260,6 +289,6 @@ ifeq ($(OS),Linux)
 		fakeroot rpm/rules clean; \
 	fi
 endif
-	@rm -f *.exe *.deb *.rpm *.tgz *.tar.gz *.tar.bz2 *.zip *.exe tags ctags pid 2>/dev/null
+	@rm -f *.exe *.deb *.rpm *.tgz *.tar.gz *.tar.bz2 *.zip *.exe *.pkg tags ctags pid 2>/dev/null
 
 .PHONY: all install tgz tbz2 deb rpm win uninstall clean distclean
