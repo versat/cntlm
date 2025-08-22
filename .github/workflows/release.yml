@@ -18,10 +18,15 @@ jobs:
               cntlm*.rpm
               cntlm*.deb
           - os: windows-latest
-            command: bash -c "make win"
+            command: make win
             artifacts: |
               cntlm-*-win64.exe
               cntlm-*-win64.zip
+          - os: macos-latest
+            command: for A in arm64 x86_64; do ARCH=$A make mac && make clean; done
+            artifacts: |
+              cntlm-*-macos-*.pkg
+              cntlm-*-macos-*.zip
 
     steps:
       - name: Install Cygwin and packages (Windows only)
@@ -45,6 +50,7 @@ jobs:
 
       - name: Build artifacts
         run: ${{ matrix.command }}
+        shell: bash
 
       - name: Extract and format version
         id: format_version
