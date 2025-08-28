@@ -7,7 +7,17 @@ on:
   workflow_dispatch:
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.extract.outputs.tag }}
+    steps:
+      - name: Extract tag
+        id: extract
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
   build:
+    needs: version
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -46,23 +56,16 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y fakeroot rpm dpkg debhelper libkrb5-dev
+        shell: bash
         if: ${{ matrix.os == 'ubuntu-latest' }}
 
       - name: Build artifacts
         run: ${{ matrix.command }}
         shell: bash
 
-      - name: Extract and format version
-        id: format_version
-        run: |
-          version="${GITHUB_REF#refs/tags/}"
-          echo "VERSION=$version" >> $GITHUB_OUTPUT
-        shell: bash
-
       - name: Create or Update Release
-        id: create_or_update_release
         uses: softprops/action-gh-release@v2.2.1
         with:
           files: ${{ matrix.artifacts }}
-          tag_name: ${{ steps.format_version.outputs.VERSION }}
-          name: Release ${{ steps.format_version.outputs.VERSION }}
+          tag_name: ${{ needs.version.outputs.tag }}
+          name: Release ${{ needs.version.outputs.tag }}
