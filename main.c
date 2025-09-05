@@ -19,23 +19,16 @@
  *
  */
 
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/select.h>
 #include <sys/stat.h>
-#include <sys/socket.h>
-#include <pthread.h>
 #include <limits.h>
-#include <stdio.h>
 #include <errno.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <signal.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <netdb.h>
+#include <poll.h>
 #include <ctype.h>
 #include <pwd.h>
 #include <fcntl.h>
@@ -729,6 +722,9 @@ int main(int argc, char **argv) {
 	plist_t proxyd_list = NULL;
 	plist_t socksd_list = NULL;
 	plist_t rules = NULL;
+	struct pollfd *fds = NULL;
+	struct pollfd *pfds = NULL;
+	int total_fds = 0;
 	config_t cf = NULL;
 	char *magic_detect = NULL;
 	int pac = 0;
@@ -1667,46 +1663,40 @@ int main(int argc, char **argv) {
 	 * after the first kill) and a "forced" one (user insists and
 	 * killed us twice).
 	 */
+
+	// Count listening sockets
+	total_fds += plist_count(proxyd_list);
+	total_fds += plist_count(socksd_list);
+	total_fds += plist_count(tunneld_list);
+
+	// Create array of pollfd
+	fds = zmalloc(sizeof(struct pollfd) * total_fds);
+	pfds = fds;
+	plist_t t;
+
+	// Fill pollfd array with socket file descriptors
+	for (t = proxyd_list; t != NULL; t = t->next, pfds++) {
+		pfds->fd = (int)t->key;
+	}
+	for (t = socksd_list; t != NULL; t = t->next, pfds++) {
+		pfds->fd = (int)t->key;
+	}
+	for (t = tunneld_list; t != NULL; t = t->next, pfds++) {
+		pfds->fd = (int)t->key;
+	}
+
 	while (quit == 0 || (tc != tj && quit < 2)) {
 		struct thread_arg_s *data;
 		union sock_addr caddr;
-		struct timeval tv;
 		socklen_t clen;
-		fd_set set;
-		plist_t t;
 		int tid = 0;
+		int timeout_ms = 1000;
 
-		FD_ZERO(&set);
-
-		/*
-		 * Watch for proxy ports.
-		 */
-		t = proxyd_list;
-		while (t) {
-			FD_SET(t->key, &set);
-			t = t->next;
+		// Reset pollfd array
+		for (pfds = fds; pfds < fds + total_fds; pfds++) {
+			pfds->events = POLLIN;
+			pfds->revents = 0;
 		}
-
-		/*
-		 * Watch for SOCKS5 ports.
-		 */
-		t = socksd_list;
-		while (t) {
-			FD_SET(t->key, &set);
-			t = t->next;
-		}
-
-		/*
-		 * Watch for tunneled ports.
-		 */
-		t = tunneld_list;
-		while (t) {
-			FD_SET(t->key, &set);
-			t = t->next;
-		}
-
-		tv.tv_sec = 1;
-		tv.tv_usec = 0;
 
 		/*
 		 * Wait here for data (connection request) on any of the listening
@@ -1719,14 +1709,14 @@ int main(int argc, char **argv) {
 		 * which routes the request as forwarded or direct, depending on the
 		 * URL host name and NoProxy settings.
 		 */
-		cd = select(FD_SETSIZE, &set, NULL, NULL, &tv);
+		cd = poll(fds, total_fds, timeout_ms);
 		if (cd > 0) {
-			for (i = 0; i < FD_SETSIZE; ++i) {
-				if (!FD_ISSET(i, &set))
+			for (pfds = fds; pfds < fds + total_fds; pfds++) {
+				if (!(pfds->revents & POLLIN))
 					continue;
 
 				clen = sizeof(caddr);
-				cd = accept(i, &caddr.addr, &clen);
+				cd = accept(pfds->fd, &caddr.addr, &clen);
 
 				if (cd < 0) {
 					syslog(LOG_ERR, "Serious error during accept: %s\n", strerror(errno));
@@ -1755,7 +1745,7 @@ int main(int argc, char **argv) {
 				pthread_attr_setguardsize(&pattr, 256);
 #endif
 
-				if (plist_in(proxyd_list, i)) {
+				if (plist_in(proxyd_list, pfds->fd)) {
 					data = (struct thread_arg_s *)zmalloc(sizeof(struct thread_arg_s));
 					data->fd = cd;
 					data->addr = caddr;
@@ -1763,7 +1753,7 @@ int main(int argc, char **argv) {
 						tid = pthread_create(&pthr, &pattr, proxy_thread, (void *)data);
 					else
 						proxy_thread((void *)data);
-				} else if (plist_in(socksd_list, i)) {
+				} else if (plist_in(socksd_list, pfds->fd)) {
 					data = (struct thread_arg_s *)zmalloc(sizeof(struct thread_arg_s));
 					data->fd = cd;
 					data->addr = caddr;
@@ -1775,7 +1765,7 @@ int main(int argc, char **argv) {
 					data = (struct thread_arg_s *)zmalloc(sizeof(struct thread_arg_s));
 					data->fd = cd;
 					data->addr = caddr;
-					data->target = plist_get(tunneld_list, i);
+					data->target = plist_get(tunneld_list, pfds->fd);
 					if (!serialize)
 						tid = pthread_create(&pthr, &pattr, tunnel_thread, (void *)data);
 					else
@@ -1811,6 +1801,8 @@ int main(int argc, char **argv) {
 	}
 
 bailout:
+	free(fds);
+
 	if (pac_initialized) {
 		pac_initialized = 0;
 		pac_cleanup();
