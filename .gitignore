@@ -5,6 +5,7 @@ cntlm*.zip
 cntlm*.rpm
 cntlm*.deb
 cntlm*.tar.gz
+cntlm*.tar.bz2
 /configure-stamp
 /config/config.h
 /config/endian
