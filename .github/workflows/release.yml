@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.extract.outputs.tag }}
+    steps:
+      - name: Extract tag
+        id: extract
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+  build:
+    needs: version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            command: make deb && make rpm
+            artifacts: |
+              cntlm*.rpm
+              cntlm*.deb
+          - os: windows-latest
+            command: make win
+            artifacts: |
+              cntlm-*-win64.exe
+              cntlm-*-win64.zip
+          - os: macos-latest
+            command: for A in arm64 x86_64; do ARCH=$A make mac && make clean; done
+            artifacts: |
+              cntlm-*-macos-*.pkg
+              cntlm-*-macos-*.zip
+
+    steps:
+      - name: Install Cygwin and packages (Windows only)
+        uses: cygwin/cygwin-install-action@master
+        with:
+          platform: x86_64
+          packages: gcc-core make ghostscript dos2unix zip cygrunsrv
+        if: ${{ matrix.os == 'windows-latest' }}
+
+      - name: Git config (Windows only)
+        run: git config --global core.autocrlf input
+        if: ${{ matrix.os == 'windows-latest' }}
+
+      - uses: actions/checkout@v4
+
+      - name: Install packages for creating packages and for Kerberos support (Ubuntu only)
+        run: |
+          sudo apt update
+          sudo apt install -y fakeroot rpm dpkg debhelper libkrb5-dev
+        shell: bash
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+
+      - name: Build artifacts
+        run: ${{ matrix.command }}
+        shell: bash
+
+      - name: Create or Update Release
+        uses: softprops/action-gh-release@v2.2.1
+        with:
+          files: ${{ matrix.artifacts }}
+          tag_name: ${{ needs.version.outputs.tag }}
+          name: Release ${{ needs.version.outputs.tag }}
