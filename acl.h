@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _ACL_H
-#define _ACL_H
+#ifndef ACL_H
+#define ACL_H
 
 #include <netinet/in.h>
 
@@ -42,4 +42,4 @@ typedef struct {
 extern int acl_add(plist_t *rules, char *spec, enum acl_t acl);
 extern enum acl_t acl_check(plist_const_t rules, struct sockaddr *caddr);
 
-#endif /* _ACL_H */
+#endif /* ACL_H */

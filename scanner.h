@@ -17,10 +17,11 @@
  *
  */
 
-#ifndef _SCANNER_H
-#define _SCANNER_H
+#ifndef SCANNER_H
+#define SCANNER_H
 
 #include "utils.h"
+#include "auth.h"
 
 /*
  * ISA plugin flags
@@ -38,4 +39,4 @@
 
 extern int scanner_hook(rr_data_const_t request, rr_data_t response, struct auth_s *credentials, int cd, int *sd, long maxKBs);
 
-#endif /* _SCANNER_H */
+#endif /* SCANNER_H */

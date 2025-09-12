@@ -23,6 +23,7 @@
 #ifdef __CYGWIN__
 
 #include "sspi.h"
+#include "utils.h"
 
 // SSPI mode
 #ifdef UNICODE

@@ -19,8 +19,11 @@
  *
  */
 
-#ifndef _PROXY_H
-#define _PROXY_H
+#ifndef PROXY_H
+#define PROXY_H
+
+#include "utils.h"
+#include "auth.h"
 
 extern int proxy_connect(struct auth_s *credentials, const char* url, const char* hostname);
 extern int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct auth_s *creds);
@@ -29,4 +32,4 @@ extern int parent_add(const char *parent, int port);
 extern int parent_available(void);
 extern void parent_free(void);
 
-#endif
+#endif /* PROXY_H */

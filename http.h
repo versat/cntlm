@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _HTTP_H
-#define _HTTP_H
+#ifndef HTTP_H
+#define HTTP_H
 
 #include <stdint.h>
 
@@ -47,4 +47,4 @@ extern length_t http_has_body(rr_data_const_t request, rr_data_const_t response)
 extern int http_body_send(int writefd, int readfd, rr_data_const_t request, rr_data_const_t response);
 extern int http_body_drop(int fd, rr_data_const_t response);
 
-#endif /* _HTTP_H */
+#endif /* HTTP_H */

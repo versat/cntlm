@@ -19,23 +19,20 @@
  *
  */
 
-#include <sys/types.h>
-#include <sys/select.h>
-#include <sys/time.h>
 #include <ctype.h>
 #include <string.h>
 #include <strings.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <poll.h>
 #include <errno.h>
 #include <assert.h>
 #include <syslog.h>
 
-#include "utils.h"
+#include "http.h"
 #include "socket.h"
 #include "ntlm.h"
-#include "http.h"
 
 #define BLOCK		2048
 
@@ -450,7 +447,7 @@ int chunked_data_send(int dst, int src) {
 	} while (csize != 0);
 
 	/* Take care of possible trailer */
-	w = len = i = 0;
+	w = len = 0;
 	do {
 		i = so_recvln(src, &buf, &bsize);
 		if (dst >= 0 && i > 0) {
@@ -468,7 +465,7 @@ int chunked_data_send(int dst, int src) {
  * Used for bidirectional HTTP CONNECT connection.
  */
 int tunnel(int cd, int sd) {
-	fd_set set;
+	struct pollfd fds[2];
 	int from;
 	int to;
 	int ret;
@@ -478,38 +475,39 @@ int tunnel(int cd, int sd) {
 	buf = zmalloc(BUFSIZE);
 
 	if (debug)
-		printf("tunnel: select cli: %d, srv: %d\n", cd, sd);
+		printf("tunnel: poll cli: %d, srv: %d\n", cd, sd);
+
+	fds[0].fd = cd;
+	fds[1].fd = sd;
 
 	do {
-		FD_ZERO(&set);
-		FD_SET(cd, &set);
-		FD_SET(sd, &set);
+		fds[0].events = POLLIN;
+		fds[1].events = POLLIN;
 
-		sel = select(FD_SETSIZE, &set, NULL, NULL, NULL);
+		sel = poll(fds, 2, -1); // Wait indefinitely
 		if (sel > 0) {
-			if (FD_ISSET(cd, &set)) {
-				from = cd;
-				to = sd;
+			if (fds[0].revents & POLLIN) {
+				from = fds[0].fd;
+				to = fds[1].fd;
 			} else {
-				from = sd;
-				to = cd;
+				from = fds[1].fd;
+				to = fds[0].fd;
 			}
 
 			ret = read(from, buf, BUFSIZE);
 			if (ret > 0) {
 				(void) write_wrapper(to, buf, ret);
 			} else {
-				free(buf);
-				return (ret == 0);
+				ret = (ret == 0);
+				break;
 			}
 		} else if (sel < 0) {
-			free(buf);
-			return 0;
+			ret = 0;
 		}
-	} while (1);
+	} while (sel >= 0);
 
 	free(buf);
-	return 1;
+	return ret;
 }
 
 /*

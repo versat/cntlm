@@ -17,16 +17,12 @@
  *
  */
 
-#ifndef _PAGES_H
-#define _PAGES_H
-
-#include "utils.h"
-#include "string.h"
-#include "stdio.h"
+#ifndef PAGES_H
+#define PAGES_H
 
 extern char *gen_407_page(const char *http);
 extern char *gen_401_page(const char *http, const char *host, int port);
 extern char *gen_denied_page(const char *ip);
 extern char *gen_502_page(const char *http, const char *msg);
 
-#endif /* _PAGES_H */
+#endif /* PAGES_H */

@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _SWAP_H
-#define _SWAP_H
+#ifndef SWAP_H
+#define SWAP_H
 
 #include <stdint.h>
 
@@ -65,4 +65,4 @@
 # define U64BE(x)		swap64(x)
 #endif
 
-#endif /* _SWAP_H */
+#endif /* SWAP_H */

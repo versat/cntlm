@@ -19,24 +19,22 @@
  *
  */
 
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <syslog.h>
 
+#include "proxy.h"
 #include "globals.h"
 #include "socket.h"
 #include "http.h"
 #include "ntlm.h"
-#include "proxy.h"
+#include "pac.h"
 
 #if config_gss == 1
 #include "kerberos.h"
 #endif
-
-#include "pac.h"
 
 /*
  * Proxy types defined by PAC specification. Used in proxy_t to
@@ -106,7 +104,7 @@ proxylist_t proxylist_add(proxylist_t list, const unsigned long key, proxy_t *pr
 	proxylist_t tmp;
 	proxylist_t t = list;
 
-	tmp = malloc(sizeof(struct proxylist_s));
+	tmp = zmalloc(sizeof(struct proxylist_s));
 	tmp->key = key;
 	tmp->proxy = proxy;
 	tmp->next = NULL;
@@ -344,7 +342,7 @@ paclist_t paclist_create(const char *pacp_str) {
 
 	free(pacp_start);
 
-	tmp = malloc(sizeof(struct paclist_s));
+	tmp = zmalloc(sizeof(struct paclist_s));
 	tmp->pacstr = pacp_str;
 	tmp->proxylist = plist;
 	tmp->proxycurr = 0;
@@ -474,7 +472,7 @@ int proxy_connect(struct auth_s *credentials, const char* url, const char* hostn
 		 */
 		if (i < 0) {
 			p = proxylist_get_next(proxylist, proxycurr);
-			if (p) {
+			if (p && p->proxy) {
 				proxycurr = p->key;
 				proxy = p->proxy;
 				syslog(LOG_ERR, "Proxy connect failed, will try %s:%d\n", proxy->hostname, proxy->port);
@@ -654,7 +652,6 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 					printf("Using Negotiation ...\n");
 
 				request->headers = hlist_mod(request->headers, "Proxy-Authorization", buf, 1);
-				free(tmp);
 			}
 			else {
 #endif

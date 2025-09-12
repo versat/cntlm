@@ -17,8 +17,6 @@
  *
  */
 
-#include <sys/types.h>
-#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -27,12 +25,11 @@
 #include <strings.h>
 #include <fnmatch.h>
 
-#include "utils.h"
+#include "scanner.h"
 #include "socket.h"
 #include "http.h"
 #include "globals.h"
 #include "forward.h"
-#include "scanner.h"
 #include "proxy.h"
 
 /*
@@ -108,7 +105,7 @@ int scanner_hook(rr_data_const_t request, rr_data_t response, struct auth_s *cre
 	if (strstr(buf, "<title>Downloading status</title>") && (pos=strstr(buf, "ISAServerUniqueID=")) && (pos = strchr(pos, '"'))) {
 		pos++;
 		c = strlen(pos);
-		for (i = 0; i < c && pos[i] != '"'; ++i);
+		for (i = 0; i < c && pos[i] != '"'; ++i) {};
 
 		if (pos[i] == '"') {
 			isaid = substr(pos, 0, i);

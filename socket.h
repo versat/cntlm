@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _SOCKET_H
-#define _SOCKET_H
+#ifndef SOCKET_H
+#define SOCKET_H
 
 #include <netinet/in.h>
 #include <stdint.h>
@@ -41,4 +41,4 @@ extern int so_dataready(int fd);
 extern int so_closed(int fd);
 extern int so_recvln(int fd, char **buf, int *size);
 
-#endif /* _SOCKET_H */
+#endif /* SOCKET_H */
