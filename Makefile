@@ -138,7 +138,7 @@ win/resources.o: win/resources.rc
 
 install: cntlm
 	# Special handling for install(1)
-	if [ "`uname -s`" = "AIX" ]; then \
+	@if [ "`uname -s`" = "AIX" ]; then \
 		install -M 755 -S -f $(BINDIR) cntlm; \
 		install -M 644 -f $(MANDIR)/man1 doc/cntlm.1; \
 		install -M 600 -c $(SYSCONFDIR) doc/cntlm.conf; \
@@ -159,35 +159,35 @@ install: cntlm
 	@echo; echo "Cntlm will look for configuration in $(SYSCONFDIR)/cntlm.conf"
 
 tgz:
-	mkdir -p tmp
-	rm -rf tmp/cntlm-$(VER)
-	git checkout-index -a -f --prefix=./tmp/cntlm-$(VER)/
-	tar zcvf cntlm-$(VER).tar.gz -C tmp/ cntlm-$(VER)
-	rm -rf tmp/cntlm-$(VER)
-	rmdir tmp 2>/dev/null || true
+	@mkdir -p tmp
+	@rm -rf tmp/cntlm-$(VER)
+	@git checkout-index -a -f --prefix=./tmp/cntlm-$(VER)/
+	@tar zcvf cntlm-$(VER).tar.gz -C tmp/ cntlm-$(VER)
+	@rm -rf tmp/cntlm-$(VER)
+	@rmdir tmp 2>/dev/null || true
 
 tbz2:
-	mkdir -p tmp
-	rm -rf tmp/cntlm-$(VER)
-	git checkout-index -a -f --prefix=./tmp/cntlm-$(VER)/
-	tar jcvf cntlm-$(VER).tar.bz2 -C tmp/ cntlm-$(VER)
-	rm -rf tmp/cntlm-$(VER)
-	rmdir tmp 2>/dev/null || true
+	@mkdir -p tmp
+	@rm -rf tmp/cntlm-$(VER)
+	@git checkout-index -a -f --prefix=./tmp/cntlm-$(VER)/
+	@tar jcvf cntlm-$(VER).tar.bz2 -C tmp/ cntlm-$(VER)
+	@rm -rf tmp/cntlm-$(VER)
+	@rmdir tmp 2>/dev/null || true
 
 deb:
-	sed -i "s/^\(cntlm *\)([^)]*)/\1($(VER))/g" debian/changelog
-	if [ `id -u` = 0 ]; then \
+	@sed -i "s/^\(cntlm *\)([^)]*)/\1($(VER))/g" debian/changelog
+	@if [ `id -u` = 0 ]; then \
 		debian/rules binary; \
 		debian/rules clean; \
 	else \
 		fakeroot debian/rules binary; \
 		fakeroot debian/rules clean; \
 	fi
-	mv ../cntlm_$(VER)*.deb .
+	@mv ../cntlm_$(VER)*.deb .
 
 rpm:
-	sed -i "s/^\(Version:[\t ]*\)\(.*\)/\1$(VER)/g" rpm/cntlm.spec
-	if [ `id -u` = 0 ]; then \
+	@sed -i "s/^\(Version:[\t ]*\)\(.*\)/\1$(VER)/g" rpm/cntlm.spec
+	@if [ `id -u` = 0 ]; then \
 		rpm/rules binary; \
 		rpm/rules clean; \
 	else \
@@ -293,7 +293,7 @@ clean:
 
 distclean: clean
 ifeq ($(OS),Linux)
-	if [ `id -u` = 0 ]; then \
+	@if [ `id -u` = 0 ]; then \
 		debian/rules clean; \
 		rpm/rules clean; \
 	else \
