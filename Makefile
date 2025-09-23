@@ -197,7 +197,12 @@ mac: cntlm cntlm-$(VER)-macos-$(ARCH).zip cntlm-$(VER)-macos-$(ARCH).pkg
 cntlm-$(VER)-macos-$(ARCH).zip:
 	@echo macOS: creating ZIP release for manual installs
 	@mkdir -p cntlm-$(VER)
-	@cp cntlm doc/cntlm.conf doc/cntlm.1 LICENSE cntlm-$(VER)/
+ifeq ($(DEBUG),1)
+	@cp cntlm cntlm-$(VER)/cntlm
+else
+	@strip -o cntlm-$(VER)/cntlm cntlm
+endif
+	@cp doc/cntlm.conf doc/cntlm.1 LICENSE cntlm-$(VER)/
 	@zip -9 $@ cntlm-$(VER)/*
 	@rm -rf cntlm-$(VER)
 	@echo "Created $@"
@@ -206,7 +211,11 @@ cntlm-$(VER)-macos-$(ARCH).pkg:
 	@echo macOS: preparing binaries for PKG installer
 	@rm -rf pkgroot
 	@mkdir -p pkgroot/$(BINDIR)
+ifeq ($(DEBUG),1)
 	@cp cntlm pkgroot/$(BINDIR)/cntlm
+else
+	@strip -o pkgroot/$(BINDIR)/cntlm cntlm
+endif
 	@chmod 755 pkgroot/$(BINDIR)/cntlm
 	@mkdir -p pkgroot/$(SYSCONFDIR)
 	@cp doc/cntlm.conf pkgroot/$(SYSCONFDIR)/cntlm.conf
