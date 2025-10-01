@@ -704,3 +704,246 @@ int http_parse_basic(hlist_const_t headers, const char *header, struct auth_s *t
 
 	return 1;
 }
+
+/*
+ * Read the HTTP body from fd into a newly allocated buffer.
+ * For chunked transfer encoding this will decode chunks and concatenate them.
+ * The caller is responsible to free(*outbuf).
+ * Returns 1 on success, 0 on failure.
+ */
+int http_read_body(int fd, rr_data_const_t response, char **outbuf, size_t *outlen) {
+	length_t bodylen;
+	char *buf = NULL;
+	ssize_t alloc = 0;
+	ssize_t filled = 0;
+
+	if (!outbuf || !outlen || !response)
+		return 0;
+
+	*outbuf = NULL;
+	*outlen = 0;
+
+	bodylen = http_has_body(NULL, response);
+	if (!bodylen) {
+		// no body
+		*outbuf = zmalloc(1);
+		*outlen = 0;
+		return 1;
+	}
+
+	if (hlist_subcmp(response->headers, "Transfer-Encoding", "chunked")) {
+		/* read chunked body by reading lines and chunks from fd */
+		int bsize = BUFSIZE;
+		char *line = zmalloc(bsize);
+		char *err = NULL;
+		long csize;
+		do {
+			int r = so_recvln(fd, &line, &bsize);
+			if (r <= 0) {
+				free(line);
+				free(buf);
+				return 0;
+			}
+			trimr(line);
+			csize = strtol(line, &err, 16);
+			if (!isspace((u_char)*err) && *err != ';' && *err != '\0') {
+				free(line);
+				free(buf);
+				return 0;
+			}
+			if (csize > 0) {
+				// ensure capacity
+				if (filled + csize > alloc) {
+					alloc = (filled + csize) * 2;
+					buf = realloc(buf, alloc);
+				}
+				// read csize bytes
+				length_t need = csize;
+				while (need > 0) {
+					size_t toread = (need > BLOCK ? BLOCK : (size_t)need);
+					ssize_t got = read(fd, buf + filled, toread);
+					if (got <= 0) {
+						free(line);
+						free(buf);
+						return 0;
+					}
+					filled += got;
+					need -= got;
+				}
+				// read and discard CRLF after chunk
+				char crlf[2];
+				if (read(fd, crlf, 2) != 2) {
+					free(line);
+					free(buf);
+					return 0;
+				}
+			}
+		} while (csize != 0);
+
+		// read possible trailer headers until empty line
+		do {
+			int r = so_recvln(fd, &line, &bsize);
+			if (r <= 0) {
+				free(line);
+				free(buf);
+				return 0;
+			}
+		} while (line[0] != '\r' && line[0] != '\n');
+
+		free(line);
+	} else if (bodylen == -1) {
+		/* read until EOF */
+		buf = NULL;
+		alloc = 0;
+		filled = 0;
+		char tmp[BLOCK];
+		ssize_t r;
+		while ((r = read(fd, tmp, BLOCK)) > 0) {
+			if (filled + r >= alloc) {
+				alloc = (alloc == 0) ? r + 1 : alloc * 2;
+				buf = realloc(buf, alloc);
+			}
+			memcpy(buf + filled, tmp, r);
+			filled += r;
+			buf[filled] = '\0';
+		}
+		if (r < 0) {
+			free(buf);
+			return 0;
+		}
+	} else {
+		/* fixed length */
+		if (bodylen > 0) {
+			buf = zmalloc(bodylen+1);
+			length_t need = bodylen;
+			size_t pos = 0;
+			while (need > 0) {
+				size_t toread = (need > BLOCK ? BLOCK : (size_t)need);
+				ssize_t got = read(fd, buf + pos, toread);
+				if (got <= 0) {
+					free(buf);
+					return 0;
+				}
+				pos += got;
+				need -= got;
+			}
+			filled = pos;
+		} else {
+			buf = zmalloc(1);
+			filled = 0;
+		}
+	}
+
+	// finalize buffer
+	if (buf == NULL) {
+		buf = zmalloc(1);
+		filled = 0;
+	}
+
+	*outbuf = buf;
+	*outlen = filled;
+
+	return 1;
+}
+
+/*
+ * Minimal HTTP GET fetcher to retrieve a file from URL into memory.
+ * Supports only http scheme (no HTTPS) and basic parsing of host:port/path.
+ * The function allocates *outbuf and sets *outlen. Caller must free(*outbuf).
+ * If outcode != NULL, the HTTP response status code will be stored there
+ * (or -1 on protocol/error).
+ * Returns 1 on successful fetch+read, 0 on error.
+ */
+int fetch_url(const char *url, char **outbuf, size_t *outlen, int *outcode) {
+	if (!url || !outbuf || !outlen)
+		return 0;
+
+	if (outcode)
+		*outcode = -1;
+
+	// Basic parse: expect http://host[:port]/path
+	const char *p = url;
+	if (strncasecmp(p, "http://", 7) == 0)
+		p += 7;
+	else
+		return 0; // only http supported for now
+
+	char *host = NULL;
+	int port = 80;
+	const char *path = strchr(p, '/');
+	if (path) {
+		host = substr(p, 0, (int)(path - p));
+	} else {
+		host = strdup(p);
+		path = "/";
+	}
+
+	// split port
+	char *colon = strchr(host, ':');
+	if (colon) {
+		*colon = '\0';
+		port = atoi(colon+1);
+		if (port == 0) port = 80;
+	}
+
+	struct addrinfo *addresses = NULL;
+	if (!so_resolv(&addresses, host, port)) {
+		free(host);
+		return 0;
+	}
+
+	int sd = so_connect(addresses);
+	freeaddrinfo(addresses);
+	if (sd < 0) {
+		free(host);
+		return 0;
+	}
+
+	// Build simple GET request
+	rr_data_t req = new_rr_data();
+	req->req = 1;
+	req->method = strdup("GET");
+	req->url = strdup(path);
+	req->http = strdup("HTTP/1.1");
+	req->headers = hlist_add(req->headers, "Host", host, HLIST_ALLOC, HLIST_ALLOC);
+	req->headers = hlist_add(req->headers, "User-Agent", "cntlm-fetch/1.0", HLIST_ALLOC, HLIST_ALLOC);
+	req->headers = hlist_add(req->headers, "Connection", "close", HLIST_ALLOC, HLIST_ALLOC);
+
+	// send headers
+	if (!headers_send(sd, req)) {
+		free_rr_data(&req);
+		close(sd);
+		free(host);
+		return 0;
+	}
+	free_rr_data(&req);
+	free(host);
+
+	// read response headers
+	rr_data_t res = new_rr_data();
+	if (!headers_recv(sd, res)) {
+		free_rr_data(&res);
+		close(sd);
+		return 0;
+	}
+
+	/* expose HTTP status code to caller */
+	if (outcode)
+		*outcode = res->code;
+
+	// read body into memory
+	char *body = NULL;
+	size_t bodylen = 0;
+	if (!http_read_body(sd, res, &body, &bodylen)) {
+		free_rr_data(&res);
+		close(sd);
+		return 0;
+	}
+	free_rr_data(&res);
+	close(sd);
+
+	*outbuf = body;
+	*outlen = bodylen;
+
+	return 1;
+}
