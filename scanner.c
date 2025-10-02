@@ -47,7 +47,7 @@ int scanner_hook(rr_data_const_t request, rr_data_t response, struct auth_s *cre
 	const char *pos;
 	int bsize;
 	int lsize;
-	int size;
+	ssize_t size;
 	int len;
 	int i;
 	int nc;
@@ -58,7 +58,9 @@ int scanner_hook(rr_data_const_t request, rr_data_t response, struct auth_s *cre
 	int ok = 1;
 	int done = 0;
 	int headers_initiated = 0;
-	long c, progress = 0, filesize = 0;
+	int c;
+	long progress = 0;
+	long filesize = 0;
 
 	/*
 	 * Let's limit the responses we examine to an absolute minimum
@@ -97,15 +99,15 @@ int scanner_hook(rr_data_const_t request, rr_data_t response, struct auth_s *cre
 	do {
 		size = read(*sd, buf + len, SAMPLE - len - 1);
 		if (debug)
-			printf("scanner_hook: read %d of %d\n", size, SAMPLE - len);
+			printf("scanner_hook: read %zd of %d\n", size, SAMPLE - len);
 		if (size > 0)
 			len += size;
 	} while (size > 0 && len < SAMPLE - 1);
 
-	if (strstr(buf, "<title>Downloading status</title>") && (pos=strstr(buf, "ISAServerUniqueID=")) && (pos = strchr(pos, '"'))) {
+	if (strstr(buf, "<title>Downloading status</title>") && (pos = strstr(buf, "ISAServerUniqueID=")) && (pos = strchr(pos, '"'))) {
 		pos++;
-		c = strlen(pos);
-		for (i = 0; i < c && pos[i] != '"'; ++i) {};
+		c = (int)strlen(pos);
+		for (i = 0; i < c && pos[i] != '"'; ++i);
 
 		if (pos[i] == '"') {
 			isaid = substr(pos, 0, i);
@@ -117,7 +119,7 @@ int scanner_hook(rr_data_const_t request, rr_data_t response, struct auth_s *cre
 			do {
 				i = so_recvln(*sd, &line, &lsize);
 
-				c = strlen(line);
+				c = (int)strlen(line);
 				if (len + c >= bsize) {
 					bsize *= 2;
 					tmp = realloc(buf, bsize);
@@ -202,7 +204,7 @@ int scanner_hook(rr_data_const_t request, rr_data_t response, struct auth_s *cre
 				}
 			} while (i > 0 && !done);
 
-			if (i >= 0 && done && (pos = strstr(line, "\",\"")+3) && (c = strchr(pos, '"') - pos) > 0) {
+			if (i >= 0 && done && (pos = strstr(line, "\",\"")+3) && (c = (int)(strchr(pos, '"') - pos)) > 0) {
 				char * encoded_url;
 
 				tmp = substr(pos, 0, c);

@@ -132,7 +132,7 @@ void listen_add(const char *service, plist_t *list, char *spec, int gateway) {
 	int port;
 	char *tmp;
 
-	char *q = strrchr(spec, ':');
+	const char *q = strrchr(spec, ':');
 	if (q != NULL) {
 		p = (int)(q - spec);
 		if(spec[0] == '[' && spec[p-1] == ']') {
@@ -169,8 +169,8 @@ void listen_add(const char *service, plist_t *list, char *spec, int gateway) {
  */
 void tunnel_add(plist_t *list, char *spec, int gateway) {
 	struct addrinfo *addresses;
-	int i;
-	int len;
+	size_t i;
+	size_t len;
 	int count;
 	int pos;
 	int port;
@@ -180,11 +180,12 @@ void tunnel_add(plist_t *list, char *spec, int gateway) {
 	spec = strdup(spec);
 	len = strlen(spec);
 	field[0] = spec;
-	for (count = 1, i = 0; count < 4 && i < len; ++i)
+	for (count = 1, i = 0; count < 4 && i < len; ++i) {
 		if (spec[i] == ':') {
 			spec[i] = 0;
 			field[count++] = spec+i+1;
 		}
+	}
 
 	pos = 0;
 	if (count == 4) {
@@ -391,16 +392,16 @@ void *socks5_thread(void *thread_data) {
 	char *upass;
 	unsigned short port;
 	int ver;
-	int r;
+	ssize_t r;
 	int c;
 	int i;
-	int w;
+	ssize_t w;
 
 	struct auth_s *tcreds = NULL;
 	unsigned char *bs = NULL;
 	unsigned char *auths = NULL;
 	unsigned char *addr = NULL;
-	int found = -1;
+	char found = -1;
 	int sd = -1;
 	int open = !hlist_count(users_list);
 
@@ -797,7 +798,7 @@ int main(int argc, char **argv) {
 					scanner_plugin = 1;
 					if (!scanner_plugin_maxsize)
 						scanner_plugin_maxsize = 1;
-					i = strlen(optarg) + 3;
+					i = (int)strlen(optarg) + 3;
 					tmp = zmalloc(i);
 					snprintf(tmp, i, "*%s*", optarg);
 					scanner_agent_list = plist_add(scanner_agent_list, 0, tmp);
@@ -829,7 +830,8 @@ int main(int argc, char **argv) {
 				magic_detect = strdup(optarg);
 				break;
 			case 'N':
-				noproxy_list = noproxy_add(noproxy_list, tmp=strdup(optarg));
+				tmp=strdup(optarg);
+				noproxy_list = noproxy_add(noproxy_list, tmp);
 				free(tmp);
 				break;
 			case 'O':
@@ -844,7 +846,7 @@ int main(int argc, char **argv) {
 				 * invisible in "ps", /proc, etc.
 				 */
 				strlcpy(cpassword, optarg, PASSWORD_BUFSIZE);
-				for (i = strlen(optarg)-1; i >= 0; --i)
+				for (i = (int)strlen(optarg)-1; i >= 0; --i)
 					optarg[i] = '*';
 				break;
 			case 'R':
@@ -893,7 +895,7 @@ int main(int argc, char **argv) {
 				strlcpy(cuid, optarg, MINIBUF_SIZE);
 				break;
 			case 'u':
-				i = strcspn(optarg, "@");
+				i = (int)strcspn(optarg, "@");
 				if (i != (int)strlen(optarg)) {
 					strlcpy(cuser, optarg, MIN(MINIBUF_SIZE, i+1));
 					strlcpy(cdomain, optarg+i+1, MINIBUF_SIZE);
@@ -1279,7 +1281,7 @@ int main(int argc, char **argv) {
 			if (!scanner_plugin_maxsize)
 				scanner_plugin_maxsize = 1;
 
-			if ((i = strlen(tmp))) {
+			if ((i = (int)strlen(tmp))) {
 				head = zmalloc(i + 3);
 				snprintf(head, i+3, "*%s*", tmp);
 				scanner_agent_list = plist_add(scanner_agent_list, 0, head);
@@ -1391,7 +1393,7 @@ int main(int argc, char **argv) {
 		tcsetattr(0, TCSADRAIN, &termnew);
 		tmp = fgets(cpassword, PASSWORD_BUFSIZE, stdin);
 		tcsetattr(0, TCSADRAIN, &termold);
-		i = strlen(cpassword) - 1;
+		i = (int)strlen(cpassword) - 1;
 		if (cpassword[i] == '\n') {
 			cpassword[i] = 0;
 			if (cpassword[i - 1] == '\r')
@@ -1440,11 +1442,13 @@ int main(int argc, char **argv) {
 			tmp = ntlm_hash_nt_password(cpassword);
 			auth_memcpy(g_creds, passnt, tmp, 21);
 			free(tmp);
-		} if (g_creds->hashlm || magic_detect || interactivehash) {
+		}
+		if (g_creds->hashlm || magic_detect || interactivehash) {
 			tmp = ntlm_hash_lm_password(cpassword);
 			auth_memcpy(g_creds, passlm, tmp, 21);
 			free(tmp);
-		} if (g_creds->hashntlm2 || magic_detect || interactivehash) {
+		}
+		if (g_creds->hashntlm2 || magic_detect || interactivehash) {
 			tmp = ntlm2_hash_password(cuser, cdomain, cpassword);
 			auth_memcpy(g_creds, passntlm2, tmp, 16);
 			free(tmp);
@@ -1625,7 +1629,8 @@ int main(int argc, char **argv) {
 
 		tmp = zmalloc(50);
 		snprintf(tmp, 50, "%d\n", getpid());
-		w = write_wrapper(cd, tmp, (len = strlen(tmp)));
+		len = (int)strlen(tmp);
+		w = (int)write_wrapper(cd, tmp, len);
 		if (w != len) {
 			syslog(LOG_ERR, "Error writing to the PID file\n");
 			myexit(1);
@@ -1647,7 +1652,7 @@ int main(int argc, char **argv) {
 	/*
 	 * Initialize the random number generator
 	 */
-	srandom(time(NULL));
+	srandom((unsigned int)(time(NULL)));
 
 	/*
 	 * This loop iterates over every connection request on any of

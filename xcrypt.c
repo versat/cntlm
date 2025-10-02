@@ -72,9 +72,9 @@
 #define G(x, y, z) (((x) & (y)) | ((x) & (z)) | ((y) & (z)))
 #define H(x, y, z) ((x) ^ (y) ^ (z))
 #define rol(x, n) (((x) << (n)) | ((uint32_t) (x) >> (32 - (n))))
-#define R1(a,b,c,d,k,s) a=rol(a+F(b,c,d)+x[k],s);
-#define R2(a,b,c,d,k,s) a=rol(a+G(b,c,d)+x[k]+K1,s);
-#define R3(a,b,c,d,k,s) a=rol(a+H(b,c,d)+x[k]+K2,s);
+#define R1(a,b,c,d,k,s) a=rol(a+F(b,c,d)+x[k],s)
+#define R2(a,b,c,d,k,s) a=rol(a+G(b,c,d)+x[k]+K1,s)
+#define R3(a,b,c,d,k,s) a=rol(a+H(b,c,d)+x[k]+K2,s)
 
 /* This array contains the bytes used to pad the buffer to the next
    64-byte boundary.  (RFC 1320, 3.1: Step 1)  */
@@ -301,10 +301,13 @@ static const unsigned char weak_keys[64][8] = {
 
 bool gl_des_is_weak_key (const char * key) {
   char work[8];
-  int i, left, right, middle, cmp_result;
+  int left;
+  int right;
+  int middle;
+  int cmp_result;
 
   /* clear parity bits */
-  for (i = 0; i < 8; ++i)
+  for (int i = 0; i < 8; ++i)
     work[i] = ((unsigned char)key[i]) & 0xfe;
 
   /* binary search in the weak key table */
@@ -410,8 +413,9 @@ bool gl_des_is_weak_key (const char * key) {
  */
 static void des_key_schedule (const char * _rawkey, uint32_t * subkey) {
   const unsigned char *rawkey = (const unsigned char *) _rawkey;
-  uint32_t left, right, work;
-  int round;
+  uint32_t left;
+  uint32_t right;
+  uint32_t work;
 
   READ_64BIT_DATA (rawkey, left, right)
     DO_PERMUTATION (right, work, left, 4, 0x0f0f0f0f)
@@ -438,7 +442,7 @@ static void des_key_schedule (const char * _rawkey, uint32_t * subkey) {
 
   right &= 0x0fffffff;
 
-  for (round = 0; round < 16; ++round)
+  for (int round = 0; round < 16; ++round)
     {
       left = ((left << encrypt_rotate_tab[round])
               | (left >> (28 - encrypt_rotate_tab[round]))) & 0x0fffffff;
@@ -494,11 +498,9 @@ static void des_key_schedule (const char * _rawkey, uint32_t * subkey) {
 }
 
 void gl_des_setkey (gl_des_ctx *ctx, const char * key) {
-  int i;
-
   des_key_schedule (key, ctx->encrypt_subkeys);
 
-  for (i = 0; i < 32; i += 2)
+  for (int i = 0; i < 32; i += 2)
     {
       ctx->decrypt_subkeys[i] = ctx->encrypt_subkeys[30 - i];
       ctx->decrypt_subkeys[i + 1] = ctx->encrypt_subkeys[31 - i];
@@ -517,8 +519,10 @@ bool gl_des_makekey (gl_des_ctx *ctx, const char * key, size_t keylen) {
 void gl_des_ecb_crypt (gl_des_ctx *ctx, const char * _from, char * _to, int mode) {
   const unsigned char *from = (const unsigned char *) _from;
   unsigned char *to = (unsigned char *) _to;
-  uint32_t left, right, work;
-  uint32_t *keys;
+  uint32_t left;
+  uint32_t right;
+  uint32_t work;
+  const uint32_t *keys;
 
   keys = mode ? ctx->decrypt_subkeys : ctx->encrypt_subkeys;
 
@@ -559,8 +563,7 @@ void md4_process_block (const void *buffer, size_t len, struct md4_ctx *ctx) {
      the loop.  */
   while (words < endp)
     {
-      int t;
-      for (t = 0; t < 16; t++)
+      for (int t = 0; t < 16; t++)
         {
           x[t] = SWAP (*words);
           words++;

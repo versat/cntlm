@@ -151,7 +151,7 @@ void plist_dump(plist_const_t list) {
 
 	t = list;
 	while (t) {
-		printf("List data: %lu => 0x%8p\n", (unsigned long int)t->key, t->aux);
+		printf("List data: %lu => 0x%8p\n", t->key, t->aux);
 		t = t->next;
 	}
 }
@@ -198,7 +198,7 @@ int plist_pop(plist_t *list, void **aux) {
 
 	t = *list;
 	while (!ok && t) {
-		id = t->key;
+		id = (int)t->key;
 		a = t->aux;
 		tmp = t->next;
 
@@ -418,10 +418,12 @@ int hlist_subcmp(hlist_const_t list, const char *key, const char *substr) {
 	char *tmp;
 	char *low;
 
-	lowercase(low = strdup(substr));
+	low = strdup(substr);
+	lowercase(low);
 	tmp = hlist_get(list, key);
 	if (tmp) {
-		lowercase(tmp = strdup(tmp));
+		tmp = strdup(tmp);
+		lowercase(tmp);
 		if (strstr(tmp, low))
 			found = 1;
 
@@ -445,10 +447,12 @@ int hlist_subcmp_all(hlist_const_t list, const char *key, const char *substr) {
 	assert(key != NULL);
 	assert(substr != NULL);
 
-	lowercase(low = strdup(substr));
+	low = strdup(substr);
+	lowercase(low);
 	while (t) {
 		if (!strcasecmp(t->key, key)) {
-			lowercase(tmp = strdup(t->value));
+			tmp = strdup(t->value);
+			lowercase(tmp);
 			if (strstr(tmp, low))
 				found = 1;
 
@@ -507,7 +511,7 @@ char *substr(const char *src, int pos, int len) {
 	assert(len >= 0);
 
 	if (len == 0)
-		len = strlen(src);
+		len = (int)strlen(src);
 
 	min_len = MIN(len, (int)strlen(src)-pos);
 	if (min_len <= 0)
@@ -679,11 +683,12 @@ void free_rr_data(rr_data_t * pdata) {
  * Cut the whitespace at the end of a string.
  */
 char *trimr(char * const buf) {
-	int i;
+	ssize_t i;
 
 	assert(buf != NULL);
 
-	for (i = strlen(buf)-1; i >= 0 && isspace((u_char)buf[i]); --i) {};
+	for (i = strlen(buf)-1; i >= 0 && isspace((u_char)buf[i]); --i);
+
 	buf[i+1] = 0;
 
 	return buf;
@@ -790,12 +795,10 @@ void *zmalloc(size_t size) {
  * Self-explanatory.
  */
 char *lowercase(char * const str) {
-	size_t i;
-
 	assert(str != NULL);
 
-	for (i = 0; i < strlen(str); ++i)
-		str[i] = tolower(str[i]);
+	for (size_t i = 0; i < strlen(str); ++i)
+		str[i] = (char)tolower(str[i]);
 
 	return str;
 }
@@ -804,12 +807,10 @@ char *lowercase(char * const str) {
  * Self-explanatory.
  */
 char *uppercase(char * const str) {
-	size_t i;
-
 	assert(str != NULL);
 
-	for (i = 0; i < strlen(str); ++i)
-		str[i] = toupper(str[i]);
+	for (size_t i = 0; i < strlen(str); ++i)
+		str[i] = (char)toupper(str[i]);
 
 	return str;
 }
@@ -817,7 +818,6 @@ char *uppercase(char * const str) {
 size_t unicode(char **dst, const char * const src) {
 	char *tmp;
 	size_t l;
-	size_t i;
 
 	if (!src) {
 		*dst = NULL;
@@ -826,7 +826,7 @@ size_t unicode(char **dst, const char * const src) {
 
 	l = MIN(BUFSIZE, strlen(src));
 	tmp = zmalloc(2*l);
-	for (i = 0; i < l; ++i)
+	for (size_t i = 0; i < l; ++i)
 		tmp[2*i] = src[i];
 
 	*dst = tmp;
@@ -858,10 +858,9 @@ char *urlencode(const char * const str) {
 
 char *printmem(const char * const src, const size_t len, const int bitwidth) {
 	char *tmp;
-	size_t i;
 
 	tmp = zmalloc(2*len+1);
-	for (i = 0; i < len; ++i) {
+	for (size_t i = 0; i < len; ++i) {
 		uint8_t val = (uint8_t)src[i] & (0xFF >> (8-bitwidth));
 		tmp[i*2] = hextab[val >> 4];
 		tmp[i*2+1] = hextab[val & 0x0F];
@@ -871,7 +870,8 @@ char *printmem(const char * const src, const size_t len, const int bitwidth) {
 }
 
 char *scanmem(const char * const src, const int bitwidth) {
-	int h, l;
+	int h;
+	int l;
 	size_t i;
 	size_t bytes;
 	char *tmp;
@@ -977,7 +977,10 @@ void to_base64(unsigned char *out, const unsigned char *in, size_t len, size_t o
 int from_base64(char *out, const char *in)
 {
 	int len = 0;
-	register unsigned char digit1, digit2, digit3, digit4;
+	register unsigned char digit1;
+	register unsigned char digit2;
+	register unsigned char digit3;
+	register unsigned char digit4;
 
 	do {
 		digit1 = in[0];
@@ -999,13 +1002,13 @@ int from_base64(char *out, const char *in)
 		in += 4;
 
 		/* digits are already sanity-checked */
-		*out++ = (base64val(digit1) << 2) | (base64val(digit2) >> 4);
+		*out++ = (char)((base64val(digit1) << 2) | (base64val(digit2) >> 4));
 		len++;
 		if (digit3 != '=') {
-			*out++ = ((base64val(digit2) << 4) & 0xf0) | (base64val(digit3) >> 2);
+			*out++ = (char)(((base64val(digit2) << 4) & 0xf0) | (base64val(digit3) >> 2));
 			len++;
 			if (digit4 != '=') {
-				*out++ = ((base64val(digit3) << 6) & 0xc0) | base64val(digit4);
+				*out++ = (char)(((base64val(digit3) << 6) & 0xc0) | base64val(digit4));
 				len++;
 			}
 		}

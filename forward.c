@@ -371,7 +371,7 @@ beginning:
 			 */
 			if (loop == 1) {
 				conn_alive = hlist_subcmp(data[1]->headers, "Connection", "keep-alive");
-				if (!conn_alive && !((CONNECT(data[0]) && data[1]->code == 200)))
+				if (!conn_alive && !(CONNECT(data[0]) && data[1]->code == 200))
 					data[1]->headers = hlist_mod(data[1]->headers, "Connection", "close", 1);
 
 				/*
@@ -427,13 +427,11 @@ beginning:
 				goto bailout;
 			}
 
-			if (plugin & PLUG_SENDDATA) {
-				if (!http_body_send(*wsocket[loop], *rsocket[loop], data[0], data[1])) {
-					free_rr_data(&data[0]);
-					free_rr_data(&data[1]);
-					rc = (void *)-1;
-					goto bailout;
-				}
+			if ((plugin & PLUG_SENDDATA) && !http_body_send(*wsocket[loop], *rsocket[loop], data[0], data[1])) {
+				free_rr_data(&data[0]);
+				free_rr_data(&data[1]);
+				rc = (void *)-1;
+				goto bailout;
 			}
 
 			/*
@@ -547,8 +545,11 @@ int prepare_http_connect(int sd, struct auth_s *credentials, const char *thost) 
 				hlist_dump(data1->headers);
 			}
 			if (!headers_send(sd, data1)) {
-				printf("Sending request failed!\n");
-				goto bailout;
+				if (debug)
+					printf("Sending request failed!\n");
+				free_rr_data(&data1);
+				free_rr_data(&data2);
+				return rc;
 			}
 
 			if (debug)
@@ -557,7 +558,9 @@ int prepare_http_connect(int sd, struct auth_s *credentials, const char *thost) 
 			if (!headers_recv(sd, data2)) {
 				if (debug)
 					printf("Reading response failed!\n");
-				goto bailout;
+				free_rr_data(&data1);
+				free_rr_data(&data2);
+				return rc;
 			}
 			if (debug)
 				hlist_dump(data2->headers);
@@ -575,7 +578,6 @@ int prepare_http_connect(int sd, struct auth_s *credentials, const char *thost) 
 	} else
 		syslog(LOG_ERR, "Tunnel requests failed!\n");
 
-bailout:
 	free_rr_data(&data1);
 	free_rr_data(&data2);
 
@@ -599,24 +601,22 @@ int forward_tunnel(void *thread_data) {
 		*pos = 0;
 	sd = proxy_connect(tcreds, thost, hostname);
 
-	if (sd < 0)
-		goto bailout;
-
-	syslog(LOG_DEBUG, "%s TUNNEL %s", saddr, thost);
-
-	if (debug)
-		printf("Tunneling to %s for client %d...\n", thost, cd);
-
-	if (prepare_http_connect(sd, tcreds, thost))
-		tunnel(cd, sd);
-
-bailout:
 	if (sd >= 0) {
+		syslog(LOG_DEBUG, "%s TUNNEL %s", saddr, thost);
+
+		if (debug)
+			printf("Tunneling to %s for client %d...\n", thost, cd);
+
+		if (prepare_http_connect(sd, tcreds, thost))
+			tunnel(cd, sd);
+
 		close(sd);
 	}
+
 	if (sd != -2) {
 		close(cd);
 	}
+
 	free(tcreds);
 	free(hostname);
 
@@ -626,7 +626,6 @@ bailout:
 #define MAGIC_TESTS	5
 
 void magic_auth_detect(const char *url) {
-	int i;
 	int nc;
 	int ign = 0;
 	int found = -1;
@@ -658,14 +657,14 @@ void magic_auth_detect(const char *url) {
 	pos = strstr(url, "://");
 	if (pos) {
 		const char * const tmp = strchr(pos+3, '/');
-		host = substr(pos+3, 0, tmp ? tmp-pos-3 : 0);
+		host = substr(pos+3, 0, tmp ? (int)(tmp-pos-3) : 0);
 	} else {
 		fprintf(stderr, "Invalid URL (%s)\n", url);
 		free(tcreds);
 		return;
 	}
 
-	for (i = 0; i < MAGIC_TESTS; ++i) {
+	for (int i = 0; i < MAGIC_TESTS && found < 0; ++i) {
 		int c;
 		res = new_rr_data();
 		req = new_rr_data();
@@ -675,8 +674,7 @@ void magic_auth_detect(const char *url) {
 		req->url = strdup(url);
 		req->http = strdup("HTTP/1.1");
 		req->headers = hlist_add(req->headers, "Proxy-Connection", "keep-alive", HLIST_ALLOC, HLIST_ALLOC);
-		if (host)
-			req->headers = hlist_add(req->headers, "Host", host, HLIST_ALLOC, HLIST_ALLOC);
+		req->headers = hlist_add(req->headers, "Host", host, HLIST_ALLOC, HLIST_ALLOC);
 
 		tcreds->hashnt = prefs[i][0];
 		tcreds->hashlm = prefs[i][1];
@@ -690,8 +688,7 @@ void magic_auth_detect(const char *url) {
 			printf("\nConnection to proxy failed, bailing out\n");
 			free_rr_data(&res);
 			free_rr_data(&req);
-			if (host)
-				free(host);
+			free(host);
 			return;
 		}
 
@@ -708,25 +705,22 @@ void magic_auth_detect(const char *url) {
 		reset_rr_data(res);
 		if (!headers_send(nc, req) || !headers_recv(nc, res)) {
 			printf("Connection closed!? Proxy doesn't talk to us.\n");
-		} else {
-			if (res->code == 407) {
-				if (hlist_subcmp_all(res->headers, "Proxy-Authenticate", "NTLM") ) {
-					printf("Credentials rejected (NTLM allowed)\n");
-				} else if (hlist_subcmp_all(res->headers, "Proxy-Authenticate", "BASIC")) {
-					printf("Proxy allows BASIC, Cntlm not required so it's not supported\n");
-				} else {
-					printf("Proxy doesn't allow NTLM, Cntlm won't help\n");
-					break;
-				}
+		} else if (res->code == 407) {
+			if (hlist_subcmp_all(res->headers, "Proxy-Authenticate", "NTLM") ) {
+				printf("Credentials rejected (NTLM allowed)\n");
+			} else if (hlist_subcmp_all(res->headers, "Proxy-Authenticate", "BASIC")) {
+				printf("Proxy allows BASIC, Cntlm not required so it's not supported\n");
 			} else {
-				printf("OK (HTTP code: %d)\n", res->code);
-				if (found < 0) {
-					found = i;
-					free_rr_data(&res);
-					free_rr_data(&req);
-					close(nc);
-					break;
-				}
+				printf("Proxy doesn't allow NTLM, Cntlm won't help\n");
+				free_rr_data(&res);
+				free_rr_data(&req);
+				close(nc);
+				break;
+			}
+		} else {
+			printf("OK (HTTP code: %d)\n", res->code);
+			if (found < 0) {
+				found = i;
 			}
 		}
 

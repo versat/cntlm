@@ -51,11 +51,11 @@ int is_http_header(const char *src) {
  * Extract the header name from the source.
  */
 char *get_http_header_name(const char *src) {
-	int i;
+	size_t i;
 
 	i = strcspn(src, ":");
-	if (i != (int)strlen(src))
-		return substr(src, 0, i);
+	if (i != strlen(src))
+		return substr(src, 0, (int)i);
 	else
 		return NULL;
 }
@@ -84,7 +84,7 @@ char *get_http_header_value(const char *src) {
 int headers_recv(int fd, rr_data_t data) {
 	int i;
 	int bsize;
-	int len;
+	size_t len;
 	int is_http = 0;
 	char *buf;
 	char *tok;
@@ -186,10 +186,10 @@ int headers_recv(int fd, rr_data_t data) {
 
 		s3 = strchr(tok, '/');
 		if (s3) {
-			host = substr(tok, 0, s3-tok);
+			host = substr(tok, 0, (int)(s3-tok));
 			data->rel_url = strdup(s3);
 		} else {
-			host = substr(tok, 0, strlen(tok));
+			host = substr(tok, 0, (int)strlen(tok));
 			data->rel_url = strdup("/");
 		}
 
@@ -278,8 +278,8 @@ bailout:
 int headers_send(int fd, rr_data_const_t data) {
 	hlist_const_t t;
 	char *buf;
-	int i;
-	int len;
+	size_t i;
+	size_t len;
 
 	/*
 	 * First compute required buffer size (avoid realloc, etc)
@@ -298,7 +298,7 @@ int headers_send(int fd, rr_data_const_t data) {
 	/*
 	 * We know how much memory we need now...
 	 */
-	const int buf_len = len;
+	const size_t buf_len = len;
 	buf = zmalloc(buf_len);
 
 	/*
@@ -336,7 +336,7 @@ int headers_send(int fd, rr_data_const_t data) {
 
 	if (i <= 0 || i != len+2) {
 		if (debug)
-			printf("headers_send: fd %d warning %d (connection closed)\n", fd, i);
+			printf("headers_send: fd %d warning %zu (connection closed)\n", fd, i);
 		return 0;
 	}
 
@@ -350,10 +350,10 @@ int headers_send(int fd, rr_data_const_t data) {
  */
 int data_send(int dst, int src, length_t len) {
 	char *buf;
-	int i;
-	int block;
+	ssize_t i;
+	ssize_t block;
 	int c = 0;
-	int j = 1;
+	ssize_t j = 1;
 
 	if (!len)
 		return 1;
@@ -368,7 +368,7 @@ int data_send(int dst, int src, length_t len) {
 			c += i;
 
 		if (dst >= 0 && debug)
-			printf("data_send: read %d of %d / %d of %lld (errno = %s)\n", i, block, c, len, i < 0 ? strerror(errno) : "ok");
+			printf("data_send: read %zu of %zu / %d of %lld (errno = %s)\n", i, block, c, len, i < 0 ? strerror(errno) : "ok");
 
 		if (dst >= 0 && so_closed(dst)) {
 			i = -999;
@@ -378,7 +378,7 @@ int data_send(int dst, int src, length_t len) {
 		if (dst >= 0 && i > 0) {
 			j = write_wrapper(dst, buf, i);
 			if (debug)
-				printf("data_send: wrote %d of %d\n", j, i);
+				printf("data_send: wrote %zd of %zu\n", j, i);
 		}
 
 	} while (i > 0 && j > 0 && (len == -1 || c <  len));
@@ -390,7 +390,7 @@ int data_send(int dst, int src, length_t len) {
 			return 1;
 
 		if (debug)
-			printf("data_send: fds %d:%d warning %d (connection closed)\n", dst, src, i);
+			printf("data_send: fds %d:%d warning %zu (connection closed)\n", dst, src, i);
 		return 0;
 	}
 
@@ -404,10 +404,10 @@ int data_send(int dst, int src, length_t len) {
 int chunked_data_send(int dst, int src) {
 	char *buf;
 	int bsize;
-	int len;
+	ssize_t len;
 	int i;
-	int w;
-	int csize;
+	ssize_t w;
+	length_t csize;
 
 	char *err = NULL;
 
@@ -436,14 +436,13 @@ int chunked_data_send(int dst, int src) {
 		if (dst >= 0)
 			(void) write_wrapper(dst, buf, strlen(buf));
 
-		if (csize)
-			if (!data_send(dst, src, csize+2)) {
-				if (debug)
-					printf("chunked_data_send: aborting, data_send failed\n");
+		if (csize && !data_send(dst, src, csize+2)) {
+			if (debug)
+				printf("chunked_data_send: aborting, data_send failed\n");
 
-				free(buf);
-				return 0;
-			}
+			free(buf);
+			return 0;
+		}
 	} while (csize != 0);
 
 	/* Take care of possible trailer */
@@ -494,7 +493,7 @@ int tunnel(int cd, int sd) {
 				to = fds[0].fd;
 			}
 
-			ret = read(from, buf, BUFSIZE);
+			ret = (int)read(from, buf, BUFSIZE);
 			if (ret > 0) {
 				(void) write_wrapper(to, buf, ret);
 			} else {
@@ -560,7 +559,6 @@ length_t http_has_body(rr_data_const_t request, rr_data_const_t response) {
 	if (!nobody && tmp == NULL && (hlist_in(current->headers, "Content-Type")
 			|| hlist_in(current->headers, "Transfer-Encoding")
 			|| hlist_subcmp(current->headers, "Connection", "close"))) {
-			// || (response->code == 200)
 		if (hlist_in(current->headers, "Transfer-Encoding")
 				&& hlist_subcmp(current->headers, "Transfer-Encoding", "chunked"))
 			length = 1;
