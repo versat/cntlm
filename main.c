@@ -1051,7 +1051,7 @@ int main(int argc, char **argv) {
 		fprintf(stream, "\t-w  <workstation>\n"
 				"\t    Some proxies require correct NetBIOS hostname.\n");
 		fprintf(stream, "\t-x  <PAC_file>\n"
-				"\t    Specify a PAC file to load.\n");
+				"\t    Specify a PAC file to load. Local files or http URLs are supported.\n");
 		fprintf(stream, "\t-X  <sspi_handle_type>\n"
 				"\t    Use SSPI with specified handle type. Works only under Windows.\n"
 				"\t    Default is negotiate.\n");
