@@ -303,8 +303,6 @@ bool gl_des_is_weak_key (const char * key) {
   char work[8];
   int left;
   int right;
-  int middle;
-  int cmp_result;
 
   /* clear parity bits */
   for (int i = 0; i < 8; ++i)
@@ -315,9 +313,10 @@ bool gl_des_is_weak_key (const char * key) {
   right = 63;
   while (left <= right)
     {
-      middle = (left + right) / 2;
+      int middle = (left + right) / 2;
 
-      if (!(cmp_result = memcmp (work, weak_keys[middle], 8)))
+      int cmp_result = memcmp(work, weak_keys[middle], 8);
+      if (cmp_result == 0)
         return -1;
 
       if (cmp_result > 0)

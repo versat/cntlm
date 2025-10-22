@@ -870,8 +870,6 @@ char *printmem(const char * const src, const size_t len, const int bitwidth) {
 }
 
 char *scanmem(const char * const src, const int bitwidth) {
-	int h;
-	int l;
 	size_t i;
 	size_t bytes;
 	char *tmp;
@@ -882,8 +880,8 @@ char *scanmem(const char * const src, const int bitwidth) {
 	bytes = strlen(src)/2;
 	tmp = zmalloc(bytes+1);
 	for (i = 0; i < bytes; ++i) {
-		h = hexindex[(int)src[i*2]];
-		l = hexindex[(int)src[i*2+1]];
+		int h = hexindex[(int)src[i*2]];
+		int l = hexindex[(int)src[i*2+1]];
 		if (h < 0 || l < 0) {
 			free(tmp);
 			return NULL;
@@ -977,21 +975,18 @@ void to_base64(unsigned char *out, const unsigned char *in, size_t len, size_t o
 int from_base64(char *out, const char *in)
 {
 	int len = 0;
-	register unsigned char digit1;
-	register unsigned char digit2;
-	register unsigned char digit3;
-	register unsigned char digit4;
+	uint8_t digit4;
 
 	do {
-		digit1 = in[0];
+		uint8_t digit1 = in[0];
 		if (digit1 > 127 || base64val (digit1) == BAD)
 			return -1;
 
-		digit2 = in[1];
+		uint8_t digit2 = in[1];
 		if (digit2 > 127 || base64val (digit2) == BAD)
 			return -1;
 
-		digit3 = in[2];
+		uint8_t digit3 = in[2];
 		if (digit3 > 127 || ((digit3 != '=') && (base64val (digit3) == BAD)))
 			return -1;
 

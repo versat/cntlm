@@ -368,7 +368,7 @@ int data_send(int dst, int src, length_t len) {
 			c += i;
 
 		if (dst >= 0 && debug)
-			printf("data_send: read %zu of %zu / %d of %lld (errno = %s)\n", i, block, c, len, i < 0 ? strerror(errno) : "ok");
+			printf("data_send: read %zd of %zd / %d of %lld (errno = %s)\n", i, block, c, len, i < 0 ? strerror(errno) : "ok");
 
 		if (dst >= 0 && so_closed(dst)) {
 			i = -999;
@@ -378,7 +378,7 @@ int data_send(int dst, int src, length_t len) {
 		if (dst >= 0 && i > 0) {
 			j = write_wrapper(dst, buf, i);
 			if (debug)
-				printf("data_send: wrote %zd of %zu\n", j, i);
+				printf("data_send: wrote %zd of %zd\n", j, i);
 		}
 
 	} while (i > 0 && j > 0 && (len == -1 || c <  len));
@@ -390,7 +390,7 @@ int data_send(int dst, int src, length_t len) {
 			return 1;
 
 		if (debug)
-			printf("data_send: fds %d:%d warning %zu (connection closed)\n", dst, src, i);
+			printf("data_send: fds %d:%d warning %zd (connection closed)\n", dst, src, i);
 		return 0;
 	}
 
@@ -755,7 +755,13 @@ int http_read_body(int fd, rr_data_const_t response, char **outbuf, size_t *outl
 				// ensure capacity
 				if (filled + csize > alloc) {
 					alloc = (filled + csize) * 2;
-					buf = realloc(buf, alloc);
+					char* tmpbuf = realloc(buf, alloc);
+					if (!tmpbuf) {
+						free(line);
+						free(buf);
+						return 0;
+					}
+					buf = tmpbuf;
 				}
 				// read csize bytes
 				length_t need = csize;
@@ -801,7 +807,12 @@ int http_read_body(int fd, rr_data_const_t response, char **outbuf, size_t *outl
 		while ((r = read(fd, tmp, BLOCK)) > 0) {
 			if (filled + r >= alloc) {
 				alloc = (alloc == 0) ? r + 1 : alloc * 2;
-				buf = realloc(buf, alloc);
+				char* tmpbuf = realloc(buf, alloc);
+				if (!tmpbuf) {
+					free(buf);
+					return 0;
+				}
+				buf = tmpbuf;
 			}
 			memcpy(buf + filled, tmp, r);
 			filled += r;
