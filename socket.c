@@ -38,7 +38,7 @@ extern int debug;
  * Important: Caller is responsible for freeing addresses via freeaddrinfo()!
  */
 int so_resolv(struct addrinfo **addresses, const char *hostname, const int port) {
-	struct addrinfo hints, *p;
+	struct addrinfo hints;
 	char buf[6];
 
 	memset(&hints, 0, sizeof(hints));
@@ -55,7 +55,7 @@ int so_resolv(struct addrinfo **addresses, const char *hostname, const int port)
 	if (debug) {
 		char s[INET6_ADDRSTRLEN] = {0};
 		printf("Resolve %s:\n", hostname);
-		for (p = *addresses; p != NULL; p = p->ai_next) {
+		for (struct addrinfo *p = *addresses; p != NULL; p = p->ai_next) {
 			INET_NTOP(p->ai_addr, s, INET6_ADDRSTRLEN);
 			printf("     %s\n", s);
 		}
@@ -92,10 +92,9 @@ int so_resolv_wildcard(struct addrinfo **addresses, const int port, int gateway)
 int so_connect(struct addrinfo *addresses) {
 	int fd = -1;
 	int rc;
-	struct addrinfo *p;
 	char s[INET6_ADDRSTRLEN] = {0};
 
-	for (p = addresses; p != NULL; p = p->ai_next) {
+	for (struct addrinfo *p = addresses; p != NULL; p = p->ai_next) {
 		int flags;
 		if ((fd = socket(p->ai_family, SOCK_STREAM, 0)) < 0) {
 			if (debug)
@@ -116,15 +115,6 @@ int so_connect(struct addrinfo *addresses) {
 			close(fd);
 			continue;
 		}
-
-		/* NON-BLOCKING connect with timeout
-		if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
-			if (debug)
-				printf("so_connect: set non-blocking: %s\n", strerror(errno));
-			close(fd);
-			continue;
-		}
-		*/
 
 		rc = connect(fd, p->ai_addr, p->ai_addrlen);
 
@@ -156,11 +146,10 @@ int so_connect(struct addrinfo *addresses) {
  */
 int so_listen(plist_t *list, struct addrinfo *addresses, void *aux) {
 	socklen_t clen;
-	struct addrinfo *p;
 	char s[INET6_ADDRSTRLEN] = {0};
 	int count = 0;
 
-	for (p = addresses; p != NULL; p = p->ai_next) {
+	for (struct addrinfo *p = addresses; p != NULL; p = p->ai_next) {
 		int fd = socket(p->ai_family, SOCK_STREAM, 0);
 		if (fd < 0) {
 			if (debug)
@@ -216,10 +205,10 @@ int so_recvtest(int fd) {
 
 	flags = fcntl(fd, F_GETFL);
 	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-	i = recv(fd, &buf, 1, MSG_PEEK);
+	i = (int)recv(fd, &buf, 1, MSG_PEEK);
 	fcntl(fd, F_SETFL, flags);
 #else
-	i = recv(fd, &buf, 1, MSG_DONTWAIT | MSG_PEEK);
+	i = (int)recv(fd, &buf, 1, MSG_DONTWAIT | MSG_PEEK);
 #endif
 
 	return i;
@@ -264,7 +253,7 @@ int so_recvln(int fd, char **buf, int *size) {
 	char *tmp;
 
 	while (len < *size-1 && c != '\n') {
-		r = read(fd, &c, 1);
+		r = (int)read(fd, &c, 1);
 		if (r <= 0)
 			break;
 

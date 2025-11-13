@@ -106,7 +106,9 @@ hlist_t users_list = NULL;			/* socks5_thread() */
 plist_t scanner_agent_list = NULL;		/* scanner_hook() */
 plist_t noproxy_list = NULL;			/* proxy_thread() */
 
-/* 1 = Pac engine is initialized and in use. */
+/* PAC configured (local path or http URL).
+ * pac_initialized = 1 when the PAC has actually been loaded (local or remote).
+ */
 int pac_initialized = 0;
 
 /*
@@ -132,7 +134,7 @@ void listen_add(const char *service, plist_t *list, char *spec, int gateway) {
 	int port;
 	char *tmp;
 
-	char *q = strrchr(spec, ':');
+	const char *q = strrchr(spec, ':');
 	if (q != NULL) {
 		p = (int)(q - spec);
 		if(spec[0] == '[' && spec[p-1] == ']') {
@@ -169,8 +171,8 @@ void listen_add(const char *service, plist_t *list, char *spec, int gateway) {
  */
 void tunnel_add(plist_t *list, char *spec, int gateway) {
 	struct addrinfo *addresses;
-	int i;
-	int len;
+	size_t i;
+	size_t len;
 	int count;
 	int pos;
 	int port;
@@ -180,11 +182,12 @@ void tunnel_add(plist_t *list, char *spec, int gateway) {
 	spec = strdup(spec);
 	len = strlen(spec);
 	field[0] = spec;
-	for (count = 1, i = 0; count < 4 && i < len; ++i)
+	for (count = 1, i = 0; count < 4 && i < len; ++i) {
 		if (spec[i] == ':') {
 			spec[i] = 0;
 			field[count++] = spec+i+1;
 		}
+	}
 
 	pos = 0;
 	if (count == 4) {
@@ -265,6 +268,37 @@ int noproxy_match(const char *addr) {
 		list = list->next;
 	}
 
+	return 0;
+}
+
+/*
+ * Retrieve Pac file from remote URL. If there is an http error or
+ * the file is not a valid pac file, exit the program.
+ * Return 1 if retrieved and initialized successfully.
+ * Return 0 if there was some network issue, it is possible to retry later.
+ */
+int fetch_pac_file(const char* pac_file) {
+	char *buf = NULL;
+	size_t len = 0;
+	int http_code = -1;
+	if (fetch_url(pac_file, &buf, &len, &http_code)) {
+		if (debug)
+			printf("fetch_url returned HTTP %d, len=%zu\n", http_code, len);
+		if (http_code != 200) {
+			syslog(LOG_ERR, "Failed to fetch PAC from %s (http=%d)\n", pac_file, http_code);
+			myexit(1);
+		}
+		if (buf && pac_init() && pac_parse_string(buf)) {
+			syslog(LOG_DEBUG, "Fetched PAC from %s\n", pac_file);
+		} else {
+			syslog(LOG_ERR, "Failed to parse PAC fetched from %s\n", pac_file);
+			myexit(1);
+		}
+		free(buf);
+		return 1;
+	} else {
+		syslog(LOG_ERR, "Failed to fetch PAC from %s\n", pac_file);
+	}
 	return 0;
 }
 
@@ -391,16 +425,16 @@ void *socks5_thread(void *thread_data) {
 	char *upass;
 	unsigned short port;
 	int ver;
-	int r;
+	ssize_t r;
 	int c;
 	int i;
-	int w;
+	ssize_t w;
 
 	struct auth_s *tcreds = NULL;
 	unsigned char *bs = NULL;
 	unsigned char *auths = NULL;
 	unsigned char *addr = NULL;
-	int found = -1;
+	char found = -1;
 	int sd = -1;
 	int open = !hlist_count(users_list);
 
@@ -776,15 +810,7 @@ int main(int argc, char **argv) {
 				break;
 			case 'x':
 				pac = 1;
-				/*
-				 * Resolve relative paths if necessary.
-				 * Don't care if the named file does not exist (ENOENT) because
-				 * later on we check the file's availability anyway.
-				 */
-				if (!realpath(optarg, pac_file) && errno != ENOENT) {
-					syslog(LOG_ERR, "Resolving path to PAC file failed: %s\n", strerror(errno));
-					myexit(1);
-				}
+				strlcpy(pac_file, optarg, PATH_MAX);
 				break;
 			case 'F':
 				cflags = swap32(strtoul(optarg, &tmp, 0));
@@ -797,7 +823,7 @@ int main(int argc, char **argv) {
 					scanner_plugin = 1;
 					if (!scanner_plugin_maxsize)
 						scanner_plugin_maxsize = 1;
-					i = strlen(optarg) + 3;
+					i = (int)strlen(optarg) + 3;
 					tmp = zmalloc(i);
 					snprintf(tmp, i, "*%s*", optarg);
 					scanner_agent_list = plist_add(scanner_agent_list, 0, tmp);
@@ -829,7 +855,8 @@ int main(int argc, char **argv) {
 				magic_detect = strdup(optarg);
 				break;
 			case 'N':
-				noproxy_list = noproxy_add(noproxy_list, tmp=strdup(optarg));
+				tmp=strdup(optarg);
+				noproxy_list = noproxy_add(noproxy_list, tmp);
 				free(tmp);
 				break;
 			case 'O':
@@ -844,7 +871,7 @@ int main(int argc, char **argv) {
 				 * invisible in "ps", /proc, etc.
 				 */
 				strlcpy(cpassword, optarg, PASSWORD_BUFSIZE);
-				for (i = strlen(optarg)-1; i >= 0; --i)
+				for (i = (int)strlen(optarg)-1; i >= 0; --i)
 					optarg[i] = '*';
 				break;
 			case 'R':
@@ -893,7 +920,7 @@ int main(int argc, char **argv) {
 				strlcpy(cuid, optarg, MINIBUF_SIZE);
 				break;
 			case 'u':
-				i = strcspn(optarg, "@");
+				i = (int)strcspn(optarg, "@");
 				if (i != (int)strlen(optarg)) {
 					strlcpy(cuser, optarg, MIN(MINIBUF_SIZE, i+1));
 					strlcpy(cdomain, optarg+i+1, MINIBUF_SIZE);
@@ -931,6 +958,12 @@ int main(int argc, char **argv) {
 			default:
 				help = 2;
 		}
+	}
+
+	if (syslog_debug) {
+		setlogmask(LOG_UPTO(LOG_DEBUG));
+	} else {
+		setlogmask(LOG_UPTO(LOG_INFO));
 	}
 
 	/*
@@ -1018,7 +1051,7 @@ int main(int argc, char **argv) {
 		fprintf(stream, "\t-w  <workstation>\n"
 				"\t    Some proxies require correct NetBIOS hostname.\n");
 		fprintf(stream, "\t-x  <PAC_file>\n"
-				"\t    Specify a PAC file to load.\n");
+				"\t    Specify a PAC file to load. Local files or http URLs are supported.\n");
 		fprintf(stream, "\t-X  <sspi_handle_type>\n"
 				"\t    Use SSPI with specified handle type. Works only under Windows.\n"
 				"\t    Default is negotiate.\n");
@@ -1179,7 +1212,7 @@ int main(int argc, char **argv) {
 		 * Check if PAC file is defined.
 		 */
 		CFG_DEFAULT(cf, "Pac", pac_file, PATH_MAX)
-		if (*pac_file) {
+		if (pac_file && *pac_file) {
 			pac = 1;
 		}
 
@@ -1279,7 +1312,7 @@ int main(int argc, char **argv) {
 			if (!scanner_plugin_maxsize)
 				scanner_plugin_maxsize = 1;
 
-			if ((i = strlen(tmp))) {
+			if ((i = (int)strlen(tmp))) {
 				head = zmalloc(i + 3);
 				snprintf(head, i+3, "*%s*", tmp);
 				scanner_agent_list = plist_add(scanner_agent_list, 0, head);
@@ -1300,23 +1333,32 @@ int main(int argc, char **argv) {
 	config_close(cf);
 
 	/* Start Pac engine if pac_file available */
-	/* TODO: pac file option in config file */
-	if (pac) {
-		/* Check if PAC file can be opened. */
-		FILE *test_fd = NULL;
-		if (!(test_fd = fopen(pac_file, "r"))) {
-			syslog(LOG_ERR, "Cannot access specified PAC file: '%s'\n", pac_file);
+	/* If pac_file looks like an HTTP URL, defer fetch until first incoming connection */
+	if (pac && strncasecmp(pac_file, "http://", 7) != 0) {
+		/* Treat as local file: resolve and load immediately */
+		char resolved[PATH_MAX] = {0};
+		if (!realpath(pac_file, resolved) && errno != ENOENT) {
+			syslog(LOG_ERR, "Resolving path to PAC file failed: %s\n", strerror(errno));
+			myexit(1);
+		}
+		/* If the file does not exist, error out */
+		FILE *test_fd = fopen(resolved, "r");
+		if (!test_fd) {
+			syslog(LOG_ERR, "Cannot access specified PAC file: %s\n", pac_file);
 			myexit(1);
 		}
 		fclose(test_fd);
 
-		/* Initiailize Pac. */
-		pac_init();
-		pac_parse_file(pac_file);
+		/* Initialize PAC immediately for local files. */
+		if (!pac_init() || !pac_parse_file(resolved)) {
+			syslog(LOG_ERR, "Failed to initialize PAC from file: %s\n", pac_file);
+			myexit(1);
+		}
 		if (debug)
-			printf("Pac initialized with PAC file %s\n", pac_file);
-		// TODO handle parsing errors from pac
+			printf("Pac initialized with PAC file %s\n", resolved);
 		pac_initialized = 1;
+		/* Normalize stored path */
+		strlcpy(pac_file, resolved, PATH_MAX);
 	}
 
 	if (!interactivehash && !parent_available() && !pac)
@@ -1391,7 +1433,7 @@ int main(int argc, char **argv) {
 		tcsetattr(0, TCSADRAIN, &termnew);
 		tmp = fgets(cpassword, PASSWORD_BUFSIZE, stdin);
 		tcsetattr(0, TCSADRAIN, &termold);
-		i = strlen(cpassword) - 1;
+		i = (int)strlen(cpassword) - 1;
 		if (cpassword[i] == '\n') {
 			cpassword[i] = 0;
 			if (cpassword[i - 1] == '\r')
@@ -1440,11 +1482,13 @@ int main(int argc, char **argv) {
 			tmp = ntlm_hash_nt_password(cpassword);
 			auth_memcpy(g_creds, passnt, tmp, 21);
 			free(tmp);
-		} if (g_creds->hashlm || magic_detect || interactivehash) {
+		}
+		if (g_creds->hashlm || magic_detect || interactivehash) {
 			tmp = ntlm_hash_lm_password(cpassword);
 			auth_memcpy(g_creds, passlm, tmp, 21);
 			free(tmp);
-		} if (g_creds->hashntlm2 || magic_detect || interactivehash) {
+		}
+		if (g_creds->hashntlm2 || magic_detect || interactivehash) {
 			tmp = ntlm2_hash_password(cuser, cdomain, cpassword);
 			auth_memcpy(g_creds, passntlm2, tmp, 16);
 			free(tmp);
@@ -1470,6 +1514,9 @@ int main(int argc, char **argv) {
 	 * User can pick the best (most secure) one as his config.
 	 */
 	if (magic_detect) {
+		// We need the proxy configuration completed before testing a remote connection
+		if (pac && !pac_initialized)
+			pac_initialized = fetch_pac_file(pac_file);
 		magic_auth_detect(magic_detect);
 		goto bailout;
 	}
@@ -1558,12 +1605,6 @@ int main(int argc, char **argv) {
 		syslog(LOG_INFO, "Cntlm ready, staying in the foreground");
 	}
 
-	if (syslog_debug) {
-		setlogmask(LOG_UPTO(LOG_DEBUG));
-	} else {
-		setlogmask(LOG_UPTO(LOG_INFO));
-	}
-
 #if config_gss == 1
 	if (g_creds->haskrb & KRB_FORCE_USE_KRB) {
 		g_creds->haskrb |= check_credential();
@@ -1625,7 +1666,8 @@ int main(int argc, char **argv) {
 
 		tmp = zmalloc(50);
 		snprintf(tmp, 50, "%d\n", getpid());
-		w = write_wrapper(cd, tmp, (len = strlen(tmp)));
+		len = (int)strlen(tmp);
+		w = (int)write_wrapper(cd, tmp, len);
 		if (w != len) {
 			syslog(LOG_ERR, "Error writing to the PID file\n");
 			myexit(1);
@@ -1647,7 +1689,7 @@ int main(int argc, char **argv) {
 	/*
 	 * Initialize the random number generator
 	 */
-	srandom(time(NULL));
+	srandom((unsigned int)(time(NULL)));
 
 	/*
 	 * This loop iterates over every connection request on any of
@@ -1737,6 +1779,15 @@ int main(int argc, char **argv) {
 					close(cd);
 					continue;
 				}
+
+				/*
+				 * Lazy-download remote PAC on first incoming activity (main thread).
+				 * Executed here so it applies to proxy, tunnel and socks5.
+				 * Blocks the main thread during fetch+parse; subsequent connections
+				 * will not block as pac_initialized will be set.
+				 */
+				if (pac && !pac_initialized)
+					pac_initialized = fetch_pac_file(pac_file);
 
 				pthread_attr_init(&pattr);
 				pthread_attr_setstacksize(&pattr, MAX(STACK_SIZE, PTHREAD_STACK_MIN));
