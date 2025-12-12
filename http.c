@@ -916,7 +916,17 @@ int fetch_url(const char *url, char **outbuf, size_t *outlen, int *outcode) {
 	req->method = strdup("GET");
 	req->url = strdup(path);
 	req->http = strdup("HTTP/1.1");
-	req->headers = hlist_add(req->headers, "Host", host, HLIST_ALLOC, HLIST_ALLOC);
+	
+	/* Build Host header - include port for non-standard ports */
+	if (port != 80) {
+		size_t host_len = strlen(host) + 7; /* host + ":65535" + null */
+		char *host_header = zmalloc(host_len);
+		snprintf(host_header, host_len, "%s:%d", host, port);
+		req->headers = hlist_add(req->headers, "Host", host_header, HLIST_ALLOC, HLIST_NOALLOC);
+	} else {
+		req->headers = hlist_add(req->headers, "Host", host, HLIST_ALLOC, HLIST_ALLOC);
+	}
+	
 	req->headers = hlist_add(req->headers, "User-Agent", "cntlm-fetch/1.0", HLIST_ALLOC, HLIST_ALLOC);
 	req->headers = hlist_add(req->headers, "Connection", "close", HLIST_ALLOC, HLIST_ALLOC);
 
