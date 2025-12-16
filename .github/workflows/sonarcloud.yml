@@ -16,7 +16,7 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Install Build Wrapper
-        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v6.0.0
+        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v7.0.0
       - name: Install packages required for optional configurations of cntlm
         run: sudo apt install -y libkrb5-dev
       - name: Run build-wrapper
@@ -24,7 +24,7 @@ jobs:
           ./configure
           build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} make
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v6.0.0
+        uses: SonarSource/sonarqube-scan-action@v7.0.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
