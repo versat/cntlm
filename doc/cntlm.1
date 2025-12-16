@@ -375,7 +375,22 @@ some proxies require this field non-empty.
 
 .TP
 .B -x <PAC_file>\ \ \ \ (Pac)
-Specify a PAC file to load.
+Specify a PAC file to load. Two forms are supported:
+.RS
+.IP \(bu 2
+Local file: a filesystem path (for example /etc/proxy.pac). The PAC is
+read and parsed during startup; failure to access or parse a required local
+PAC will cause cntlm to exit with an error.
+.IP \(bu 2
+Remote file: an HTTP URL (for example http://example.com/proxy.pac). The PAC
+is fetched lazily on the first incoming connection to avoid blocking startup;
+after a successful fetch and parse the PAC is used for parent-proxy selection.
+Only plain HTTP (http://) is supported for remote PAC fetching (HTTPS is not
+supported).
+.PP
+The PAC is used to determine the appropriate parent proxy for a request's
+target host/URL. See the configuration file for examples and additional notes.
+.RE
 
 .TP
 .B -X <sspi_handle_type>\ \ \ \ (SSPI)
