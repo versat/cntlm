@@ -672,7 +672,7 @@ void free_rr_data(rr_data_t * pdata) {
 	if (data->body) free(data->body);
 
 	free(data);
-	data = NULL;
+	*pdata = NULL;
 }
 
 /*
