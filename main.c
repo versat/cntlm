@@ -1504,7 +1504,7 @@ int main(int argc, char **argv) {
 			!g_creds->haskrb &&
 #endif
 #ifdef __CYGWIN__
-			!sspi_enabled() &&
+			sspi_is_ntlm() &&
 #endif
 			    ((g_creds->hashnt && is_memory_all_zero(g_creds->passnt, ARRAY_SIZE(g_creds->passnt)))
 			 || (g_creds->hashlm && is_memory_all_zero(g_creds->passlm, ARRAY_SIZE(g_creds->passlm)))
