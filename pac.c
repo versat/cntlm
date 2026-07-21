@@ -94,6 +94,11 @@ char *read_file(const char* filename) {
     len = ftell(fd);
     fseek(fd, 0L, SEEK_SET);	
 
+    if (len == 0) {
+        fclose(fd);
+        return NULL;
+    }
+
     buf = (char*)calloc(len+1, sizeof(char));	
     if(buf == NULL) {
         fclose(fd);

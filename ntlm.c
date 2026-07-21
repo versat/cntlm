@@ -229,13 +229,13 @@ int ntlm_request(char **dst, struct auth_s *creds) {
 #endif
 	char *buf;
 	char *tmp;
-	int dlen;
-	int hlen;
+	uint16_t dlen;
+	uint16_t hlen;
 	uint32_t flags = 0xb206;
 
 	*dst = NULL;
-	dlen = strlen(creds->domain);
-	hlen = strlen(creds->workstation);
+	dlen = (uint16_t)strlen(creds->domain);
+	hlen = (uint16_t)strlen(creds->workstation);
 
 	if (!creds->flags) {
 		if (creds->hashntlm2)
@@ -290,30 +290,14 @@ int ntlm_request(char **dst, struct auth_s *creds) {
 
 static char *printuc(const char *src, size_t len) {
 	char *tmp;
-	size_t i;
 
 	tmp = zmalloc((len+1)/2 + 1);
-	for (i = 0; i < len/2; ++i) {
+	for (size_t i = 0; i < len/2; ++i) {
 		tmp[i] = src[i*2];
 	}
 
 	return tmp;
 }
-
-/*
-void dump(char *src, int len) {
-	int i, j;
-	char *tmp;
-
-	tmp = new(len*3+4);
-	for (i = 0; i < len; ++i) {
-		snprintf(tmp+i*3, 4, "%0hhX   ", src[i]);
-		printf("%c ", src[i]);
-	}
-	printf("\n%s\n", tmp);
-	free(tmp);
-}
-*/
 
 int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds) {
 #ifdef __CYGWIN__
@@ -327,9 +311,9 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 	char *uuser;
 	char *uhost;
 	char *tmp;
-	size_t dlen;
-	size_t ulen;
-	size_t hlen;
+	uint16_t dlen;
+	uint16_t ulen;
+	uint16_t hlen;
 	uint16_t tpos;
 	uint16_t tlen;
 	uint16_t ttype = -1;
@@ -411,20 +395,20 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 
 	if (creds->hashnt || creds->hashntlm2) {
 		tmp = uppercase(strdup(creds->domain));
-		dlen = unicode(&udomain, tmp);
+		dlen = (uint16_t)unicode(&udomain, tmp);
 		free(tmp);
-		ulen = unicode(&uuser, creds->user);
+		ulen = (uint16_t)unicode(&uuser, creds->user);
 		tmp = uppercase(strdup(creds->workstation));
-		hlen = unicode(&uhost, tmp);
+		hlen = (uint16_t)unicode(&uhost, tmp);
 		free(tmp);
 	} else {
 		udomain = uppercase(strdup(creds->domain));
 		uuser = uppercase(strdup(creds->user));
 		uhost = uppercase(strdup(creds->workstation));
 
-		dlen = strlen(creds->domain);
-		ulen = strlen(creds->user);
-		hlen = strlen(creds->workstation);
+		dlen = (uint16_t)strlen(creds->domain);
+		ulen = (uint16_t)strlen(creds->user);
+		hlen = (uint16_t)strlen(creds->workstation);
 	}
 
 	if (debug) {
@@ -449,13 +433,13 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 	VAL(buf, uint32_t, 8) = U32LE(3);
 
 	/* LM */
-	VAL(buf, uint16_t, 12) = U16LE(lmlen);
-	VAL(buf, uint16_t, 14) = U16LE(lmlen);
+	VAL(buf, uint16_t, 12) = U16LE((uint16_t)lmlen);
+	VAL(buf, uint16_t, 14) = U16LE((uint16_t)lmlen);
 	VAL(buf, uint32_t, 16) = U32LE(64+dlen+ulen+hlen);
 
 	/* NT */
-	VAL(buf, uint16_t, 20) = U16LE(ntlen);
-	VAL(buf, uint16_t, 22) = U16LE(ntlen);
+	VAL(buf, uint16_t, 20) = U16LE((uint16_t)ntlen);
+	VAL(buf, uint16_t, 22) = U16LE((uint16_t)ntlen);
 	VAL(buf, uint32_t, 24) = U32LE(64+dlen+ulen+hlen+lmlen);
 
 	/* Domain */
@@ -476,7 +460,7 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 	/* Session */
 	VAL(buf, uint16_t, 52) = U16LE(0);
 	VAL(buf, uint16_t, 54) = U16LE(0);
-	VAL(buf, uint16_t, 56) = U16LE(64+dlen+ulen+hlen+lmlen+ntlen);
+	VAL(buf, uint16_t, 56) = U16LE((uint16_t)(64+dlen+ulen+hlen+lmlen+ntlen));
 
 	/* Flags */
 	VAL(buf, uint32_t, 60) = VAL(challenge, uint32_t, 20);
