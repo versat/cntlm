@@ -496,7 +496,7 @@ int proxy_connect(struct auth_s *credentials, const char* url, const char* hostn
 		plist_const_t list = connection_list;
 		while (list) {
 			plist_const_t tmp = list->next;
-			close(list->key);
+			close((int)(list->key));
 			list = tmp;
 		}
 		plist_free(connection_list);

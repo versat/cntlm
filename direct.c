@@ -55,7 +55,12 @@ int www_authenticate(int sd, int cd, rr_data_t request, rr_data_t response, stru
 	rr_data_t auth;
 	int len;
 
-	int rc = 0;
+	/*
+	 * Drop whatever error page server returned, only if we didn't send a HEAD request (probe)
+	 * In this case the response can contain a Content-Length > 0 but anyway there is no body.
+	 */
+	if (!probe && !http_body_drop(sd, response))
+		return 0;
 
 	buf = zmalloc(BUFSIZE);
 
@@ -72,20 +77,16 @@ int www_authenticate(int sd, int cd, rr_data_t request, rr_data_t response, stru
 	auth->headers = hlist_mod(auth->headers, "Content-Length", "0", 1);
 	auth->headers = hlist_del(auth->headers, "Transfer-Encoding");
 
-	/*
-	 * Drop whatever error page server returned, only if we didn't send a HEAD request (probe)
-	 * In this case the response can contain a Content-Length > 0 but anyway there is no body.
-	 */
-	if (!probe && !http_body_drop(sd, response))
-		goto bailout;
-
 	if (debug) {
 		printf("\nSending WWW auth request...\n");
 		hlist_dump(auth->headers);
 	}
 
-	if (!headers_send(sd, auth))
-		goto bailout;
+	if (!headers_send(sd, auth)) {
+		free(buf);
+		free_rr_data(&auth);
+		return 0;
+	}
 
 	if (debug)
 		printf("\nReading WWW auth response...\n");
@@ -95,7 +96,9 @@ int www_authenticate(int sd, int cd, rr_data_t request, rr_data_t response, stru
 	 */
 	reset_rr_data(auth);
 	if (!headers_recv(sd, auth)) {
-		goto bailout;
+		free(buf);
+		free_rr_data(&auth);
+		return 0;
 	}
 
 	if (debug)
@@ -105,8 +108,11 @@ int www_authenticate(int sd, int cd, rr_data_t request, rr_data_t response, stru
 	 * Auth required?
 	 */
 	if (auth->code == 401) {
-		if (!http_body_drop(sd, auth))
-			goto bailout;
+		if (!http_body_drop(sd, auth)) {
+			free(buf);
+			free_rr_data(&auth);
+			return 0;
+		}
 
 		tmp = hlist_get(auth->headers, "WWW-Authenticate");
 		if (tmp && strlen(tmp) > 6 + 8) {
@@ -125,30 +131,40 @@ int www_authenticate(int sd, int cd, rr_data_t request, rr_data_t response, stru
 					response->errmsg = "Invalid NTLM challenge from web server";
 					free(challenge);
 					free(tmp);
-					goto bailout;
+					free(buf);
+					free_rr_data(&auth);
+					return 0;
 				}
 			} else {
 				syslog(LOG_ERR, "Server returning invalid challenge!\n");
 				response->errmsg = "Invalid NTLM challenge from web server";
 				free(challenge);
-				goto bailout;
+				free(buf);
+				free_rr_data(&auth);
+				return 0;
 			}
 
 			free(challenge);
 		} else {
 			syslog(LOG_WARNING, "No challenge in WWW-Authenticate!\n");
 			response->errmsg = "Web server reply missing NTLM challenge";
-			goto bailout;
+			free(buf);
+			free_rr_data(&auth);
+			return 0;
 		}
 	} else {
-		goto bailout;
+		free(buf);
+		free_rr_data(&auth);
+		return 0;
 	}
 
 	if (debug)
 		printf("\nSending WWW auth...\n");
 
 	if (!headers_send(sd, request)) {
-		goto bailout;
+		free(buf);
+		free_rr_data(&auth);
+		return 0;
 	}
 
 	/*
@@ -157,33 +173,32 @@ int www_authenticate(int sd, int cd, rr_data_t request, rr_data_t response, stru
 	 */
 	reset_rr_data(auth);
 	if (probe && !http_body_send(sd, cd, request, auth)) {
-		goto bailout;
+		free(buf);
+		free_rr_data(&auth);
+		return 0;
 	}
 
 	if (debug)
 		printf("\nReading final server response...\n");
 
 	if (!headers_recv(sd, auth)) {
-		goto bailout;
+		free(buf);
+		free_rr_data(&auth);
+		return 0;
 	}
-
-	rc = 1;
 
 	if (debug)
 		hlist_dump(auth->headers);
 
-bailout:
-	if (rc)
-		copy_rr_data(response, auth);
-	free_rr_data(&auth);
+	copy_rr_data(response, auth);
 	free(buf);
+	free_rr_data(&auth);
 
-	return rc;
+	return 1;
 }
 
 rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 	rr_data_t data[2] = { NULL, NULL };
-	rr_data_t rc = NULL;
 	struct auth_s *tcreds = NULL;
 	int *rsocket[2];
 	int *wsocket[2];
@@ -209,15 +224,8 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 		tmp = gen_502_page(request->http, strerror(errno));
 		(void) write_wrapper(cd, tmp, strlen(tmp)); // We don't really care about the result
 		free(tmp);
-		rc = (void *)-1;
-		goto bailout;
+		return (void *)-1;
 	}
-
-	/*
-	 * Now save NTLM credentials for purposes of this thread.
-	 * If web auth fails, we'll rewrite them like with NTLM-to-Basic in proxy mode.
-	 */
-	tcreds = dup_auth(g_creds, /* fullcopy */ 1);
 
 	if (request->hostname) {
 		hostname = strdup(request->hostname);
@@ -226,10 +234,15 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 		tmp = gen_502_page(request->http, "Invalid request URL");
 		(void) write_wrapper(cd, tmp, strlen(tmp));
 		free(tmp);
-
-		rc = (void *)-1;
-		goto bailout;
+		close(sd);
+		return (void *)-1;
 	}
+
+	/*
+	 * Now save NTLM credentials for purposes of this thread.
+	 * If web auth fails, we'll rewrite them like with NTLM-to-Basic in proxy mode.
+	 */
+	tcreds = dup_auth(g_creds, /* fullcopy */ 1);
 
 	do {
 		if (request) {
@@ -263,8 +276,10 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 				if (!headers_recv(*rsocket[loop], data[loop])) {
 					free_rr_data(&data[0]);
 					free_rr_data(&data[1]);
-					rc = (void *)-1;
-					goto bailout;
+					free(tcreds);
+					free(hostname);
+					close(sd);
+					return (void *)-1;
 				}
 			}
 
@@ -278,10 +293,13 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 				if (debug)
 					printf("\n******* D RETURN: %s *******\n", data[0]->url);
 
-				rc = dup_rr_data(data[0]);
+				rr_data_t rc =  dup_rr_data(data[0]);
 				free_rr_data(&data[0]);
 				free_rr_data(&data[1]);
-				goto bailout;
+				free(tcreds);
+				free(hostname);
+				close(sd);
+				return rc;
 			}
 
 			if (debug)
@@ -339,8 +357,10 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 
 				free_rr_data(&data[0]);
 				free_rr_data(&data[1]);
-				rc = (void *)-1;
-				goto bailout;
+				free(tcreds);
+				free(hostname);
+				close(sd);
+				return (void *)-1;
 			}
 
 			if (loop == 1 && data[1]->code == 401 && hlist_subcmp_all(data[1]->headers, "WWW-Authenticate", "NTLM")) {
@@ -362,12 +382,11 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 						tmp = gen_502_page(data[0]->http, "WWW authentication reconnect failed");
 						(void) write_wrapper(cd, tmp, strlen(tmp));
 						free(tmp);
-
 						free_rr_data(&data[0]);
 						free_rr_data(&data[1]);
-
-						rc = (void *)-1;
-						goto bailout;
+						free(tcreds);
+						free(hostname);
+						return (void *)-1;
 					}
 				}
 				if (!www_authenticate(*wsocket[0], *rsocket[0], data[0], data[1], tcreds, probe)) {
@@ -377,12 +396,12 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 					tmp = gen_502_page(data[1]->http, data[1]->errmsg ? data[1]->errmsg : "Error during WWW-Authenticate");
 					(void) write_wrapper(cd, tmp, strlen(tmp));
 					free(tmp);
-
 					free_rr_data(&data[0]);
 					free_rr_data(&data[1]);
-
-					rc = (void *)-1;
-					goto bailout;
+					free(tcreds);
+					free(hostname);
+					close(sd);
+					return (void *)-1;
 				} else if (data[1]->code == 401) {
 					/*
 					 * Server giving 401 after auth?
@@ -391,12 +410,12 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 					tmp = gen_401_page(data[1]->http, data[0]->hostname, data[0]->port);
 					(void) write_wrapper(cd, tmp, strlen(tmp));
 					free(tmp);
-
 					free_rr_data(&data[0]);
 					free_rr_data(&data[1]);
-
-					rc = (void *)-1;
-					goto bailout;
+					free(tcreds);
+					free(hostname);
+					close(sd);
+					return (void *)-1;
 				}
 				probe = 0;
 			}
@@ -414,12 +433,11 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 						tmp = gen_502_page(data[0]->http, "Connection to remote server failed");
 						(void) write_wrapper(cd, tmp, strlen(tmp));
 						free(tmp);
-
 						free_rr_data(&data[0]);
 						free_rr_data(&data[1]);
-
-						rc = (void *)-1;
-						goto bailout;
+						free(tcreds);
+						free(hostname);
+						return (void *)-1;
 					}
 					syslog(LOG_DEBUG, "server reconnect after probe");
 				}
@@ -446,7 +464,6 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 				} else {
 					data[1]->headers = hlist_mod(data[1]->headers, "Proxy-Connection", "close", 1);
 					data[1]->headers = hlist_mod(data[1]->headers, "Connection", "close", 1);
-					rc = (void *)-1;
 				}
 			}
 
@@ -474,8 +491,10 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 					free_rr_data(&auth);
 					free_rr_data(&data[0]);
 					free_rr_data(&data[1]);
-					rc = (void *)-1;
-					goto bailout;
+					free(tcreds);
+					free(hostname);
+					close(sd);
+					return (void *)-1;
 				}
 				free_rr_data(&auth);
 			} else {
@@ -485,15 +504,19 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 				if (!headers_send(*wsocket[loop], data[loop])) {
 					free_rr_data(&data[0]);
 					free_rr_data(&data[1]);
-					rc = (void *)-1;
-					goto bailout;
+					free(tcreds);
+					free(hostname);
+					close(sd);
+					return (void *)-1;
 				}
 
 				if (!http_body_send(*wsocket[loop], *rsocket[loop], data[0], data[1])) {
 					free_rr_data(&data[0]);
 					free_rr_data(&data[1]);
-					rc = (void *)-1;
-					goto bailout;
+					free(tcreds);
+					free(hostname);
+					close(sd);
+					return (void *)-1;
 				}
 			}
 
@@ -505,17 +528,11 @@ rr_data_t direct_request(void *cdata, rr_data_const_t request) {
 
 	} while (conn_alive && !so_closed(sd) && !so_closed(cd) && !serialize);
 
-bailout:
-	if (tcreds)
-		free(tcreds);
-	if (hostname)
-		free(hostname);
+	free(tcreds);
+	free(hostname);
+	close(sd);
 
-	if (sd >= 0) {
-		close(sd);
-	}
-
-	return rc;
+	return (void *)-1;
 }
 
 void direct_tunnel(void *thread_data) {
@@ -532,12 +549,16 @@ void direct_tunnel(void *thread_data) {
 	hostname = strdup(thost);
 	if ((pos = strchr(hostname, ':')) != NULL) {
 		*pos = 0;
-		port = atoi(++pos);
+		port = atoi(pos + 1);
 	}
 
 	sd = host_connect(hostname, port);
-	if (sd <= 0)
-		goto bailout;
+	free(hostname);
+
+	if (sd <= 0) {
+		close(cd);
+		return;
+	}
 
 	syslog(LOG_DEBUG, "%s FORWARD %s", saddr, thost);
 
@@ -546,11 +567,7 @@ void direct_tunnel(void *thread_data) {
 
 	tunnel(cd, sd);
 
-bailout:
-	free(hostname);
-	if(sd >= 0) {
-		close(sd);
-	}
+	close(sd);
 	close(cd);
 
 	return;

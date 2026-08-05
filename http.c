@@ -51,11 +51,11 @@ int is_http_header(const char *src) {
  * Extract the header name from the source.
  */
 char *get_http_header_name(const char *src) {
-	int i;
+	size_t i;
 
 	i = strcspn(src, ":");
-	if (i != (int)strlen(src))
-		return substr(src, 0, i);
+	if (i != strlen(src))
+		return substr(src, 0, (int)i);
 	else
 		return NULL;
 }
@@ -84,7 +84,7 @@ char *get_http_header_value(const char *src) {
 int headers_recv(int fd, rr_data_t data) {
 	int i;
 	int bsize;
-	int len;
+	size_t len;
 	int is_http = 0;
 	char *buf;
 	char *tok;
@@ -186,10 +186,10 @@ int headers_recv(int fd, rr_data_t data) {
 
 		s3 = strchr(tok, '/');
 		if (s3) {
-			host = substr(tok, 0, s3-tok);
+			host = substr(tok, 0, (int)(s3-tok));
 			data->rel_url = strdup(s3);
 		} else {
-			host = substr(tok, 0, strlen(tok));
+			host = substr(tok, 0, (int)strlen(tok));
 			data->rel_url = strdup("/");
 		}
 
@@ -278,8 +278,8 @@ bailout:
 int headers_send(int fd, rr_data_const_t data) {
 	hlist_const_t t;
 	char *buf;
-	int i;
-	int len;
+	size_t i;
+	size_t len;
 
 	/*
 	 * First compute required buffer size (avoid realloc, etc)
@@ -298,7 +298,7 @@ int headers_send(int fd, rr_data_const_t data) {
 	/*
 	 * We know how much memory we need now...
 	 */
-	const int buf_len = len;
+	const size_t buf_len = len;
 	buf = zmalloc(buf_len);
 
 	/*
@@ -336,7 +336,7 @@ int headers_send(int fd, rr_data_const_t data) {
 
 	if (i <= 0 || i != len+2) {
 		if (debug)
-			printf("headers_send: fd %d warning %d (connection closed)\n", fd, i);
+			printf("headers_send: fd %d warning %zu (connection closed)\n", fd, i);
 		return 0;
 	}
 
@@ -350,10 +350,10 @@ int headers_send(int fd, rr_data_const_t data) {
  */
 int data_send(int dst, int src, length_t len) {
 	char *buf;
-	int i;
-	int block;
+	ssize_t i;
+	ssize_t block;
 	int c = 0;
-	int j = 1;
+	ssize_t j = 1;
 
 	if (!len)
 		return 1;
@@ -368,7 +368,7 @@ int data_send(int dst, int src, length_t len) {
 			c += i;
 
 		if (dst >= 0 && debug)
-			printf("data_send: read %d of %d / %d of %lld (errno = %s)\n", i, block, c, len, i < 0 ? strerror(errno) : "ok");
+			printf("data_send: read %zd of %zd / %d of %lld (errno = %s)\n", i, block, c, len, i < 0 ? strerror(errno) : "ok");
 
 		if (dst >= 0 && so_closed(dst)) {
 			i = -999;
@@ -378,7 +378,7 @@ int data_send(int dst, int src, length_t len) {
 		if (dst >= 0 && i > 0) {
 			j = write_wrapper(dst, buf, i);
 			if (debug)
-				printf("data_send: wrote %d of %d\n", j, i);
+				printf("data_send: wrote %zd of %zd\n", j, i);
 		}
 
 	} while (i > 0 && j > 0 && (len == -1 || c <  len));
@@ -390,7 +390,7 @@ int data_send(int dst, int src, length_t len) {
 			return 1;
 
 		if (debug)
-			printf("data_send: fds %d:%d warning %d (connection closed)\n", dst, src, i);
+			printf("data_send: fds %d:%d warning %zd (connection closed)\n", dst, src, i);
 		return 0;
 	}
 
@@ -404,10 +404,10 @@ int data_send(int dst, int src, length_t len) {
 int chunked_data_send(int dst, int src) {
 	char *buf;
 	int bsize;
-	int len;
+	ssize_t len;
 	int i;
-	int w;
-	int csize;
+	ssize_t w;
+	length_t csize;
 
 	char *err = NULL;
 
@@ -436,14 +436,13 @@ int chunked_data_send(int dst, int src) {
 		if (dst >= 0)
 			(void) write_wrapper(dst, buf, strlen(buf));
 
-		if (csize)
-			if (!data_send(dst, src, csize+2)) {
-				if (debug)
-					printf("chunked_data_send: aborting, data_send failed\n");
+		if (csize && !data_send(dst, src, csize+2)) {
+			if (debug)
+				printf("chunked_data_send: aborting, data_send failed\n");
 
-				free(buf);
-				return 0;
-			}
+			free(buf);
+			return 0;
+		}
 	} while (csize != 0);
 
 	/* Take care of possible trailer */
@@ -494,7 +493,7 @@ int tunnel(int cd, int sd) {
 				to = fds[0].fd;
 			}
 
-			ret = read(from, buf, BUFSIZE);
+			ret = (int)read(from, buf, BUFSIZE);
 			if (ret > 0) {
 				(void) write_wrapper(to, buf, ret);
 			} else {
@@ -560,7 +559,6 @@ length_t http_has_body(rr_data_const_t request, rr_data_const_t response) {
 	if (!nobody && tmp == NULL && (hlist_in(current->headers, "Content-Type")
 			|| hlist_in(current->headers, "Transfer-Encoding")
 			|| hlist_subcmp(current->headers, "Connection", "close"))) {
-			// || (response->code == 200)
 		if (hlist_in(current->headers, "Transfer-Encoding")
 				&& hlist_subcmp(current->headers, "Transfer-Encoding", "chunked"))
 			length = 1;
@@ -703,6 +701,270 @@ int http_parse_basic(hlist_const_t headers, const char *header, struct auth_s *t
 		compat_memset_s(buf, header_bufsize, 0, header_bufsize);
 		free(buf);
 	}
+
+	return 1;
+}
+
+/*
+ * Read the HTTP body from fd into a newly allocated buffer.
+ * For chunked transfer encoding this will decode chunks and concatenate them.
+ * The caller is responsible to free(*outbuf).
+ * Returns 1 on success, 0 on failure.
+ */
+int http_read_body(int fd, rr_data_const_t response, char **outbuf, size_t *outlen) {
+	length_t bodylen;
+	char *buf = NULL;
+	ssize_t alloc = 0;
+	ssize_t filled = 0;
+
+	if (!outbuf || !outlen || !response)
+		return 0;
+
+	*outbuf = NULL;
+	*outlen = 0;
+
+	bodylen = http_has_body(NULL, response);
+	if (!bodylen) {
+		// no body
+		*outbuf = zmalloc(1);
+		*outlen = 0;
+		return 1;
+	}
+
+	if (hlist_subcmp(response->headers, "Transfer-Encoding", "chunked")) {
+		/* read chunked body by reading lines and chunks from fd */
+		int bsize = BUFSIZE;
+		char *line = zmalloc(bsize);
+		char *err = NULL;
+		long csize;
+		do {
+			int r = so_recvln(fd, &line, &bsize);
+			if (r <= 0) {
+				free(line);
+				free(buf);
+				return 0;
+			}
+			trimr(line);
+			csize = strtol(line, &err, 16);
+			if (!isspace((u_char)*err) && *err != ';' && *err != '\0') {
+				free(line);
+				free(buf);
+				return 0;
+			}
+			if (csize > 0) {
+				// ensure capacity
+				if (filled + csize > alloc) {
+					alloc = (filled + csize) * 2;
+					char* tmpbuf = realloc(buf, alloc);
+					if (!tmpbuf) {
+						free(line);
+						free(buf);
+						return 0;
+					}
+					buf = tmpbuf;
+				}
+				// read csize bytes
+				length_t need = csize;
+				while (need > 0) {
+					size_t toread = (need > BLOCK ? BLOCK : (size_t)need);
+					ssize_t got = read(fd, buf + filled, toread);
+					if (got <= 0) {
+						free(line);
+						free(buf);
+						return 0;
+					}
+					filled += got;
+					need -= got;
+				}
+				// read and discard CRLF after chunk
+				char crlf[2];
+				if (read(fd, crlf, 2) != 2) {
+					free(line);
+					free(buf);
+					return 0;
+				}
+			}
+		} while (csize != 0);
+
+		// read possible trailer headers until empty line
+		do {
+			int r = so_recvln(fd, &line, &bsize);
+			if (r <= 0) {
+				free(line);
+				free(buf);
+				return 0;
+			}
+		} while (line[0] != '\r' && line[0] != '\n');
+
+		free(line);
+	} else if (bodylen == -1) {
+		/* read until EOF */
+		buf = NULL;
+		alloc = 0;
+		filled = 0;
+		char tmp[BLOCK];
+		ssize_t r;
+		while ((r = read(fd, tmp, BLOCK)) > 0) {
+			if (filled + r >= alloc) {
+				alloc = (alloc == 0) ? r + 1 : alloc * 2;
+				char* tmpbuf = realloc(buf, alloc);
+				if (!tmpbuf) {
+					free(buf);
+					return 0;
+				}
+				buf = tmpbuf;
+			}
+			memcpy(buf + filled, tmp, r);
+			filled += r;
+			buf[filled] = '\0';
+		}
+		if (r < 0) {
+			free(buf);
+			return 0;
+		}
+	} else {
+		/* fixed length */
+		if (bodylen > 0) {
+			buf = zmalloc(bodylen+1);
+			length_t need = bodylen;
+			size_t pos = 0;
+			while (need > 0) {
+				size_t toread = (need > BLOCK ? BLOCK : (size_t)need);
+				ssize_t got = read(fd, buf + pos, toread);
+				if (got <= 0) {
+					free(buf);
+					return 0;
+				}
+				pos += got;
+				need -= got;
+			}
+			filled = pos;
+		} else {
+			buf = zmalloc(1);
+			filled = 0;
+		}
+	}
+
+	// finalize buffer
+	if (buf == NULL) {
+		buf = zmalloc(1);
+		filled = 0;
+	}
+
+	*outbuf = buf;
+	*outlen = filled;
+
+	return 1;
+}
+
+/*
+ * Minimal HTTP GET fetcher to retrieve a file from URL into memory.
+ * Supports only http scheme (no HTTPS) and basic parsing of host:port/path.
+ * The function allocates *outbuf and sets *outlen. Caller must free(*outbuf).
+ * If outcode != NULL, the HTTP response status code will be stored there
+ * (or -1 on protocol/error).
+ * Returns 1 on successful fetch+read, 0 on error.
+ */
+int fetch_url(const char *url, char **outbuf, size_t *outlen, int *outcode) {
+	if (!url || !outbuf || !outlen)
+		return 0;
+
+	if (outcode)
+		*outcode = -1;
+
+	// Basic parse: expect http://host[:port]/path
+	const char *p = url;
+	if (strncasecmp(p, "http://", 7) == 0)
+		p += 7;
+	else
+		return 0; // only http supported for now
+
+	char *host = NULL;
+	int port = 80;
+	const char *path = strchr(p, '/');
+	if (path) {
+		host = substr(p, 0, (int)(path - p));
+	} else {
+		host = strdup(p);
+		path = "/";
+	}
+
+	// split port
+	char *colon = strchr(host, ':');
+	if (colon) {
+		*colon = '\0';
+		port = atoi(colon+1);
+		if (port == 0) port = 80;
+	}
+
+	struct addrinfo *addresses = NULL;
+	if (!so_resolv(&addresses, host, port)) {
+		free(host);
+		return 0;
+	}
+
+	int sd = so_connect(addresses);
+	freeaddrinfo(addresses);
+	if (sd < 0) {
+		free(host);
+		return 0;
+	}
+
+	// Build simple GET request
+	rr_data_t req = new_rr_data();
+	req->req = 1;
+	req->method = strdup("GET");
+	req->url = strdup(path);
+	req->http = strdup("HTTP/1.1");
+	
+	/* Build Host header - include port for non-standard ports */
+	if (port != 80) {
+		size_t host_len = strlen(host) + 7; /* host + ":65535" + null */
+		char *host_header = zmalloc(host_len);
+		snprintf(host_header, host_len, "%s:%d", host, port);
+		req->headers = hlist_add(req->headers, "Host", host_header, HLIST_ALLOC, HLIST_NOALLOC);
+	} else {
+		req->headers = hlist_add(req->headers, "Host", host, HLIST_ALLOC, HLIST_ALLOC);
+	}
+	
+	req->headers = hlist_add(req->headers, "User-Agent", "cntlm-fetch/1.0", HLIST_ALLOC, HLIST_ALLOC);
+	req->headers = hlist_add(req->headers, "Connection", "close", HLIST_ALLOC, HLIST_ALLOC);
+
+	// send headers
+	if (!headers_send(sd, req)) {
+		free_rr_data(&req);
+		close(sd);
+		free(host);
+		return 0;
+	}
+	free_rr_data(&req);
+	free(host);
+
+	// read response headers
+	rr_data_t res = new_rr_data();
+	if (!headers_recv(sd, res)) {
+		free_rr_data(&res);
+		close(sd);
+		return 0;
+	}
+
+	/* expose HTTP status code to caller */
+	if (outcode)
+		*outcode = res->code;
+
+	// read body into memory
+	char *body = NULL;
+	size_t bodylen = 0;
+	if (!http_read_body(sd, res, &body, &bodylen)) {
+		free_rr_data(&res);
+		close(sd);
+		return 0;
+	}
+	free_rr_data(&res);
+	close(sd);
+
+	*outbuf = body;
+	*outlen = bodylen;
 
 	return 1;
 }

@@ -46,5 +46,6 @@ extern int tunnel(int cd, int sd);
 extern length_t http_has_body(rr_data_const_t request, rr_data_const_t response);
 extern int http_body_send(int writefd, int readfd, rr_data_const_t request, rr_data_const_t response);
 extern int http_body_drop(int fd, rr_data_const_t response);
+extern int fetch_url(const char *url, char **outbuf, size_t *outlen, int *outcode);
 
 #endif /* HTTP_H */

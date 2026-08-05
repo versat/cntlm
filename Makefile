@@ -28,7 +28,7 @@ ifeq ($(OS),Darwin)
 	ifndef ARCH
 		ARCH := $(shell uname -m)
 	endif
-	CFLAGS := -arch $(ARCH)
+	CFLAGS += -arch $(ARCH)
 # Change binary directory for macOS
 	BINDIR := $(DESTDIR)$(PREFIX)/bin
 endif
@@ -303,4 +303,4 @@ ifeq ($(OS),Linux)
 endif
 	@rm -f *.exe *.deb *.rpm *.tgz *.tar.gz *.tar.bz2 *.zip *.exe *.pkg tags ctags pid 2>/dev/null
 
-.PHONY: all install tgz tbz2 deb rpm win uninstall clean distclean
+.PHONY: all install tgz tbz2 deb rpm mac win uninstall clean distclean
