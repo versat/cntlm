@@ -29,6 +29,7 @@
 
 #include <windows.h>
 #include <sspi.h>
+#include <stdio.h>
 
 #define TOKEN_BUFSIZE 4096
 
@@ -38,12 +39,22 @@ struct sspi_handle
 	CtxtHandle context;
 };
 
+struct sspi_negotiate_state {
+    CredHandle credentials;
+    CtxtHandle context;
+};
+
+extern int sspi_negotiate(char **dst, struct sspi_negotiate_state *state, const char *proxy_hostname);
+extern const char* sspi_get_scheme(void);
+
 extern int sspi_enabled(void);
+extern int sspi_is_negotiate(void);
+extern int sspi_is_ntlm(void);
 extern int sspi_set(char *mode);
 extern int sspi_unset(void);
 
-extern int sspi_request(char **dst, struct sspi_handle *sspi);
-extern int sspi_response(char **dst, char *challenge, int challen, struct sspi_handle *sspi);
+extern int sspi_ntlm_request(char **dst, struct sspi_handle *sspi);
+extern int sspi_ntlm_response(char **dst, char *challenge, int challen, struct sspi_handle *sspi);
 
 #endif /*  __CYGWIN__ */
 

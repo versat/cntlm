@@ -36,6 +36,17 @@
 #include "kerberos.h"
 #endif
 
+#ifdef __CYGWIN__
+// Thread-local storage for Negotiate state
+static pthread_key_t negotiate_state_key;
+static pthread_once_t key_once = PTHREAD_ONCE_INIT;
+
+// Helper function to create the key
+static void make_negotiate_key(void) {
+    pthread_key_create(&negotiate_state_key, NULL);
+}
+#endif
+
 /*
  * Proxy types defined by PAC specification. Used in proxy_t to
  * specify proxy type.
@@ -87,7 +98,7 @@ proxylist_t parent_list = NULL;
 unsigned long parent_curr = 0;
 pthread_mutex_t parent_mtx = PTHREAD_MUTEX_INITIALIZER;
 
-#if config_gss == 1
+#if config_gss == 1 || defined(__CYGWIN__)
 proxy_t *curr_proxy;
 #endif
 
@@ -477,7 +488,7 @@ int proxy_connect(struct auth_s *credentials, const char* url, const char* hostn
 				proxy = p->proxy;
 				syslog(LOG_ERR, "Proxy connect failed, will try %s:%d\n", proxy->hostname, proxy->port);
 			}
-#if config_gss == 1
+#if config_gss == 1 || defined(__CYGWIN__)
 		} else {
 			//kerberos needs the hostname of the parent proxy for generate the token, so we keep it
 			curr_proxy = proxy;
@@ -550,14 +561,34 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 			printf("Using Negotiation ...\n");
 	}
 	else {
-#endif
-
-		strlcpy(buf, "NTLM ", bufsize);
-		len = ntlm_request(&tmp, credentials);
+#elif defined(__CYGWIN__)
+	if (sspi_is_negotiate()) {
+		// Get scheme from SSPI (returns "NTLM" or "Negotiate")
+		snprintf(buf, bufsize, "%s ", sspi_get_scheme());
+		int prefix_len = strlen(buf);
+		
+		pthread_once(&key_once, make_negotiate_key);
+		struct sspi_negotiate_state *negotiate_state = pthread_getspecific(negotiate_state_key);
+		if (!negotiate_state) {
+			negotiate_state = zmalloc(sizeof(struct sspi_negotiate_state));
+			pthread_setspecific(negotiate_state_key, negotiate_state);
+		}
+		len = sspi_negotiate(&tmp, negotiate_state, curr_proxy->hostname);
 		if (len) {
-			to_base64(MEM(buf, uint8_t, 5), MEM(tmp, uint8_t, 0), len, bufsize-5);
+			to_base64(MEM(buf, uint8_t, prefix_len), MEM(tmp, uint8_t, 0), len, bufsize - prefix_len);
 			free(tmp);
 		}
+	}
+	else {
+#endif
+		// Traditional NTLM fallback
+		strlcpy(buf, "NTLM ", bufsize);
+    	len = ntlm_request(&tmp, credentials);
+    	if (len) {
+			to_base64(MEM(buf, uint8_t, 5), MEM(tmp, uint8_t, 0), len, bufsize - 5);
+			free(tmp);
+		}
+	}
 
 #if config_gss == 1
 	}
@@ -654,6 +685,26 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 				request->headers = hlist_mod(request->headers, "Proxy-Authorization", buf, 1);
 			}
 			else {
+#elif defined(__CYGWIN__)
+		if (sspi_is_negotiate()) {
+			// Get scheme from SSPI (returns "NTLM" or "Negotiate")
+			snprintf(buf, bufsize, "%s ", sspi_get_scheme());
+			int prefix_len = strlen(buf);
+			
+			pthread_once(&key_once, make_negotiate_key);
+			struct sspi_negotiate_state *negotiate_state = pthread_getspecific(negotiate_state_key);
+			if (!negotiate_state) {
+				negotiate_state = zmalloc(sizeof(struct sspi_negotiate_state));
+				memset(negotiate_state, 0, sizeof(struct sspi_negotiate_state));
+				pthread_setspecific(negotiate_state_key, negotiate_state);
+			}
+			len = sspi_negotiate(&tmp, negotiate_state, curr_proxy->hostname);
+			if (len) {
+				to_base64(MEM(buf, uint8_t, prefix_len), MEM(tmp, uint8_t, 0), len, bufsize - prefix_len);
+				free(tmp);
+			}
+		}
+		else {
 #endif
 				challenge = zmalloc(strlen(tmp) + 5 + 1);
 				len = from_base64(challenge, tmp + 5);
@@ -680,7 +731,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 				}
 
 				free(challenge);
-#if config_gss == 1
+#if config_gss == 1 || defined(__CYGWIN__)
 			}
 #endif
 		} else {
