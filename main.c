@@ -954,16 +954,18 @@ int main(int argc, char **argv) {
 		fprintf(stream, "Usage: %s [-AaBcDdFfGgHhILlMNOPpqRrSsTUuvwXx] <proxy_host>[:]<proxy_port> ...\n", argv[0]);
 		fprintf(stream, "\t-A  <address>[/<net>]\n"
 				"\t    ACL allow rule. IP or hostname, net must be a number (CIDR notation)\n");
-		fprintf(stream, "\t-a  ntlm | nt | lm"
+		fprintf(stream, "\t-a  ntlmv2 | ntlm2sr | nt | ntlm | lm"
 #if config_gss == 1
 				" | gss\n"
-				"\t    Authentication type - combined NTLM, just LM, just NT, or GSS. Default NTLM.\n"
+				"\t    Authentication type - NTLMv2, NTLM2 session response, just NT, combined\n"
+				"\t    NT+LM, just LM, or GSS. Default NTLMv2.\n"
 				"\t    GSS activates kerberos auth: you need a cached credential.\n"
 #else
 				"\n"
-				"\t    Authentication type - combined NTLM, just LM, or just NT. Default NTLM.\n"
+				"\t    Authentication type - NTLMv2, NTLM2 session response, just NT, combined\n"
+				"\t    NT+LM, or just LM. Default NTLMv2.\n"
 #endif
-				"\t    NTLM is the most versatile setting and likely to work for you.\n");
+				"\t    NTLMv2 is the strongest setting and the one to try first.\n");
 		fprintf(stream, "\t-B  Enable NTLM-to-basic authentication.\n");
 		fprintf(stream, "\t-c  <config_file>\n"
 				"\t    Configuration file. Other arguments can be used as well, overriding\n"
@@ -989,7 +991,7 @@ int main(int argc, char **argv) {
 				"\t    Main listening port for the NTLM proxy.\n");
 		fprintf(stream, "\t-M  <testurl>\n"
 				"\t    Magic autodetection of proxy's NTLM dialect.\n");
-		fprintf(stream, "\t-N  \"<hostname_wildcard1>[, <hostname_wildcardN>\"\n"
+		fprintf(stream, "\t-N  \"<hostname_wildcard1>[,<hostname_wildcardN>]\"\n"
 				"\t    List of URL's to serve directly as stand-alone proxy (e.g. '*.local')\n");
 		fprintf(stream, "\t-O  [<saddr>:]<lport>\n"
 				"\t    Enable SOCKS5 proxy on port lport (binding to address saddr)\n");
@@ -1012,7 +1014,7 @@ int main(int argc, char **argv) {
 				"\t    MUST be the first argument on the command line, implies -v.\n");
 		fprintf(stream, "\t-U  <uid>\n"
 				"\t    Run as uid. It is an important security measure not to run as root.\n");
-		fprintf(stream, "\t-u  <user>[@<domain]\n"
+		fprintf(stream, "\t-u  <user>[@<domain>]\n"
 				"\t    Domain/workgroup can be set separately.\n");
 		fprintf(stream, "\t-v  Print debugging information.\n");
 		fprintf(stream, "\t-w  <workstation>\n"
