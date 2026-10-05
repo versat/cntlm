@@ -62,7 +62,7 @@ struct proxylist_s {
 typedef struct paclist_s *paclist_t;
 typedef const struct paclist_s *paclist_const_t;
 struct paclist_s {
-	const char *pacstr;
+	char *pacstr;						/* owned copy of the string returned by the PAC */
 	struct proxylist_s *proxylist;
 	unsigned long proxycurr;
 	int count;
@@ -343,7 +343,7 @@ paclist_t paclist_create(const char *pacp_str) {
 	free(pacp_start);
 
 	tmp = zmalloc(sizeof(struct paclist_s));
-	tmp->pacstr = pacp_str;
+	tmp->pacstr = strdup(pacp_str);
 	tmp->proxylist = plist;
 	tmp->proxycurr = 0;
 	tmp->count = plist_count;
@@ -360,6 +360,9 @@ paclist_t paclist_create(const char *pacp_str) {
 paclist_t paclist_get(const char *pacp_str) {
 	paclist_t tmp;
 	paclist_t p = pac_list;
+
+	if (pacp_str == NULL)
+		return NULL;
 
 	while (p) {
 		if (strcmp(pacp_str, p->pacstr) == 0) {
@@ -394,6 +397,7 @@ void paclist_free(paclist_t paclist) {
 	while (paclist) {
 		paclist_t t = paclist->next;
 		proxylist_free(paclist->proxylist, 0);
+		free(paclist->pacstr);
 		free(paclist);
 		paclist = t;
 	}
@@ -421,16 +425,22 @@ int proxy_connect(struct auth_s *credentials, const char* url, const char* hostn
 	int proxycount = 0;
 
 	paclist_t paclist = NULL;
-	const char *pacp_str;
+	char *pacp_str;
 	if (pac_initialized) {
 		/*
 		 * Create proxy list for request from PAC file.
 		 */
 		pthread_mutex_lock(&pac_mtx);
 		pacp_str = pac_find_proxy(url, hostname);
-		pthread_mutex_unlock(&pac_mtx);
-
 		paclist = paclist_get(pacp_str);
+		pthread_mutex_unlock(&pac_mtx);
+		free(pacp_str);
+
+		if (paclist == NULL) {
+			syslog(LOG_ERR, "PAC script returned no proxy for %s\n", url);
+			return -1;
+		}
+
 		proxylist = paclist->proxylist;
 		proxycurr = paclist->proxycurr;
 		proxycount = paclist->count;
