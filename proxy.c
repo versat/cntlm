@@ -88,7 +88,38 @@ unsigned long parent_curr = 0;
 pthread_mutex_t parent_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 #if config_gss == 1
-proxy_t *curr_proxy;
+/*
+ * Kerberos needs the hostname of the parent proxy to generate the token, so we
+ * keep the proxy of the last successful connection. It is kept per thread, as
+ * every thread can be talking to a different parent proxy (e.g. with a PAC).
+ */
+static pthread_key_t curr_proxy_key;
+static pthread_once_t curr_proxy_once = PTHREAD_ONCE_INIT;
+static int curr_proxy_ready = 0;
+
+static void curr_proxy_init(void) {
+	curr_proxy_ready = (pthread_key_create(&curr_proxy_key, NULL) == 0);
+	if (!curr_proxy_ready)
+		syslog(LOG_ERR, "Cannot create the per thread key for the current proxy\n");
+}
+
+static void curr_proxy_set(const proxy_t *proxy) {
+	pthread_once(&curr_proxy_once, curr_proxy_init);
+	if (curr_proxy_ready)
+		pthread_setspecific(curr_proxy_key, proxy);
+}
+
+/*
+ * Hostname of the proxy of the last connection of this thread, NULL if none.
+ */
+static const char *curr_proxy_hostname(void) {
+	const proxy_t *proxy;
+
+	pthread_once(&curr_proxy_once, curr_proxy_init);
+	proxy = curr_proxy_ready ? pthread_getspecific(curr_proxy_key) : NULL;
+
+	return proxy ? proxy->hostname : NULL;
+}
 #endif
 
 /*
@@ -490,7 +521,7 @@ int proxy_connect(struct auth_s *credentials, const char* url, const char* hostn
 #if config_gss == 1
 		} else {
 			//kerberos needs the hostname of the parent proxy for generate the token, so we keep it
-			curr_proxy = proxy;
+			curr_proxy_set(proxy);
 #endif
 		}
 	} while (i < 0 && ++loop < proxycount);
@@ -562,7 +593,9 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 	buf = zmalloc(bufsize);
 
 #if config_gss == 1
-	if(g_creds->haskrb && acquire_kerberos_token(curr_proxy->hostname, credentials, &buf, &bufsize)) {
+	const char *krb_host = curr_proxy_hostname();
+
+	if(g_creds->haskrb && krb_host && acquire_kerberos_token(krb_host, credentials, &buf, &bufsize)) {
 		//pre auth, we try to authenticate directly with kerberos, without to ask if auth is needed
 		//we assume that if kdc releases a ticket for the proxy, then the proxy is configured for kerberos auth
 		//drawback is that later in the code cntlm logs that no auth is required because we have already authenticated
@@ -667,7 +700,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 
 		if (tmp) {
 #if config_gss == 1
-			if(g_creds->haskrb && strncasecmp(tmp, "NEGOTIATE", 9) == 0 && acquire_kerberos_token(curr_proxy->hostname, credentials, &buf, &bufsize)) {
+			if(g_creds->haskrb && krb_host && strncasecmp(tmp, "NEGOTIATE", 9) == 0 && acquire_kerberos_token(krb_host, credentials, &buf, &bufsize)) {
 				if (debug)
 					printf("Using Negotiation ...\n");
 
