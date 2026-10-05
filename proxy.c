@@ -499,7 +499,7 @@ int proxy_connect(struct auth_s *credentials, const char* url, const char* hostn
 			close(list->key);
 			list = tmp;
 		}
-		plist_free(connection_list);
+		connection_list = plist_free(connection_list);
 		pthread_mutex_unlock(&connection_mtx);
 
 		pthread_mutex_lock(&parent_mtx);
