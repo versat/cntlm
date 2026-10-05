@@ -613,7 +613,7 @@ void *socks5_thread(void *thread_data) {
 			sd = host_connect(hostname, ntohs(port));
 			i = (sd >= 0);
 		} else if (sd >= 0) {
-			i = prepare_http_connect(sd, tcreds, thost);
+			i = prepare_http_connect(&sd, tcreds, thost);
 		}
 		free(hostname);
 	}
