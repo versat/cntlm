@@ -526,6 +526,15 @@ int proxy_connect(struct auth_s *credentials, const char* url, const char* hostn
 }
 
 /*
+ * The connection to the proxy is no good: close it and forget about it, so
+ * that nobody uses (or closes) the same descriptor again.
+ */
+static void proxy_drop(int *sd) {
+	close(*sd);
+	*sd = -1;
+}
+
+/*
  * Send request, read reply, if it contains NTLM challenge, generate final
  * NTLM auth message and insert it into the original client header,
  * which is then processed by caller himself.
@@ -534,7 +543,8 @@ int proxy_connect(struct auth_s *credentials, const char* url, const char* hostn
  * if auth was required or not from response->code. If not, caller has
  * a full reply to forward to client.
  *
- * Return 0 in case of network error, 1 when proxy replies
+ * Return 0 in case of network error (closes sd and sets it to -1 in this case),
+ * 1 when proxy replies
  *
  * Caller must init & free "request" and "response" (if supplied)
  *
@@ -617,8 +627,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 	}
 
 	if (!headers_send(*sd, auth)) {
-		close(*sd);
-		*sd = -1;
+		proxy_drop(sd);
 		goto bailout;
 	}
 
@@ -636,8 +645,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 
 	reset_rr_data(auth);
 	if (!headers_recv(*sd, auth)) {
-		close(*sd);
-		*sd = -1;
+		proxy_drop(sd);
 		goto bailout;
 	}
 
@@ -652,8 +660,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 	if (auth->code == 407) {
 		if (!http_body_drop(*sd, auth)) {				// FIXME: if below fails, we should forward what we drop here...
 			rc = 0;
-			close(*sd);
-			*sd = -1;
+			proxy_drop(sd);
 			goto bailout;
 		}
 		tmp = hlist_get(auth->headers, "Proxy-Authenticate");
@@ -683,16 +690,14 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 						free(challenge);
 						free(tmp);
 						rc = 0;
-						close(*sd);
-						*sd = -1;
+						proxy_drop(sd);
 						goto bailout;
 					}
 				} else {
 					syslog(LOG_ERR, "Proxy returning invalid challenge!\n");
 					free(challenge);
 					rc = 0;
-					close(*sd);
-					*sd = -1;
+					proxy_drop(sd);
 					goto bailout;
 				}
 
@@ -710,8 +715,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 			response->code = 407;				// See explanation above
 		if (!http_body_drop(*sd, auth)) {
 			rc = 0;
-			close(*sd);
-			*sd = -1;
+			proxy_drop(sd);
 			goto bailout;
 		}
 	}
