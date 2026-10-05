@@ -1262,7 +1262,7 @@ int main(int argc, char **argv) {
 			free(tmp);
 		}
 
-		while ((tmp = config_pop(cf, "SOCKS5Users"))) {
+		while ((tmp = config_pop(cf, "SOCKS5User"))) {
 			head = strchr(tmp, ':');
 			if (!head) {
 				syslog(LOG_ERR, "Invalid username:password format for SOCKS5User: %s\n", tmp);
@@ -1270,6 +1270,7 @@ int main(int argc, char **argv) {
 				head[0] = 0;
 				users_list = hlist_add(users_list, tmp, head+1, HLIST_ALLOC, HLIST_ALLOC);
 			}
+			free(tmp);
 		}
 
 
