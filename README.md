@@ -120,7 +120,7 @@ project definition file, installer:
 
 Now this automatically creates the installer.
 
-Alternative, run this command, which does these steps, too:
+Alternatively, run this command, which does these steps, too:
 
     C:\cygwin64\bin\bash -e -l -c "cd /cygdrive/yourdrive/your_ctnlm_src_location && make distclean && ./configure && make && make win"
 
@@ -190,4 +190,6 @@ Makefiles for different compilers are supported by the ./configure script
 
 ## Contact
 
-David Kubicek <dave@awk.cz> (seems to be no longer available)
+This is a fork of the original cntlm code. For issues, discussion, PRs, and so on, visit <https://github.com/versat/cntlm>.
+
+The original author of cntlm is David Kubicek, and he now also has a GitHub repository at <https://github.com/DavidKubicek/cntlm>.
