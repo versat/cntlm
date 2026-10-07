@@ -48,13 +48,14 @@ int pac_parse_string(const char *pacstring);      // PAC string to parse
 /// @brief Finds proxy for the given URL and Host.
 /// @param url URL to find proxy for.
 /// @param host Host part of the URL.
-/// @returns proxy string on sucess and NULL on error.
+/// @returns newly allocated proxy string (the caller must free it) on success
+/// and NULL on error.
 ///
 /// Finds proxy for the given URL and Host. This function should be called only
 /// after pac engine has been initialized (using pac_init) and pac
 /// script has been parsed (using pac_parse_file or pac_parse_string).
-const char *pac_find_proxy(const char *url,            // URL to find proxy for
-                           const char *host);          // Host part of the URL
+char *pac_find_proxy(const char *url,                  // URL to find proxy for
+                     const char *host);                // Host part of the URL
 
 /// @brief Destroys JavaSctipt context.
 ///

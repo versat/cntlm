@@ -62,7 +62,7 @@ struct proxylist_s {
 typedef struct paclist_s *paclist_t;
 typedef const struct paclist_s *paclist_const_t;
 struct paclist_s {
-	const char *pacstr;
+	char *pacstr;						/* owned copy of the string returned by the PAC */
 	struct proxylist_s *proxylist;
 	unsigned long proxycurr;
 	int count;
@@ -88,7 +88,38 @@ unsigned long parent_curr = 0;
 pthread_mutex_t parent_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 #if config_gss == 1
-proxy_t *curr_proxy;
+/*
+ * Kerberos needs the hostname of the parent proxy to generate the token, so we
+ * keep the proxy of the last successful connection. It is kept per thread, as
+ * every thread can be talking to a different parent proxy (e.g. with a PAC).
+ */
+static pthread_key_t curr_proxy_key;
+static pthread_once_t curr_proxy_once = PTHREAD_ONCE_INIT;
+static int curr_proxy_ready = 0;
+
+static void curr_proxy_init(void) {
+	curr_proxy_ready = (pthread_key_create(&curr_proxy_key, NULL) == 0);
+	if (!curr_proxy_ready)
+		syslog(LOG_ERR, "Cannot create the per thread key for the current proxy\n");
+}
+
+static void curr_proxy_set(const proxy_t *proxy) {
+	pthread_once(&curr_proxy_once, curr_proxy_init);
+	if (curr_proxy_ready)
+		pthread_setspecific(curr_proxy_key, proxy);
+}
+
+/*
+ * Hostname of the proxy of the last connection of this thread, NULL if none.
+ */
+static const char *curr_proxy_hostname(void) {
+	const proxy_t *proxy;
+
+	pthread_once(&curr_proxy_once, curr_proxy_init);
+	proxy = curr_proxy_ready ? pthread_getspecific(curr_proxy_key) : NULL;
+
+	return proxy ? proxy->hostname : NULL;
+}
 #endif
 
 /*
@@ -343,7 +374,7 @@ paclist_t paclist_create(const char *pacp_str) {
 	free(pacp_start);
 
 	tmp = zmalloc(sizeof(struct paclist_s));
-	tmp->pacstr = pacp_str;
+	tmp->pacstr = strdup(pacp_str);
 	tmp->proxylist = plist;
 	tmp->proxycurr = 0;
 	tmp->count = plist_count;
@@ -360,6 +391,9 @@ paclist_t paclist_create(const char *pacp_str) {
 paclist_t paclist_get(const char *pacp_str) {
 	paclist_t tmp;
 	paclist_t p = pac_list;
+
+	if (pacp_str == NULL)
+		return NULL;
 
 	while (p) {
 		if (strcmp(pacp_str, p->pacstr) == 0) {
@@ -394,6 +428,7 @@ void paclist_free(paclist_t paclist) {
 	while (paclist) {
 		paclist_t t = paclist->next;
 		proxylist_free(paclist->proxylist, 0);
+		free(paclist->pacstr);
 		free(paclist);
 		paclist = t;
 	}
@@ -421,16 +456,22 @@ int proxy_connect(struct auth_s *credentials, const char* url, const char* hostn
 	int proxycount = 0;
 
 	paclist_t paclist = NULL;
-	const char *pacp_str;
+	char *pacp_str;
 	if (pac_initialized) {
 		/*
 		 * Create proxy list for request from PAC file.
 		 */
 		pthread_mutex_lock(&pac_mtx);
 		pacp_str = pac_find_proxy(url, hostname);
-		pthread_mutex_unlock(&pac_mtx);
-
 		paclist = paclist_get(pacp_str);
+		pthread_mutex_unlock(&pac_mtx);
+		free(pacp_str);
+
+		if (paclist == NULL) {
+			syslog(LOG_ERR, "PAC script returned no proxy for %s\n", url);
+			return -1;
+		}
+
 		proxylist = paclist->proxylist;
 		proxycurr = paclist->proxycurr;
 		proxycount = paclist->count;
@@ -480,7 +521,7 @@ int proxy_connect(struct auth_s *credentials, const char* url, const char* hostn
 #if config_gss == 1
 		} else {
 			//kerberos needs the hostname of the parent proxy for generate the token, so we keep it
-			curr_proxy = proxy;
+			curr_proxy_set(proxy);
 #endif
 		}
 	} while (i < 0 && ++loop < proxycount);
@@ -499,7 +540,7 @@ int proxy_connect(struct auth_s *credentials, const char* url, const char* hostn
 			close(list->key);
 			list = tmp;
 		}
-		plist_free(connection_list);
+		connection_list = plist_free(connection_list);
 		pthread_mutex_unlock(&connection_mtx);
 
 		pthread_mutex_lock(&parent_mtx);
@@ -516,6 +557,15 @@ int proxy_connect(struct auth_s *credentials, const char* url, const char* hostn
 }
 
 /*
+ * The connection to the proxy is no good: close it and forget about it, so
+ * that nobody uses (or closes) the same descriptor again.
+ */
+static void proxy_drop(int *sd) {
+	close(*sd);
+	*sd = -1;
+}
+
+/*
  * Send request, read reply, if it contains NTLM challenge, generate final
  * NTLM auth message and insert it into the original client header,
  * which is then processed by caller himself.
@@ -524,7 +574,8 @@ int proxy_connect(struct auth_s *credentials, const char* url, const char* hostn
  * if auth was required or not from response->code. If not, caller has
  * a full reply to forward to client.
  *
- * Return 0 in case of network error, 1 when proxy replies
+ * Return 0 in case of network error (closes sd and sets it to -1 in this case),
+ * 1 when proxy replies
  *
  * Caller must init & free "request" and "response" (if supplied)
  *
@@ -542,7 +593,9 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 	buf = zmalloc(bufsize);
 
 #if config_gss == 1
-	if(g_creds->haskrb && acquire_kerberos_token(curr_proxy->hostname, credentials, &buf, &bufsize)) {
+	const char *krb_host = curr_proxy_hostname();
+
+	if(g_creds->haskrb && krb_host && acquire_kerberos_token(krb_host, credentials, &buf, &bufsize)) {
 		//pre auth, we try to authenticate directly with kerberos, without to ask if auth is needed
 		//we assume that if kdc releases a ticket for the proxy, then the proxy is configured for kerberos auth
 		//drawback is that later in the code cntlm logs that no auth is required because we have already authenticated
@@ -607,7 +660,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 	}
 
 	if (!headers_send(*sd, auth)) {
-		close(*sd);
+		proxy_drop(sd);
 		goto bailout;
 	}
 
@@ -625,7 +678,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 
 	reset_rr_data(auth);
 	if (!headers_recv(*sd, auth)) {
-		close(*sd);
+		proxy_drop(sd);
 		goto bailout;
 	}
 
@@ -640,14 +693,14 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 	if (auth->code == 407) {
 		if (!http_body_drop(*sd, auth)) {				// FIXME: if below fails, we should forward what we drop here...
 			rc = 0;
-			close(*sd);
+			proxy_drop(sd);
 			goto bailout;
 		}
 		tmp = hlist_get(auth->headers, "Proxy-Authenticate");
 
 		if (tmp) {
 #if config_gss == 1
-			if(g_creds->haskrb && strncasecmp(tmp, "NEGOTIATE", 9) == 0 && acquire_kerberos_token(curr_proxy->hostname, credentials, &buf, &bufsize)) {
+			if(g_creds->haskrb && krb_host && strncasecmp(tmp, "NEGOTIATE", 9) == 0 && acquire_kerberos_token(krb_host, credentials, &buf, &bufsize)) {
 				if (debug)
 					printf("Using Negotiation ...\n");
 
@@ -669,13 +722,15 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 						syslog(LOG_ERR, "No target info block. Cannot do NTLMv2!\n");
 						free(challenge);
 						free(tmp);
-						close(*sd);
+						rc = 0;
+						proxy_drop(sd);
 						goto bailout;
 					}
 				} else {
 					syslog(LOG_ERR, "Proxy returning invalid challenge!\n");
 					free(challenge);
-					close(*sd);
+					rc = 0;
+					proxy_drop(sd);
 					goto bailout;
 				}
 
@@ -693,7 +748,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 			response->code = 407;				// See explanation above
 		if (!http_body_drop(*sd, auth)) {
 			rc = 0;
-			close(*sd);
+			proxy_drop(sd);
 			goto bailout;
 		}
 	}
