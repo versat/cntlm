@@ -666,7 +666,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 						request->headers = hlist_mod(request->headers, "Proxy-Authorization", buf, 1);
 						free(tmp);
 					} else {
-						syslog(LOG_ERR, "No target info block. Cannot do NTLMv2!\n");
+						syslog(LOG_ERR, "Cannot build NTLM response: invalid or oversized challenge\n");
 						free(challenge);
 						free(tmp);
 						close(*sd);

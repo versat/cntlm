@@ -121,7 +121,7 @@ int www_authenticate(int sd, int cd, rr_data_t request, rr_data_t response, stru
 					request->headers = hlist_mod(request->headers, "Authorization", buf, 1);
 					free(tmp);
 				} else {
-					syslog(LOG_ERR, "No target info block. Cannot do NTLMv2!\n");
+					syslog(LOG_ERR, "Cannot build NTLM response: invalid or oversized challenge\n");
 					response->errmsg = "Invalid NTLM challenge from web server";
 					free(challenge);
 					free(tmp);
