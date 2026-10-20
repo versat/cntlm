@@ -31,6 +31,8 @@
 #include "sspi.h"
 #endif
 
+#define NTLM_TARGETINFO_MAX	2048
+
 extern int debug;
 
 static void ntlm_set_key(const unsigned char *src, gl_des_ctx *context) {
@@ -265,7 +267,7 @@ int ntlm_request(char **dst, struct auth_s *creds) {
 		printf("\t    Flags: 0x%X\n", (int)flags);
 	}
 
-	buf = zmalloc(NTLM_BUFSIZE);
+	buf = zmalloc(32+hlen+dlen);
 	memcpy(buf, "NTLMSSP\0", 8);
 	VAL(buf, uint32_t, 8) = U32LE(1);
 	VAL(buf, uint32_t, 12) = U32LE(flags);
@@ -330,11 +332,12 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 	size_t dlen;
 	size_t ulen;
 	size_t hlen;
-	uint16_t tpos;
-	uint16_t tlen;
+	int tpos;
+	int tlen;
 	uint16_t ttype = -1;
-	uint16_t tbofs = 0;
-	uint16_t tblen = 0;
+	int tbofs = 0;
+	int tblen = 0;
+	int msglen;
 	char *lmhash = NULL;
 	char *nthash = NULL;
 	int lmlen = 0;
@@ -387,6 +390,9 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 
 		if (tblen && ttype == 0)
 			tblen += 4;
+
+		if (tblen > NTLM_TARGETINFO_MAX)
+			return 0;
 
 		if (debug) {
 			printf("\t    TBofs: %d\n\t    TBlen: %d\n\t    ttype: %d\n", tbofs, tblen, ttype);
@@ -444,7 +450,8 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 		}
 	}
 
-	buf = zmalloc(NTLM_BUFSIZE);
+	msglen = 64+dlen+ulen+hlen+lmlen+ntlen;
+	buf = zmalloc(msglen);
 	memcpy(buf, "NTLMSSP\0", 8);
 	VAL(buf, uint32_t, 8) = U32LE(3);
 
@@ -487,7 +494,7 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 	if (lmhash)
 		memcpy(MEM(buf, char, 64+dlen+ulen+hlen), lmhash, lmlen);
 	if (nthash)
-		memcpy(MEM(buf, char, 64+dlen+ulen+hlen+24), nthash, ntlen);
+		memcpy(MEM(buf, char, 64+dlen+ulen+hlen+lmlen), nthash, ntlen);
 
 	if (nthash)
 		free(nthash);
@@ -499,5 +506,5 @@ int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds
 	free(udomain);
 
 	*dst = buf;
-	return 64+dlen+ulen+hlen+lmlen+ntlen;
+	return msglen;
 }
