@@ -24,7 +24,6 @@
 
 #include "auth.h"
 
-#define NTLM_BUFSIZE		1024
 #define NTLM_CHALLENGE_MIN	40
 
 extern char *ntlm_hash_lm_password(const char *password);
