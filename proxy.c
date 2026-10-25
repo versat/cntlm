@@ -608,6 +608,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 
 	if (!headers_send(*sd, auth)) {
 		close(*sd);
+		*sd = -1;
 		goto bailout;
 	}
 
@@ -626,6 +627,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 	reset_rr_data(auth);
 	if (!headers_recv(*sd, auth)) {
 		close(*sd);
+		*sd = -1;
 		goto bailout;
 	}
 
@@ -641,6 +643,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 		if (!http_body_drop(*sd, auth)) {				// FIXME: if below fails, we should forward what we drop here...
 			rc = 0;
 			close(*sd);
+			*sd = -1;
 			goto bailout;
 		}
 		tmp = hlist_get(auth->headers, "Proxy-Authenticate");
@@ -671,6 +674,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 						free(tmp);
 						rc = 0;
 						close(*sd);
+						*sd = -1;
 						goto bailout;
 					}
 				} else {
@@ -678,6 +682,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 					free(challenge);
 					rc = 0;
 					close(*sd);
+					*sd = -1;
 					goto bailout;
 				}
 
@@ -696,6 +701,7 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 		if (!http_body_drop(*sd, auth)) {
 			rc = 0;
 			close(*sd);
+			*sd = -1;
 			goto bailout;
 		}
 	}
