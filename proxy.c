@@ -669,12 +669,14 @@ int proxy_authenticate(int *sd, rr_data_t request, rr_data_t response, struct au
 						syslog(LOG_ERR, "Cannot build NTLM response: invalid or oversized challenge\n");
 						free(challenge);
 						free(tmp);
+						rc = 0;
 						close(*sd);
 						goto bailout;
 					}
 				} else {
 					syslog(LOG_ERR, "Proxy returning invalid challenge!\n");
 					free(challenge);
+					rc = 0;
 					close(*sd);
 					goto bailout;
 				}
