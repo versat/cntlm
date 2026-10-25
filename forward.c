@@ -501,14 +501,14 @@ bailout:
  *
  * Return 1 for success, 0 failure.
  */
-int prepare_http_connect(int sd, struct auth_s *credentials, const char *thost) {
+int prepare_http_connect(int *sd, struct auth_s *credentials, const char *thost) {
 	rr_data_t data1;
 	rr_data_t data2;
 	int rc = 0;
 	hlist_t tl;
 	char *pos;
 
-	if (!sd || !thost || !strlen(thost))
+	if (!sd || !*sd || !thost || !strlen(thost))
 		return 0;
 
 	data1 = new_rr_data();
@@ -537,7 +537,7 @@ int prepare_http_connect(int sd, struct auth_s *credentials, const char *thost) 
 	if (debug)
 		printf("Starting authentication...\n");
 
-	if (proxy_authenticate(&sd, data1, data2, credentials)) {
+	if (proxy_authenticate(sd, data1, data2, credentials)) {
 		/*
 		 * Let's try final auth step, possibly changing data2->code
 		 */
@@ -546,7 +546,7 @@ int prepare_http_connect(int sd, struct auth_s *credentials, const char *thost) 
 				printf("Sending real request:\n");
 				hlist_dump(data1->headers);
 			}
-			if (!headers_send(sd, data1)) {
+			if (!headers_send(*sd, data1)) {
 				printf("Sending request failed!\n");
 				goto bailout;
 			}
@@ -554,7 +554,7 @@ int prepare_http_connect(int sd, struct auth_s *credentials, const char *thost) 
 			if (debug)
 				printf("\nReading real response:\n");
 			reset_rr_data(data2);
-			if (!headers_recv(sd, data2)) {
+			if (!headers_recv(*sd, data2)) {
 				if (debug)
 					printf("Reading response failed!\n");
 				goto bailout;
@@ -607,7 +607,7 @@ int forward_tunnel(void *thread_data) {
 	if (debug)
 		printf("Tunneling to %s for client %d...\n", thost, cd);
 
-	if (prepare_http_connect(sd, tcreds, thost))
+	if (prepare_http_connect(&sd, tcreds, thost))
 		tunnel(cd, sd);
 
 bailout:
