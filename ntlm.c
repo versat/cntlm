@@ -224,9 +224,9 @@ char *ntlm2_hash_password(const char *username, const char *domain, const char *
 
 int ntlm_request(char **dst, struct auth_s *creds) {
 #ifdef __CYGWIN__
-	if (sspi_enabled())
+	if (sspi_is_ntlm())
 	{
-		return sspi_request(dst, &creds->sspi);
+		return sspi_ntlm_request(dst, &creds->sspi);
 	}
 #endif
 	char *buf;
@@ -319,9 +319,9 @@ void dump(char *src, int len) {
 
 int ntlm_response(char **dst, char *challenge, int challen, struct auth_s *creds) {
 #ifdef __CYGWIN__
-	if (sspi_enabled())
+	if (sspi_is_ntlm())
 	{
-		return sspi_response(dst, challenge, challen, &creds->sspi);
+		return sspi_ntlm_response(dst, challenge, challen, &creds->sspi);
 	}
 #endif
 	char *buf;
