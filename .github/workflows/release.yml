@@ -64,6 +64,7 @@ jobs:
         shell: bash
 
       - name: Create or Update Release
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
         uses: softprops/action-gh-release@v3.0.3
         with:
           files: ${{ matrix.artifacts }}
