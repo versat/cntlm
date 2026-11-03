@@ -24,6 +24,7 @@
 
 #include "sspi.h"
 #include "utils.h"
+#include <syslog.h>
 
 // SSPI mode
 #ifdef UNICODE
@@ -182,10 +183,43 @@ int sspi_enabled(void)
 	return 0;
 }
 
+int sspi_is_negotiate(void) {
+    if (!sspi_enabled())
+        return 0;
+#ifdef UNICODE
+    return (wcscmp(sspi_mode, L"Negotiate") == 0);
+#else
+    return (strcasecmp(sspi_mode, "Negotiate") == 0);
+#endif
+}
+
+int sspi_is_ntlm(void) {
+    if (!sspi_enabled())
+        return 0;
+#ifdef UNICODE
+    return (wcscmp(sspi_mode, L"NTLM") == 0);
+#else
+    return (strcasecmp(sspi_mode, "NTLM") == 0);
+#endif
+}
+
+const char* sspi_get_scheme(void) {
+    if (!sspi_enabled())
+        return "NTLM";
+        
+#ifdef UNICODE
+    static char scheme[32];
+    wcstombs(scheme, sspi_mode, sizeof(scheme));
+    return scheme;
+#else
+    return sspi_mode;
+#endif
+}
+
 int sspi_set(char* mode)
 {
 	sspi_dll = LoadSecurityDll();
-	if (!strcasecmp("NTLM", mode) && sspi_dll)  // Only NTLM supported for now
+	if ((!strcasecmp("NTLM", mode) || !strcasecmp("Negotiate", mode)) && sspi_dll)  // Only NTLM and Negotiate supported for now
 	{
 #ifdef UNICODE
 		sspi_mode = zmalloc(sizeof(wchar_t) * strlen(mode));
@@ -208,7 +242,7 @@ int sspi_unset(void)
 	return 1;
 }
 
-int sspi_request(char **dst, struct sspi_handle *sspi)
+int sspi_ntlm_request(char **dst, struct sspi_handle *sspi)
 {
 	SECURITY_STATUS status;
 	TimeStamp expiry;
@@ -264,7 +298,7 @@ int sspi_request(char **dst, struct sspi_handle *sspi)
 	return token.cbBuffer;
 }
 
-int sspi_response(char **dst, char *challengeBuf, int challen, struct sspi_handle *sspi)
+int sspi_ntlm_response(char **dst, char *challengeBuf, int challen, struct sspi_handle *sspi)
 {
 	SecBuffer challenge;
 	SecBuffer answer;
@@ -306,6 +340,77 @@ int sspi_response(char **dst, char *challengeBuf, int challen, struct sspi_handl
 
 	*dst = answer.pvBuffer;
 	return answer.cbBuffer;
+}
+
+int sspi_negotiate(char **dst, struct sspi_negotiate_state *state, const char *proxy_hostname)
+{
+    SECURITY_STATUS status;
+    TimeStamp expiry;
+    SecBufferDesc output_desc;
+    SecBuffer output_buffer;
+    unsigned int context_attr;
+    
+    // Step 1: Acquire credentials handle with Negotiate package
+    status = _AcquireCredentialsHandle(
+        NULL,
+        TEXT("Negotiate"),
+        SECPKG_CRED_OUTBOUND,
+        NULL, NULL, NULL, NULL,
+        &state->credentials,
+        &expiry);
+    
+    if (status != SEC_E_OK) {
+        syslog(LOG_ERR, "AcquireCredentialsHandle failed: 0x%08x", status);
+        return 0;
+    }
+    
+    // Build SPN from proxy hostname
+    char hostname_only[256];
+    snprintf(hostname_only, sizeof(hostname_only), "%s", proxy_hostname ? proxy_hostname : "");
+    char *colon = strchr(hostname_only, ':');
+    if (colon) *colon = '\0';
+    
+    // Step 2: Initialize security context
+    output_desc.ulVersion = SECBUFFER_VERSION;
+    output_desc.cBuffers = 1;
+    output_desc.pBuffers = &output_buffer;
+    output_buffer.cbBuffer = TOKEN_BUFSIZE;
+    output_buffer.BufferType = SECBUFFER_TOKEN;
+    output_buffer.pvBuffer = zmalloc(TOKEN_BUFSIZE);
+    
+#ifdef UNICODE
+    wchar_t target_name[261]; // 256 + 5 chars
+    wchar_t whostname[256];
+    mbstowcs(whostname, hostname_only, 256);
+    swprintf(target_name, 256, L"HTTP/%s", whostname);
+#else
+    char target_name[261]; // 256 + 5 chars
+    snprintf(target_name, sizeof(target_name), "HTTP/%s", hostname_only);
+#endif
+    
+    status = _InitializeSecurityContext(
+        &state->credentials,
+        NULL,
+        target_name,
+        ISC_REQ_CONFIDENTIALITY | ISC_REQ_REPLAY_DETECT | ISC_REQ_CONNECTION,
+        0,
+        SECURITY_NETWORK_DREP,
+        NULL,
+        0,
+        &state->context,
+        &output_desc,
+        &context_attr,
+        &expiry);
+    
+    if (status != SEC_E_OK && status != SEC_I_CONTINUE_NEEDED) {
+        syslog(LOG_ERR, "InitializeSecurityContext failed: 0x%08x", status);
+        _FreeCredentialsHandle(&state->credentials);
+        free(output_buffer.pvBuffer);
+        return 0;
+    }
+    *dst = output_buffer.pvBuffer;
+    
+    return output_buffer.cbBuffer;
 }
 
 #endif /*  __CYGWIN__ */
