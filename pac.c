@@ -179,7 +179,7 @@ int pac_parse_string(const char *pacstring) {
     return 1;
 }
 
-const char *pac_find_proxy(const char *url, const char *host) {
+char *pac_find_proxy(const char *url, const char *host) {
     if (!pac_ctx || !url || !host)
         return NULL;
 
@@ -190,7 +190,13 @@ const char *pac_find_proxy(const char *url, const char *host) {
         escaped_url ? escaped_url : url,
         escaped_host ? escaped_host : host);
     duk_eval(pac_ctx);
+    /*
+     * The string belongs to the JS engine, which frees it as soon as it is
+     * popped if nothing else refers to it (e.g. when the script builds it with
+     * a concatenation): return a copy.
+     */
     const char* res = duk_get_string(pac_ctx, -1);
+    char* copy = res ? strdup(res) : NULL;
     duk_pop(pac_ctx);
 
     if (escaped_url)
@@ -198,7 +204,7 @@ const char *pac_find_proxy(const char *url, const char *host) {
     if (escaped_host)
         free(escaped_host);
 
-    return res;
+    return copy;
 }
 
 void pac_cleanup(void) {

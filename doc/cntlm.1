@@ -93,7 +93,7 @@ which are computed from the password hash. Each response uses a different hashin
 types were invented, stronger algorithms were used. When you first install \fBcntlm\fP, find the strongest one
 which works for you (preferably using\ \fB-M\fP). Above they are listed from strongest to weakest. Very old
 servers or dedicated HW proxies might be unable to process anything but LM. If none of those work, see
-compatibility flags option\ \fB-F\fP or submit a Support Request.
+compatibility flags option\ \fB-F\fP or submit a Support Request. The default is \fBNTLMv2\fP.
 
 .br
 \fBIMPORTANT:\fP Although NTLMv2 is not widely adopted (i.e. enforced), it is supported on all Windows since
@@ -246,7 +246,7 @@ and proxy address first. You can use \fB-I\fP to enter your password interactive
 
 .ne 5
 .TP
-.B -N <pattern1>[,<patternN]\ \ \ \ (NoProxy)
+.B -N <pattern1>[,<patternN>]\ \ \ \ (NoProxy)
 Avoid parent proxy for these host names. All matching URL's will be proxied \fIdirectly\fP by \fBcntlm\fP as a
 stand-alone proxy. \fBCntlm\fP supports WWW authentication in this mode, thus allowing you to access local
 intranet sites with corporate NTLM authentication. Hopefully, you won't need that virtualized MSIE any more. :)

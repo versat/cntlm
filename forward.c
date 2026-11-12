@@ -444,7 +444,8 @@ beginning:
 			 * This way, we also tell our caller that proxy keep-alive is impossible.
 			 */
 			if (loop == 1) {
-				proxy_alive = hlist_subcmp(data[1]->headers, "Proxy-Connection", "keep-alive")
+				proxy_alive = (hlist_subcmp(data[1]->headers, "Proxy-Connection", "keep-alive")
+						|| hlist_subcmp(data[1]->headers, "Connection", "keep-alive"))
 					&& data[0]->http_version >= 11;
 				if (proxy_alive) {
 					data[1]->headers = hlist_mod(data[1]->headers, "Proxy-Connection", "keep-alive", 1);
@@ -499,7 +500,11 @@ bailout:
  * Auth connection "sd" and try to return negotiated CONNECT
  * connection to a remote host:port (thost).
  *
- * Return 1 for success, 0 failure.
+ * proxy_authenticate() can replace the connection, so the caller must
+ * use the descriptor in "sd" afterwards.
+ *
+ * Return 1 for success, 0 failure. In case of failure the connection is
+ * closed and sd is set to -1.
  */
 int prepare_http_connect(int *sd, struct auth_s *credentials, const char *thost) {
 	rr_data_t data1;
@@ -508,7 +513,7 @@ int prepare_http_connect(int *sd, struct auth_s *credentials, const char *thost)
 	hlist_t tl;
 	char *pos;
 
-	if (!sd || !*sd || !thost || !strlen(thost))
+	if (!sd || *sd <= 0 || !thost || !strlen(thost))
 		return 0;
 
 	data1 = new_rr_data();
@@ -578,6 +583,11 @@ int prepare_http_connect(int *sd, struct auth_s *credentials, const char *thost)
 bailout:
 	free_rr_data(&data1);
 	free_rr_data(&data2);
+
+	if (!rc && *sd >= 0) {
+		close(*sd);
+		*sd = -1;
+	}
 
 	return rc;
 }
