@@ -228,6 +228,10 @@ int headers_recv(int fd, rr_data_t data) {
 
 		if (host[0] == '[') {
 			tok = strchr(host, ']');
+			if (!tok) {
+				i = -5;
+				goto bailout;
+			}
 			*tok = 0;
 			data->hostname = strdup(host+1);
 			if (*(tok+1) == ':') {
